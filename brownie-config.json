@@ -1,4 +1,7 @@
 {
+    "network_defaults":{
+        "gas_limit": 6600000
+    },
     "logging":{
         "test":{"tx":[0,2]}
     }

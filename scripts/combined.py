@@ -1,7 +1,11 @@
+#!/usr/bin/python3
+
+import itertools
 import json
 import os
 from subprocess import Popen, DEVNULL
 
+from brownie import *
 
 SETUP_PUBKEY = [
     "0x01cf7cc93bfbf7b2c5f04a3bc9cb8b72bbcf2defcabdceb09860c493bdf1588d",
@@ -10,49 +14,11 @@ SETUP_PUBKEY = [
     "0x02cb2a424885c9e412b94c40905b359e3043275cd29f5b557f008cd0a3e0c0dc"
 ]
 CHAIN_ID = 1
-SCALING_FACTOR = "1 ether"
+SCALING_FACTOR = 10
 
 local_accounts = []
 params = {}
 notes = {}
-
-def setup_environment():
-    '''
-    Set up the basic aztec environent:
-
-     * Deploy the aztec contracts and a test ERC20
-     * Create 5 new local accounts (needed so we can access the private keys)
-     * Send 50 ether and 10000 test tokens to each account
-     * Approve the aztec bridge contract to transfer tokens for each account
-    '''
-
-    global token, bridge
-    token = a[0].deploy(ERC20)
-    a[0].deploy(AZTEC)
-    AZTECERC20Bridge.bytecode = AZTECERC20Bridge.bytecode.replace(
-        'AZTECInterface',
-        'AZTEC'
-    )
-    bridge = a[0].deploy(
-        AZTECERC20Bridge,
-        SETUP_PUBKEY,
-        token,
-        SCALING_FACTOR,
-        CHAIN_ID
-    )
-    
-    for i in range(5):
-        local_accounts.append(accounts.add())
-        notes[local_accounts[-1]] = []
-        a[i].transfer(local_accounts[-1], "50 ether")
-        token.approve(bridge, "10000 ether", {'from':local_accounts[-1]})
-        token.transfer(local_accounts[-1], "10000 ether", {'from':a[0]})
-    
-    params.update({
-        'accounts': [i.private_key for i in local_accounts],
-        "aztecContract": bridge,
-        "chainId": CHAIN_ID,
-    })
 
 
 def send_tx(inputs, outputs, sender):
@@ -104,8 +70,49 @@ def send_tx(inputs, outputs, sender):
             'amount': outputs[i]['amount']
         })
 
+def setup_environment():
 
-def deploy():
+    global bridge, token
+    owner = accounts.add()
+    a[-2].transfer(owner, "50 ether")
+    kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 0)
+    issuer = accounts[1].deploy(IssuingEntity, [accounts[1], owner], 1)
+    token = accounts[1].deploy(SecurityToken, issuer, "Test Token", "TST", "10000 ether")
+    issuer.addToken(token)
+    issuer.setRegistrar(kyc, True)
+    
+    a[0].deploy(AZTEC)
+    AztecCustodian.bytecode = AztecCustodian.bytecode.replace(
+        'AZTECInterface',
+        'AZTEC'
+    )
+    bridge = a[0].deploy(
+        AztecCustodian,
+        SETUP_PUBKEY,
+        token,
+        SCALING_FACTOR,
+        CHAIN_ID
+    )
+
+    issuer.addCustodian(bridge)
+
+    issuer.setCountries([1,2,3],[1,1,1],[0,0,0])
+    for count,country,rating in [(c,i[0],i[1]) for c,i in enumerate(itertools.product([1,2,3], [1,2]))]:
+        local_accounts.append(accounts.add())
+        notes[local_accounts[-1]] = []
+        a[count].transfer(local_accounts[-1], "50 ether")
+        kyc.addInvestor("investor"+str(count), country, 'aws', rating, 9999999999, [local_accounts[-1]])
+        token.approve(bridge, "100 ether", {'from':local_accounts[-1]})
+        token.transfer(local_accounts[-1], "100 ether", {'from':a[1]})
+
+    params.update({
+        'accounts': [i.private_key for i in local_accounts],
+        "aztecContract": bridge,
+        "chainId": CHAIN_ID,
+        'issuerKey': owner.private_key
+    })
+
+def main():
 
     setup_environment()
 
@@ -123,6 +130,17 @@ def deploy():
         {'owner': local_accounts[3], 'amount': 130},
     ], local_accounts[1])
 
-    send_tx(notes[local_accounts[3]], [
-        {'owner': local_accounts[0], 'amount': 30}
-    ], local_accounts[3])
+    send_tx(notes[local_accounts[0]], [
+        {'owner': local_accounts[1], 'amount': 5}
+    ], local_accounts[0])
+
+    send_tx([], [
+        {'owner': local_accounts[4], 'amount':100},
+        {'owner': local_accounts[0], 'amount':50},
+        {'owner': local_accounts[2], 'amount':50},
+    ], local_accounts[4])
+
+    send_tx(notes[local_accounts[4]], [
+        {'owner': local_accounts[1], 'amount': 20},
+        {'owner': local_accounts[3], 'amount': 20}
+    ], local_accounts[4])

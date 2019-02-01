@@ -134,7 +134,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		@param _token Address of the token to transfer
 		@param _to Address of the recipient
 		@param _value Amount to transfer
-		@param _stillOwner is recipient still a beneficial owner for this token?
+		@param _stillOwner is recipient still a beneficial owner for this issuer?
 		@return bool success
 	 */
 	function transfer(
@@ -209,7 +209,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		}
 		i.balances[_token] = i.balances[_token].add(_value);
 		/* bytes4 signature for custodian module receivedTokens() */
-		_callModules(0x081e5f03, abi.encode(_token, _id, _value));
+		_callModules(0xa0e7f751, abi.encode(_token, _id, _value));
 		return true;
 	}
 
@@ -264,6 +264,11 @@ contract OwnedCustodian is Modular, MultiSig {
 			_value,
 			issuer.isOwner
 		));
+		/* bytes4 signature for custodian module internalTransfer() */
+		_callModules(
+			0x7054b724,
+			abi.encode(_token, _fromID, _toID, _value, _stillOwner)
+		);
 		emit TransferOwnership(_token, _fromID, _toID, _value);
 		return true;
 	}
@@ -297,6 +302,8 @@ contract OwnedCustodian is Modular, MultiSig {
 		if (i.tokenCount == 0 && i.isOwner) {
 			i.isOwner = false;
 			IssuingEntity(_issuer).releaseOwnership(ownerID, _id);
+			/* bytes4 signature of custodian module ownershipReleased() */
+			_callModules(0x054d1c76, abi.encode(_issuer, _id));
 		}
 	}
 

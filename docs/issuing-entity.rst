@@ -82,7 +82,7 @@ Investors must be identified by a registrar before they can send or receive toke
 Custodians
 ==========
 
-**Custodian** are entities that are approved to hold tokens on behalf of multiple investors. Common examples of custodians include broker/dealers and secondary markets. Each custodian must be individually approved by an issuer before they can receive tokens.
+**Custodian** are entities that are approved to hold tokens on behalf of multiple investors. Common examples of custodians include broker/dealers, escrow agents and secondary markets. Each custodian must be individually approved by an issuer before they can receive tokens.
 
 Custodians interact with an issuer's investor counts differently from regular investors. When an investor transfers a balance into a custodian it does not increase the overall investor count, instead the investor is now included in the list of beneficial owners represented by the custodian. Even if the investor now has a balance of 0, they will be still be included in the issuer's investor count.
 
@@ -90,29 +90,27 @@ Each time a beneficial owner is added or removed from a custodian, the ``Benefic
 
 See the :ref:`custodian` documentation for more information on how custodians interact with the IssuingEntity contract.
 
-.. warning:: Custodians may facilitate off-chain transfers of ownership that bypass on-chain compliance checks. It is imperative this approval only be given to known, trusted entities who have deployed a verified, audited custodian contract.
-
 .. method:: IssuingEntity.addCustodian(address _custodian)
 
     Approves a custodian contract to send and receive tokens associated with the issuer.
 
     Once a custodian is approved, they can be restricted with ``IssuingEntity.setInvestorRestriction``.
 
-.. method:: IssuingEntity.setBeneficialOwners(bytes32 _custID, bytes32[] _id, bool _add)
+.. method:: IssuingEntity.releaseOwnership(bytes32 _custID, bytes32 _id)
 
-    Modifies the list of beneficial owners associated with the custodian.
+    Removes an investor from a custodian's list of beneficial owners.
 
     * ``_custID``: Custodian ID
-    * ``_id``: Array of investor IDs
-    * ``_add``: Permission bool
+    * ``_id``: Investor ID
 
-    This can only be called via the custodian's contract, or by the issuer. An issuer should only use this method in a case where a custodian has been found to be acting in bad faith.
+    This can be called via the Custodian contract, or directly by the issuer.
 
+    .. note:: In the case of a direct call by the issuer, the Custodian contract will not be called to update it's record. This results in a discrepancy between the on-chain ownership records of the custodian contract and the issuer contract. An issuer should only call this method as a last resort in a situation where a custodian has been found to be acting in bad faith.
 
 Setting Investor Limits
 =======================
 
-Issuers can define investor limits globally, by country, by investor rating, or by a combination thereof. These limits are common across all tokens associated to the issuer.
+Issuers can define investor limits globally, by country, by investor rating, or by a combination thereof. These limits are shared across all tokens associated to the issuer.
 
 Investor counts and limits are stored in uint32[8] arrays. The first entry in each array is the sum of all the remaining entries. The remaining entries correspond to the count or limit for each investor rating. In most (if not all) countries there will be less than 7 types of investor accreditation ratings, and so the upper range of these arrays will be empty. Setting an investor limit to 0 means no limit is imposed.
 

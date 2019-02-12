@@ -1,9 +1,10 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "./open-zeppelin/SafeMath.sol";
+import "./interfaces/IKYCRegistrar.sol";
 
 /** @title KYC Registrar */
-contract KYCRegistrar {
+contract KYCRegistrar is IKYCRegistrar {
 
 	using SafeMath for uint256;
 	using SafeMath32 for uint32;

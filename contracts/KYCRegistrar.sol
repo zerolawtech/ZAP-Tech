@@ -96,6 +96,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		@param _threshold multisig threshold for owning authority
 	 */
 	constructor (address[] _owners, uint32 _threshold) public {
+		require(_threshold > 0);
 		require(_threshold <= _owners.length);
 		ownerID = keccak256(abi.encodePacked(address(this)));
 		Authority storage a = authorityData[ownerID];
@@ -182,6 +183,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		onlyOwner
 		returns (bool)
 	{
+		require(_threshold > 0);
 		bytes32 _id = keccak256(abi.encodePacked(address(this),_addr[0]));
 		require(investorData[_id].authority == 0);
 		Authority storage a = authorityData[_id];
@@ -211,6 +213,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		onlyOwner
 		returns (bool)
 	{
+		require(_threshold > 0);
 		if (!_checkMultiSig()) return false;
 		require(authorityData[_id].addressCount > 0);
 		require(_threshold <= authorityData[_id].addressCount);

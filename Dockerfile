@@ -13,7 +13,7 @@ RUN apt-get install -y python3.6 python3-pip python3-venv wget curl git npm node
 
 RUN npm install -g ganache-cli@6.2.5
 
-RUN curl https://raw.githubusercontent.com/iamdefinitelyahuman/brownie/master/brownie-install.sh | sh
+RUN curl https://raw.githubusercontent.com/HyperLink-Technology/brownie/master/brownie-install.sh | sh
 
 # Brownie installs compilers at runtime so ensure the updates are
 # in the compiled image so it doesn't do this every time

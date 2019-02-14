@@ -13,7 +13,7 @@ def setup():
     escrow = a[0].deploy(EscrowCustodian)
     issuer.addCustodian(escrow)
 
-def simple_execution():
+def simple_execution(skip=True):
     '''Execute a simple loan'''
     token.transfer(a[2],200),
     token.transfer(a[4],200)
@@ -32,7 +32,7 @@ def simple_execution():
     check.equal(token.balanceOf(a[2]), 200)
     check.equal(escrow.balanceOf(token, id2), 0)
 
-def revoke_offer():
+def revoke_offer(skip=True):
     '''Make and revoke offers'''
     escrow.offerLoan(id2, token, [int(time.time()+30)],[1100],[100], {'from':a[3], 'value':1000})
     escrow.offerLoan(id2, token, [int(time.time()+30)],[1100],[100], {'from':a[3], 'value':1000})
@@ -43,7 +43,7 @@ def revoke_offer():
     check.reverts(escrow.revokeOffer, (1, {'from':a[3]}))
     check.reverts(escrow.claimOffer, (1, {'from':a[2]}))
 
-def multidate():
+def multidate(skip=True):
     '''Execute a more complex loan'''
     escrow.offerLoan(
         id2,
@@ -69,7 +69,7 @@ def multidate():
     check.equal(token.balanceOf(a[2]), 200)
     check.equal(escrow.balanceOf(token, id2), 0)
 
-def reclaim():
+def reclaim(skip=True):
     '''Reposess assets in an overdue loan'''
     escrow.offerLoan(id2, token, [int(time.time()+1.5)],[1100],[100], {'from':a[3], 'value':1000})
     escrow.claimOffer(4, {'from':a[2]})
@@ -80,7 +80,7 @@ def reclaim():
     check.equal(token.balanceOf(a[3]), 100)
     check.reverts(escrow.claimCollateral, (4, {'from':a[3]}))
 
-def pay_overdue():
+def pay_overdue(skip=True):
     '''Pay an overdue loan'''
     escrow.offerLoan(id2, token, [int(time.time()+1.5)],[1100],[100], {'from':a[3], 'value':1000})
     escrow.claimOffer(5, {'from':a[2]})
@@ -90,7 +90,7 @@ def pay_overdue():
     check.reverts(escrow.claimCollateral, (5, {'from':a[3]}))
     
 
-def reclaim_complex():
+def reclaim_complex(skip=True):
     '''Reposess a more complex loan'''
     escrow.offerLoan(
         id2,
@@ -111,7 +111,7 @@ def reclaim_complex():
     check.reverts(escrow.claimCollateral, (4, {'from':a[3]}))
     check.reverts(escrow.makePayment,(4, {'from':a[2],'value':500}))
 
-def transfer_offer():
+def transfer_offer(skip=True):
     '''Transfer loan ownership'''
     token.transfer(a[2],150,{'from':a[3]})
     escrow.offerLoan(id2, token, [int(time.time()+30)],[1100],[100], {'from':a[3], 'value':1000})

@@ -151,10 +151,6 @@ contract KYCRegistrar is IKYCRegistrar {
 		internal
 		returns (uint32 _count) 
 	{
-		require(
-			investorData[_id].country != 0 ||
-			authorityData[_id].addressCount > 0
-		);
 		for (uint256 i = 0; i < _addr.length; i++) {
 			Address storage _inv = idMap[_addr[i]];
 			if (_inv.id == _id && _inv.restricted) {

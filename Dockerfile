@@ -1,6 +1,6 @@
 # run with:
 # docker build -f Dockerfile -t brownie .
-# docker run -v $PWD:/usr/src brownie brownie
+# docker run -it -v $PWD:/usr/src brownie brownie
 # If you need to update the version of brownie then run the docker
 # build command again
 

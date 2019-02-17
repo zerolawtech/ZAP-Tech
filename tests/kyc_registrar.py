@@ -4,9 +4,13 @@ from brownie import *
 
 def setup():
     # is this passing a threshold of zero?
-    global registrar, a, countries
+    global a, countries
     countries = [1,2,3]
     a = accounts
+    global owner1, owner2
+    owner1 = a[0]; owner2 = a[1]
+    global scratch1 
+    scratch1 = a[-1]
 
 def whitelist_public_abi():
     '''Public ABI only contains the expected methods'''
@@ -43,6 +47,49 @@ def constructor_with_threshold_of_zero_fails():
     '''Contract will not deploy with _threshold of 0'''
     check.reverts(a[0].deploy, [KYCRegistrar, [accounts[0]], 0])
 
+def constructor_with_threshold_too_high_fails():
+    '''Contract will not deploy with _threshold > #owners'''
+    check.reverts(a[0].deploy, [KYCRegistrar, [a[0]], 2])
+
+################################################
+# Owners
+
+def owner_can_add_a_new_owner_address():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
+    ownerID = registrar.getID(owner1)
+    txr = registrar.registerAddresses(ownerID, [scratch1])
+    check.equal(txr.return_value, True)
+    check.equal(registrar.getID(scratch1), ownerID) # new address gets added to existing ID
+    
+def one_owner_cant_add_a_new_owner_address_when_multisig():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)
+    ownerID = registrar.getID(owner1)
+    txr = registrar.registerAddresses(ownerID, [scratch1])
+    check.equal(txr.return_value, False)
+
+def owner_cant_restrict_an_owner_address_multisig():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)
+    ownerID = registrar.getID(owner1)
+    txr = registrar.restrictAddresses(ownerID, [owner2])
+    check.equal(txr.return_value, False)
+    check.event_not_fired(txr, 'RestrictedAddresses')
+
+def owner_can_restrict_an_owner_address():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
+    ownerID = registrar.getID(owner1)
+    txr = registrar.restrictAddresses(ownerID, [owner2])
+    check.equal(txr.return_value, True)
+    check.event_fired(txr, 'RestrictedAddresses' , 1)
+
+def owner_can_unrestrict_an_owner_address():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
+    ownerID = registrar.getID(owner1)
+    txr = registrar.restrictAddresses(ownerID, [owner2], {'from':owner1})
+    check.equal(txr.return_value, True)
+    check.event_fired(txr, 'RestrictedAddresses' , 1)
+    txr = registrar.registerAddresses(ownerID, [owner2], {'from':owner1})
+    check.equal(txr.return_value, True)
+    check.event_fired(txr, 'RegisteredAddresses' , 1)
 
 #################################
 # addAuthority failing path tests

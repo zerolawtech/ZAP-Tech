@@ -113,12 +113,12 @@ contract KYCRegistrar is IKYCRegistrar {
 		bytes32 _id = idMap[msg.sender].id;
 		Authority storage a = authorityData[_id];
 		bytes32 _callHash = keccak256(msg.data);
+		for (uint256 i = 0; i < a.multiSigAuth[_callHash].length; i++) {
+			require(a.multiSigAuth[_callHash][i] != msg.sender);
+		}
 		if (a.multiSigAuth[_callHash].length.add(1) >= a.multiSigThreshold) {
 			delete a.multiSigAuth[_callHash];
 			return true;
-		}
-		for (uint256 i = 0; i < a.multiSigAuth[_callHash].length; i++) {
-			require(a.multiSigAuth[_callHash][i] != msg.sender);
 		}
 		a.multiSigAuth[_callHash].push(msg.sender);
 		return false;
@@ -183,12 +183,12 @@ contract KYCRegistrar is IKYCRegistrar {
 		onlyOwner
 		returns (bool)
 	{
+		if (!_checkMultiSig()) return false;
 		require(_threshold > 0);
-		bytes32 _id = keccak256(abi.encodePacked(address(this),_addr[0]));
+		bytes32 _id = keccak256(abi.encodePacked(address(this), _addr[0]));
 		require(investorData[_id].authority == 0);
 		Authority storage a = authorityData[_id];
 		require(authorityData[_id].addressCount == 0);
-		if (!_checkMultiSig()) return false;
 		a.addressCount = _addAddresses(_id, _addr);
 		require(a.addressCount >= _threshold);
 		a.multiSigThreshold = _threshold;
@@ -213,8 +213,8 @@ contract KYCRegistrar is IKYCRegistrar {
 		onlyOwner
 		returns (bool)
 	{
-		require(_threshold > 0);
 		if (!_checkMultiSig()) return false;
+		require(_threshold > 0);
 		require(authorityData[_id].addressCount > 0);
 		require(_threshold <= authorityData[_id].addressCount);
 		authorityData[_id].multiSigThreshold = _threshold;
@@ -263,8 +263,8 @@ contract KYCRegistrar is IKYCRegistrar {
 		onlyOwner
 		returns (bool)
 	{
-		require(authorityData[_id].addressCount > 0);
 		if (!_checkMultiSig()) return false;
+		require(authorityData[_id].addressCount > 0);
 		authorityData[_id].restricted = !_permitted;
 		emit AuthorityRestriction(_id, !_permitted);
 		return true;
@@ -466,7 +466,6 @@ contract KYCRegistrar is IKYCRegistrar {
 			Authority storage a = authorityData[_id];
 			a.addressCount = a.addressCount.sub(uint32(_addr.length));
 			require(a.addressCount >= a.multiSigThreshold);
-			require(a.addressCount > 0);
 		} else {
 			_authorityCheck(investorData[_id].country);
 		}

@@ -37,7 +37,7 @@ def mintburn_transfer():
     check.confirms(token.transfer, (accounts[2],10000), "Unable to send tokens")
     check.confirms(token.transfer,(accounts[1],10000, {'from':accounts[2]}), "Unable to send tokens")
 
-def mintburn_burn():
+def mintburn_burn(skip=True):
     '''MintBurn: burn tokens'''
     check.confirms(mint.burn,(token.address, 1000000),"Unable to burn")
     check.equal(token.balanceOf(issuer.address), 1000000, "Issuer balance is wrong")
@@ -63,7 +63,7 @@ def mintburn_detach():
         (issuer.address, mint.address),
         "Unable to detach module")
 
-def mintburn_final():
+def mintburn_final(skip=True):
     '''MintBurn: attach and detach once more'''
     check.confirms(
         issuer.attachModule,
@@ -74,7 +74,7 @@ def mintburn_final():
         (issuer.address, mint.address),
         "Unable to attach module")
 
-def dividend_setup():
+def dividend_setup(skip=True):
     '''Dividend: deploy and attach'''
     global dividend_time, dividend, cust
     cust = accounts[0].deploy(Custodian, [a[0]], 1)
@@ -93,7 +93,7 @@ def dividend_setup():
         (token.address, dividend.address),
         "Unable to attach module")
 
-def dividend_transfer():
+def dividend_transfer(skip=True):
     '''Dividend: transfer tokens before claim time'''
     token.transfer(accounts[2], 100)
     token.transfer(cust,100,{'from':accounts[2]})
@@ -107,21 +107,21 @@ def dividend_transfer():
     token.transferFrom(accounts[6], accounts[7], 600, {'from':accounts[1]})
     check.equal(token.circulatingSupply(), 2000, "Circulating supply is wrong")
 
-def dividend_mint():
+def dividend_mint(skip=True):
     '''Dividend: attach MintBurn, mint and burn tokens'''
     issuer.attachModule(issuer.address, mint.address)
     mint.mint(token.address, 1000000)
     mint.burn(token.address, 500000)
     issuer.detachModule(issuer.address, mint.address)
 
-def dividend_transfer2():
+def dividend_transfer2(skip=True):
     '''Dividend: transfer tokens after claim time'''
     if dividend_time > time.time():
         time.sleep(dividend_time-time.time()+1)
     token.transfer(accounts[2], 100000)
     token.transfer(accounts[2], 10000)
 
-def dividend_issue():
+def dividend_issue(skip=True):
     '''Dividend: issue the dividend'''
     check.reverts(
         dividend.issueDividend,
@@ -138,7 +138,7 @@ def dividend_issue():
         (100, {'value':"10 ether"}),
         "Was able to call issueDividend twice")
 
-def dividend_claim():
+def dividend_claim(skip=True):
     '''Dividend: claim dividends'''
     blank = "0x"+("0"*40)
 
@@ -158,7 +158,7 @@ def dividend_claim():
         check.equal(accounts[i].balance(), balance+final-(tx.gasUsed*tx.gasPrice), "Dividend payout wrong: {}".format(i))
         check.reverts(dividend.claimDividend,(accounts[i],), "Able to claim twice")
 
-def dividend_close():
+def dividend_close(skip=True):
     '''Dividend: close dividends'''
     dividend.closeDividend()
     token.transfer(accounts[2], 100)

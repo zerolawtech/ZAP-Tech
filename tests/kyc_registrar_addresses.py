@@ -2,21 +2,21 @@
 
 from brownie import *
 
-zero32 = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-
 def setup():
-    # is this passing a threshold of zero?
     global a, countries
     countries = [1,2,3]
     a = accounts
     global owner1, owner2
-    owner1 = a[0]; owner2 = a[1]
     global authority1, authority2
-    authority1 = a[2]; authority2 = a[3]
     global investor1, investor2
-    investor1 = a[4]; investor2 = a[5]
     global scratch1 
-    scratch1 = a[-1]
+    owner1 = a[0]; 
+    owner2 = a[1]
+    authority1 = a[2]; 
+    authority2 = a[3]
+    investor1 = a[4]; 
+    investor2 = a[5]
+    scratch1 = a[9]
 
 
 ################################################
@@ -65,35 +65,22 @@ def owner_cant_unrestrict_their_own_address():
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
     ownerID = registrar.getID(owner1)
     txr = registrar.restrictAddresses(ownerID, [owner2])
-    txr = registrar.registerAddresses(ownerID, [owner2], {'from':owner2})
-    check.false(registrar.isPermitted(owner2))
+    check.reverts(registrar.registerAddresses, (ownerID, [owner2], {'from':owner2}))
 
-def restricted_owner_calling_registerAddresses_doesnt_fire_RegisteredAddresses(pending=True):
+def restricted_owner_address_cant_add_a_new_owner_address():
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
     ownerID = registrar.getID(owner1)
     txr = registrar.restrictAddresses(ownerID, [owner2])
-    check.equal(txr.return_value, True)
-    check.event_fired(txr, 'RestrictedAddresses' , 1)
-    txr = registrar.registerAddresses(ownerID, [owner2], {'from':owner2})
-    check.false(registrar.isPermitted(owner2), False)
-    check.event_not_fired(txr, 'RegisteredAddresses')
-    check.equal(txr.return_value, False)
-
-def restricted_owner_address_cant_add_a_new_owner_address(pending=True):
-    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
-    ownerID = registrar.getID(owner1)
-    txr = registrar.restrictAddresses(ownerID, [owner2])
-    txr = registrar.registerAddresses(ownerID, [scratch1], {'from':owner2})
-    check.not_equal(registrar.getID(scratch1), ownerID)
+    check.reverts(registrar.registerAddresses, (ownerID, [scratch1], {'from':owner2}))
 
 # Owners controlling authorities
 
 def owner_can_add_a_new_authority_address_multisig():
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)
     registrar.addAuthority([authority1], countries, 1, {'from':owner1})
-    check.equal(registrar.getID(authority1), zero32)
+    check.equal(registrar.getID(authority1), 0)
     registrar.addAuthority([authority1], countries, 1, {'from':owner2})
-    check.not_equal(registrar.getID(authority1), zero32)
+    check.not_equal(registrar.getID(authority1), 0)
 
 def owner_can_restrict_an_authority_address():
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)

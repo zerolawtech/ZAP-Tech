@@ -124,12 +124,12 @@ def authority_can_add_a_new_investor_address_in_their_country():
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
     registrar.addAuthority([authority1], countries, 1, {'from':owner1})
     registrar.addAuthority([authority2], countries, 1, {'from':owner1})
-    id = '0x9c93effa8c8bc959961e24dbda7cbc1be362a1df'
-    registrar.addInvestor(id, 1, 1, 1, 4550275220, [investor1], {'from':authority1})
-    id = registrar.getID(investor1)
-    registrar.registerAddresses(id, [investor2], {'from':authority2})
+    id_ = '0x9c93effa8c8bc959961e24dbda7cbc1be362a1df'
+    registrar.addInvestor(id_, 1, 1, 1, 4550275220, [investor1], {'from':authority1})
+    id_ = registrar.getID(investor1)
+    registrar.registerAddresses(id_, [investor2], {'from':authority2})
     id2 = registrar.getID(investor2)
-    check.equal(id, id2)
+    check.equal(id_, id2)
 
 # Investors
 
@@ -137,7 +137,7 @@ def investor_cant_add_a_new_address():
     # only owner/authorities can do this
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
     registrar.addAuthority([authority1], countries, 1, {'from':owner1})
-    id = '0x9c93effa8c8bc959961e24dbda7cbc1be362a1df'
-    registrar.addInvestor(id, 1, 1, 1, 4550275220, [investor1], {'from':authority1})
-    id = registrar.getID(investor1)
-    check.reverts(registrar.registerAddresses, (id, [investor2], {'from':investor1}))
+    id_ = '0x9c93effa8c8bc959961e24dbda7cbc1be362a1df'
+    registrar.addInvestor(id_, 1, 1, 1, 4550275220, [investor1], {'from':authority1})
+    id_ = registrar.getID(investor1)
+    check.reverts(registrar.registerAddresses, (id_, [investor2], {'from':investor1}))

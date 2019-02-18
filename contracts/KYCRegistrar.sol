@@ -433,6 +433,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		if (a.addressCount > 0) {
 			/* Only the owner can register addresses for an authority. */
 			require(idMap[msg.sender].id == ownerID);
+			require(!idMap[msg.sender].restricted);
 			a.addressCount = a.addressCount.add(_addAddresses(_id, _addr));
 		} else {
 			_authorityCheck(investorData[_id].country);

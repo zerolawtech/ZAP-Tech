@@ -5,7 +5,7 @@ from brownie import *
 import itertools
 
 def main():
-    kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 0)
+    kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
     issuer = accounts[1].deploy(IssuingEntity, [accounts[1]], 1)
     token = accounts[1].deploy(SecurityToken, issuer, "Test Token", "TST", 1000000)
     issuer.addToken(token)

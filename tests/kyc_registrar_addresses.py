@@ -30,6 +30,8 @@ def owner_can_add_a_new_owner_address():
     txr = registrar.registerAddresses(ownerID, [scratch1])
     check.equal(txr.return_value, True)
     check.equal(registrar.getID(scratch1), ownerID) # new address gets added to existing ID
+    check.event_fired(txr, 'RegisteredAddresses' , 1)
+
     
 def one_owner_cant_add_a_new_owner_address_when_multisig():
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)

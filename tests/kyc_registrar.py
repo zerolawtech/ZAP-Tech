@@ -85,7 +85,7 @@ def addAuthority_threshold_of_one_passses():
     registrar = a[0].deploy(KYCRegistrar, [accounts[0]], 1)
     tx_receipt = registrar.addAuthority([a[1]], countries, 1)
     check.true(tx_receipt.return_value)
-    check.true(tx_receipt.events[-1]['name'] == 'NewAuthority')
+    check.event_fired(tx_receipt, 'NewAuthority')
 
 def threshold_of_two_multisig_check_both_owners_can_multisig():
     '''Check two owners can increase multisig counts'''

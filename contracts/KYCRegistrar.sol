@@ -143,7 +143,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		@notice Internal function to add new addresses
 		@param _id investor or authority ID
 		@param _addr array of addresses
-		@return number of new addresses (not previous restricted)
+		@return number of new addresses (not previously restricted)
 	 */
 	function _addAddresses(
 		bytes32 _id,
@@ -154,11 +154,15 @@ contract KYCRegistrar is IKYCRegistrar {
 	{
 		for (uint256 i = 0; i < _addr.length; i++) {
 			Address storage _inv = idMap[_addr[i]];
+			/** If address was previous assigned to this investor ID
+				and is currently restricted - remove the restriction */
 			if (_inv.id == _id && _inv.restricted) {
 				_inv.restricted = false;
+			/* If address has not had an investor ID associated - set the ID */
 			} else if (_inv.id == 0) {
 				_inv.id = _id;
 				_count = _count.add(1);
+			/* In all other cases, revert */
 			} else {
 				revert();
 			}

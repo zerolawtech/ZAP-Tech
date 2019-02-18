@@ -54,43 +54,6 @@ def constructor_with_threshold_too_high_fails():
 ################################################
 # Owners
 
-def owner_can_add_a_new_owner_address():
-    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
-    ownerID = registrar.getID(owner1)
-    txr = registrar.registerAddresses(ownerID, [scratch1])
-    check.equal(txr.return_value, True)
-    check.equal(registrar.getID(scratch1), ownerID) # new address gets added to existing ID
-    
-def one_owner_cant_add_a_new_owner_address_when_multisig():
-    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)
-    ownerID = registrar.getID(owner1)
-    txr = registrar.registerAddresses(ownerID, [scratch1])
-    check.equal(txr.return_value, False)
-
-def owner_cant_restrict_an_owner_address_multisig():
-    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)
-    ownerID = registrar.getID(owner1)
-    txr = registrar.restrictAddresses(ownerID, [owner2])
-    check.equal(txr.return_value, False)
-    check.event_not_fired(txr, 'RestrictedAddresses')
-
-def owner_can_restrict_an_owner_address():
-    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
-    ownerID = registrar.getID(owner1)
-    txr = registrar.restrictAddresses(ownerID, [owner2])
-    check.equal(txr.return_value, True)
-    check.event_fired(txr, 'RestrictedAddresses' , 1)
-
-def owner_can_unrestrict_an_owner_address():
-    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
-    ownerID = registrar.getID(owner1)
-    txr = registrar.restrictAddresses(ownerID, [owner2], {'from':owner1})
-    check.equal(txr.return_value, True)
-    check.event_fired(txr, 'RestrictedAddresses' , 1)
-    txr = registrar.registerAddresses(ownerID, [owner2], {'from':owner1})
-    check.equal(txr.return_value, True)
-    check.event_fired(txr, 'RegisteredAddresses' , 1)
-
 #################################
 # addAuthority failing path tests
 
@@ -99,17 +62,16 @@ def addAuthority_threshold_of_zero_fails():
     registrar = a[0].deploy(KYCRegistrar, [accounts[0]], 1)
     check.reverts(registrar.addAuthority, [[a[1]], countries, 0])
 
-def threshold_of_two_multisig_check_one_owner_cant_multisig(pending=True):
+def threshold_of_two_multisig_check_one_owner_cant_multisig():
     '''Check one owner can't repeatedly increase multisig counts'''
     registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 2)
     check.false(registrar.addAuthority([a[3]], countries, 1, {'from':a[0]}).return_value)
     # same owner makes the call again
-    check.false(registrar.addAuthority([a[3]], countries, 1, {'from':a[0]}).return_value)
+    check.reverts(registrar.addAuthority, ([a[3]], countries, 1, {'from':a[0]}))
 
 def setAuthorityThreshold_cannot_set_threshold_to_zero():
     '''setAuthorityThreshold cannot set _threshold to 0'''
-    registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 2)
-    check.false(registrar.addAuthority([a[3]], countries, 1, {'from':a[0]}).return_value)
+    registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 1)
     check.true(registrar.addAuthority([a[3]], countries, 1, {'from':a[1]}).return_value)
     authority_id = registrar.getID(a[3])
     check.reverts(registrar.setAuthorityThreshold, [authority_id, 0])

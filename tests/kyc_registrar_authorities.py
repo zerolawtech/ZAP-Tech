@@ -1,6 +1,10 @@
 from brownie import *
 
 def setup():
+    # Require explicit 'from' addresses for all transactions
+    # This prevents us accidentally calling as owner
+    config['test']['default_contract_owner'] = False
+
     global a, countries
     countries = [1,2,3]
     a = accounts
@@ -15,7 +19,7 @@ def setup():
     scratch2 = a[9]
     global registrar
     registrar = owner1.deploy(KYCRegistrar, [owner1], 1)
-    registrar.addAuthority([authority1], countries, 1)
+    registrar.addAuthority([authority1], countries, 1, {'from': owner1})
     global authorityID
     authorityID = registrar.getID(authority1)
     global investorID, investorID2
@@ -47,7 +51,7 @@ def addInvestor_already_added_fails():
 
 def addInvestor_by_restricted_authority_fails():
     id_ = registrar.getID(authority1)
-    registrar.setAuthorityRestriction(id_, False)
+    registrar.setAuthorityRestriction(id_, False, {'from': owner1})
     check.reverts(registrar.addInvestor, (investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1}), 'dev: restricted')
 
 #################################
@@ -64,7 +68,7 @@ def updateInvestor_updates_all_fields_and_fires_event():
 
 def updateInvestor_by_other_valid_authority_passes():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
-    registrar.addAuthority([authority2], [3], 1)
+    registrar.addAuthority([authority2], [3], 1, {'from': owner1})
     check.confirms(registrar.updateInvestor, (investorID, b'ccc', 2, 9999999999, {'from':authority2}))
 
 #################################
@@ -74,12 +78,12 @@ def updateInvestor_by_other_valid_authority_passes():
 
 def updateInvestor_by_restricted_authority_fails():
     id_ = registrar.getID(authority1)
-    registrar.setAuthorityRestriction(id_, False)
-    check.reverts(registrar.updateInvestor, (investorID, b'ccc', 2, 9999999999), {'from':authority1})
+    registrar.setAuthorityRestriction(id_, False, {'from': owner1})
+    check.reverts(registrar.updateInvestor, (investorID, b'ccc', 2, 9999999999, {'from':authority1}))
 
 def updateInvestor_with_countries_that_dont_match_authority_fails():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
-    registrar.addAuthority([authority2], [4], 1)
+    registrar.addAuthority([authority2], [4], 1, {'from': owner1})
     check.reverts(registrar.updateInvestor, (investorID, b'ccc', 2, 9999999999, {'from':authority2}), revert_msg="dev: country")
 
 #################################
@@ -87,18 +91,18 @@ def updateInvestor_with_countries_that_dont_match_authority_fails():
 
 def setInvestorAuthority_fires_event():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
-    registrar.addAuthority([authority2], countries, 1)
+    registrar.addAuthority([authority2], countries, 1, {'from': owner1})
     authorityID2 = registrar.getID(authority2)
-    txr = registrar.setInvestorAuthority([investorID], authorityID2)
+    txr = registrar.setInvestorAuthority([investorID], authorityID2, {'from': owner1})
     # There is no way to directly check the investor's authority, so use the event
     check.event_fired(txr, 'UpdatedInvestor', 1, { 'authority': authorityID2 })
 
 def setInvestorAuthority_updates_multiple_investors():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
     registrar.addInvestor(investorID2, 3, b'abc', 1, 9999999999, [scratch2], {'from':authority1})
-    registrar.addAuthority([authority2], countries, 1)
+    registrar.addAuthority([authority2], countries, 1, {'from': owner1})
     authorityID2 = registrar.getID(authority2)
-    txr = registrar.setInvestorAuthority([investorID, investorID2], authorityID2)
+    txr = registrar.setInvestorAuthority([investorID, investorID2], authorityID2, {'from': owner1})
     # There is no way to directly check the investor's authority, so use the event
     check.event_fired(txr, 'UpdatedInvestor', 2, [{ 'authority': authorityID2 }, { 'authority': authorityID2 }])
 
@@ -114,7 +118,7 @@ def authority_cant_change_authority_for_an_investor(pending=True):
 
 def authority_cant_be_set_to_an_non_authority_address():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
-    check.reverts(registrar.setInvestorAuthority, ([investorID], investorID), {'from':authority1})
+    check.reverts(registrar.setInvestorAuthority, ([investorID], investorID, {'from':authority1}))
 
 
 #######################################
@@ -122,12 +126,10 @@ def authority_cant_be_set_to_an_non_authority_address():
 
 def any_judicial_authority_can_restrict_an_investor():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
-    registrar.addAuthority([authority2], countries, 1)
+    registrar.addAuthority([authority2], countries, 1, {'from': owner1})
     authorityID2 = registrar.getID(authority2)
     txr = registrar.setInvestorRestriction(investorID, False, {'from':authority2})
     check.event_fired(txr, 'InvestorRestriction')
-
-
 
 # TODO: owner can restrict investors
 # TODO: can_unrestrict_a_restricted_investor

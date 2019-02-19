@@ -132,10 +132,10 @@ contract KYCRegistrar is IKYCRegistrar {
 		bytes32 _id = idMap[msg.sender].id;
 		require(_country != 0);
 		require(authorityData[_id].addressCount > 0);
-		require(!authorityData[_id].restricted);
+		require(!authorityData[_id].restricted, "dev: restricted");
 		require(!idMap[msg.sender].restricted);
 		if (_id != ownerID) {
-			require(authorityData[_id].countries[_country]);
+			require(authorityData[_id].countries[_country], "dev: country");
 		}
 	}
 
@@ -301,7 +301,7 @@ contract KYCRegistrar is IKYCRegistrar {
 	{
 		_authorityCheck(_country);
 		require(_rating > 0);
-		require(_expires > now);
+		require(_expires > now, "dev: expired");
 		require(authorityData[_id].addressCount == 0);
 		require(investorData[_id].authority == 0);
 		if (!_checkMultiSig()) return false;

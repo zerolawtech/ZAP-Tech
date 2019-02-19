@@ -87,3 +87,12 @@ def setAuthorityRestriction_multisig():
     txr = registrar.addInvestor(b"investor8", 1, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
     check.event_fired(txr, 'NewInvestor')
 
+#######################################
+# setInvestorRestriction
+
+def owner_can_restrict_an_investor():
+    investorID = b"investor8"
+    registrar = a[0].deploy(KYCRegistrar, [accounts[0]], 1)
+    registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1])
+    txr = registrar.setInvestorRestriction(investorID, False)
+    check.event_fired(txr, 'InvestorRestriction')

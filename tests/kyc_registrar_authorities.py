@@ -109,12 +109,11 @@ def setInvestorAuthority_updates_multiple_investors():
 #######################################
 # setInvestorAuthority fail path tests
 
-# I think there must be a bug in this test, it should pass I think
-def authority_cant_change_authority_for_an_investor(pending=True):
+def authority_cant_change_authority_for_an_investor():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
-    registrar.addAuthority([authority2], countries, 1)
+    registrar.addAuthority([authority2], countries, 1, {'from': owner1})
     authorityID2 = registrar.getID(authority2)
-    check.reverts(registrar.setInvestorAuthority, ([investorID], authorityID2), {'from':authority1})
+    check.reverts(registrar.setInvestorAuthority, ([investorID], authorityID2, {'from':authority1}))
 
 def authority_cant_be_set_to_an_non_authority_address():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
@@ -131,7 +130,6 @@ def any_judicial_authority_can_restrict_an_investor():
     txr = registrar.setInvestorRestriction(investorID, False, {'from':authority2})
     check.event_fired(txr, 'InvestorRestriction')
 
-# TODO: owner can restrict investors
 # TODO: can_unrestrict_a_restricted_investor
 # TODO: fires InvestorRestriction
 

@@ -3,6 +3,8 @@
 from brownie import *
 
 def setup():
+    config['test']['default_contract_owner'] = True
+
     global a, countries
     countries = [1,2,3]
     a = accounts

@@ -98,3 +98,22 @@ def owner_can_restrict_an_investor():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1])
     txr = registrar.setInvestorRestriction(investorID, False)
     check.event_fired(txr, 'InvestorRestriction')
+
+#######################################
+# setAuthorityCountries
+
+# TODO: permissive and restrictive - add or remove
+# TODO: effect on an investor if a country is removed? .. shouldn't matter.
+# authority doesn't exist
+# is not owner
+# test that it works?
+
+def setAuthorityCountries_multisig():
+    registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 2)
+    registrar.addAuthority([authority1], countries, 1, {'from':a[0]})
+    registrar.addAuthority([authority1], countries, 1, {'from':a[1]})
+    id_ = registrar.getID(authority1)
+    txr = registrar.setAuthorityCountries(id_, [5], True, {'from':a[0]})
+    check.false(txr.return_value)
+    txr = registrar.setAuthorityCountries(id_, [5], True, {'from':a[1]})
+    check.true(txr.return_value)

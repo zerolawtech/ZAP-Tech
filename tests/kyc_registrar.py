@@ -3,14 +3,21 @@
 from brownie import *
 
 def setup():
-    # is this passing a threshold of zero?
     global a, countries
     countries = [1,2,3]
     a = accounts
     global owner1, owner2
-    owner1 = a[0]; owner2 = a[1]
+    global authority1, authority2
+    global investor1, investor2
     global scratch1 
-    scratch1 = a[-1]
+    owner1 = a[0]; 
+    owner2 = a[1]
+    authority1 = a[2]; 
+    authority2 = a[3]
+    investor1 = a[4]; 
+    investor2 = a[5]
+    scratch1 = a[9]
+
 
 def whitelist_public_abi():
     '''Public ABI only contains the expected methods'''
@@ -63,4 +70,53 @@ def check_multisig_resets():
     check.false(registrar.setAuthorityThreshold(authority_id, 1, {'from':a[0]}).return_value)
     check.true(registrar.setAuthorityThreshold(authority_id, 1, {'from':a[1]}).return_value)
 
+def test_generateID():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    check.confirms(registrar.generateID, ["this is some string"])
 
+def test_getInvestorByID():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id_ = "foobar"
+    registrar.addInvestor(id_, 3, 1, 2, 9999999999, [a[1]], {'from': a[0]})
+    investor = registrar.getInvestorByID(id_)
+    check.equal(investor[0], True)
+    check.equal(investor[1], 2)
+    check.equal(investor[2], 3)
+
+def test_getInvestorsByID():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id1 = "investor1"
+    id2 = "investor2"
+    registrar.addInvestor(id1, 3, 1, 4, 9999999999, [a[1]], {'from': a[0]})
+    registrar.addInvestor(id2, 2, 1, 5, 9999999999, [a[2]], {'from': a[0]})
+    investors = registrar.getInvestorsByID(id1, id2)
+    check.equal(investors[0][0], True)
+    check.equal(investors[0][1], True)
+    check.equal(investors[1][0], 4)
+    check.equal(investors[1][1], 5)
+    check.equal(investors[2][0], 3)
+    check.equal(investors[2][1], 2)
+
+def test_getInvestors():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id1 = "0x01"
+    id2 = "0x02"
+    registrar.addInvestor(id1, 3, 1, 4, 9999999999, [a[1]], {'from': a[0]})
+    registrar.addInvestor(id2, 2, 1, 5, 9999999999, [a[2]], {'from': a[0]})
+    investors = registrar.getInvestors(a[1], a[2])
+    check.equal(investors[0][0], id1)
+    check.equal(investors[0][1], id2)
+    check.equal(investors[1][0], True)
+    check.equal(investors[1][1], True)
+    check.equal(investors[2][0], 4)
+    check.equal(investors[2][1], 5)
+    check.equal(investors[3][0], 3)
+    check.equal(investors[3][1], 2)
+
+def test_isRegistered():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id1 = "investor1"
+    id2 = "investor2"
+    registrar.addInvestor(id1, 3, 1, 4, 9999999999, [a[1]], {'from': a[0]})
+    check.equal(registrar.isRegistered(id1), True)
+    check.equal(registrar.isRegistered(id2), False)

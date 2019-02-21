@@ -400,7 +400,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		onlyOwner
 		returns (bool)
 	{
-		require(authorityData[_authID].addressCount > 0);
+		require(authorityData[_authID].addressCount > 0, "dev: not authority");
 		if (!_checkMultiSig()) return false;
 		for (uint256 i = 0; i < _id.length; i++) {
 			require(investorData[_id[i]].country != 0);

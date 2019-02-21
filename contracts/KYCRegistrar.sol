@@ -414,6 +414,7 @@ contract KYCRegistrar is IKYCRegistrar {
 				_authID
 			);
 		}
+		return true;
 	}
 
 	/**

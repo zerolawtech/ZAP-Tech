@@ -3,6 +3,8 @@
 from brownie import *
 
 def setup():
+    config['test']['default_contract_owner'] = True
+
     global a, countries
     countries = [1,2,3]
     a = accounts
@@ -30,6 +32,8 @@ def owner_can_add_a_new_owner_address():
     txr = registrar.registerAddresses(ownerID, [scratch1])
     check.equal(txr.return_value, True)
     check.equal(registrar.getID(scratch1), ownerID) # new address gets added to existing ID
+    check.event_fired(txr, 'RegisteredAddresses' , 1)
+
     
 def one_owner_cant_add_a_new_owner_address_when_multisig():
     registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)
@@ -117,6 +121,14 @@ def authority_can_add_a_new_investor_address_in_their_country():
     registrar.registerAddresses(id_, [investor2], {'from':authority2})
     id2 = registrar.getID(investor2)
     check.equal(id_, id2)
+
+def authorities_cant_add_address_to_authority():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
+    registrar.addAuthority([authority1], countries, 1, {'from':owner1})
+    registrar.addAuthority([authority2], countries, 1, {'from':owner1})
+    id_ = registrar.getID(authority2)
+    check.reverts(registrar.registerAddresses,(id_, [investor2], {'from':authority1}), revert_msg="dev: not owner")
+
 
 # Investors
 

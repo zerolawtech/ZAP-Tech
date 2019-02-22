@@ -4,6 +4,7 @@ from brownie import *
 from scripts.deploy_simple import main
 
 def setup():
+    config['test']['default_contract_owner'] = True
     main()
     global issuer, token, a
     issuer = IssuingEntity[0]

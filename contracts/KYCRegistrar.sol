@@ -132,10 +132,10 @@ contract KYCRegistrar is IKYCRegistrar {
 		bytes32 _id = idMap[msg.sender].id;
 		require(_country != 0);
 		require(authorityData[_id].addressCount > 0);
-		require(!authorityData[_id].restricted);
+		require(!authorityData[_id].restricted, "dev: restricted");
 		require(!idMap[msg.sender].restricted);
 		if (_id != ownerID) {
-			require(authorityData[_id].countries[_country]);
+			require(authorityData[_id].countries[_country], "dev: country");
 		}
 	}
 
@@ -301,7 +301,7 @@ contract KYCRegistrar is IKYCRegistrar {
 	{
 		_authorityCheck(_country);
 		require(_rating > 0);
-		require(_expires > now);
+		require(_expires > now, "dev: expired");
 		require(authorityData[_id].addressCount == 0);
 		require(investorData[_id].authority == 0);
 		if (!_checkMultiSig()) return false;
@@ -400,7 +400,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		onlyOwner
 		returns (bool)
 	{
-		require(authorityData[_authID].addressCount > 0);
+		require(authorityData[_authID].addressCount > 0, "dev: not authority");
 		if (!_checkMultiSig()) return false;
 		for (uint256 i = 0; i < _id.length; i++) {
 			require(investorData[_id[i]].country != 0);
@@ -414,6 +414,7 @@ contract KYCRegistrar is IKYCRegistrar {
 				_authID
 			);
 		}
+		return true;
 	}
 
 	/**
@@ -436,7 +437,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		Authority storage a = authorityData[_id];
 		if (a.addressCount > 0) {
 			/* Only the owner can register addresses for an authority. */
-			require(idMap[msg.sender].id == ownerID);
+			require(idMap[msg.sender].id == ownerID, "dev: not owner");
 			require(!idMap[msg.sender].restricted);
 			a.addressCount = a.addressCount.add(_addAddresses(_id, _addr));
 		} else {

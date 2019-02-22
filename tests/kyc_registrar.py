@@ -3,14 +3,21 @@
 from brownie import *
 
 def setup():
-    # is this passing a threshold of zero?
     global a, countries
     countries = [1,2,3]
     a = accounts
     global owner1, owner2
-    owner1 = a[0]; owner2 = a[1]
+    global authority1, authority2
+    global investor1, investor2
     global scratch1 
-    scratch1 = a[-1]
+    owner1 = a[0]; 
+    owner2 = a[1]
+    authority1 = a[2]; 
+    authority2 = a[3]
+    investor1 = a[4]; 
+    investor2 = a[5]
+    scratch1 = a[9]
+
 
 def whitelist_public_abi():
     '''Public ABI only contains the expected methods'''
@@ -51,48 +58,6 @@ def constructor_with_threshold_too_high_fails():
     '''Contract will not deploy with _threshold > #owners'''
     check.reverts(a[0].deploy, [KYCRegistrar, [a[0]], 2])
 
-################################################
-# Owners
-
-#################################
-# addAuthority failing path tests
-
-def addAuthority_threshold_of_zero_fails():
-    '''Owner can't call addAuthority with _threshold of 0'''
-    registrar = a[0].deploy(KYCRegistrar, [accounts[0]], 1)
-    check.reverts(registrar.addAuthority, [[a[1]], countries, 0])
-
-def threshold_of_two_multisig_check_one_owner_cant_multisig():
-    '''Check one owner can't repeatedly increase multisig counts'''
-    registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 2)
-    check.false(registrar.addAuthority([a[3]], countries, 1, {'from':a[0]}).return_value)
-    # same owner makes the call again
-    check.reverts(registrar.addAuthority, ([a[3]], countries, 1, {'from':a[0]}))
-
-def setAuthorityThreshold_cannot_set_threshold_to_zero():
-    '''setAuthorityThreshold cannot set _threshold to 0'''
-    registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 1)
-    check.true(registrar.addAuthority([a[3]], countries, 1, {'from':a[1]}).return_value)
-    authority_id = registrar.getID(a[3])
-    check.reverts(registrar.setAuthorityThreshold, [authority_id, 0])
-
-
-#################################
-# addAuthority success path tests
-
-def addAuthority_threshold_of_one_passses():
-    '''Owner can addAuthority when threshold is 1'''
-    registrar = a[0].deploy(KYCRegistrar, [accounts[0]], 1)
-    tx_receipt = registrar.addAuthority([a[1]], countries, 1)
-    check.true(tx_receipt.return_value)
-    check.true(tx_receipt.events[-1]['name'] == 'NewAuthority')
-
-def threshold_of_two_multisig_check_both_owners_can_multisig():
-    '''Check two owners can increase multisig counts'''
-    registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 2)
-    check.false(registrar.addAuthority([a[3]], countries, 1, {'from':a[0]}).return_value)
-    check.true(registrar.addAuthority([a[3]], countries, 1, {'from':a[1]}).return_value)
-
 def check_multisig_resets():
     '''multisig resets when call is successful'''
     registrar = a[0].deploy(KYCRegistrar, [a[0], a[1]], 2)
@@ -105,4 +70,57 @@ def check_multisig_resets():
     check.false(registrar.setAuthorityThreshold(authority_id, 1, {'from':a[0]}).return_value)
     check.true(registrar.setAuthorityThreshold(authority_id, 1, {'from':a[1]}).return_value)
 
+def test_generateID():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    check.confirms(registrar.generateID, ["this is some string"])
 
+def test_getInvestorByID():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id_ = "foobar"
+    registrar.addInvestor(id_, 3, 1, 2, 9999999999, [a[1]], {'from': a[0]})
+    investor = registrar.getInvestorByID(id_)
+    check.equal(investor[0], True)
+    check.equal(investor[1], 2)
+    check.equal(investor[2], 3)
+
+def test_getInvestorsByID():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id1 = "investor1"
+    id2 = "investor2"
+    registrar.addInvestor(id1, 3, 1, 4, 9999999999, [a[1]], {'from': a[0]})
+    registrar.addInvestor(id2, 2, 1, 5, 9999999999, [a[2]], {'from': a[0]})
+    investors = registrar.getInvestorsByID(id1, id2)
+    check.equal(investors[0][0], True)
+    check.equal(investors[0][1], True)
+    check.equal(investors[1][0], 4)
+    check.equal(investors[1][1], 5)
+    check.equal(investors[2][0], 3)
+    check.equal(investors[2][1], 2)
+
+def test_getInvestors():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id1 = "0x01"
+    id2 = "0x02"
+    registrar.addInvestor(id1, 3, 1, 4, 9999999999, [a[1]], {'from': a[0]})
+    registrar.addInvestor(id2, 2, 1, 5, 9999999999, [a[2]], {'from': a[0]})
+    investors = registrar.getInvestors(a[1], a[2])
+    check.equal(investors[0][0], id1)
+    check.equal(investors[0][1], id2)
+    check.equal(investors[1][0], True)
+    check.equal(investors[1][1], True)
+    check.equal(investors[2][0], 4)
+    check.equal(investors[2][1], 5)
+    check.equal(investors[3][0], 3)
+    check.equal(investors[3][1], 2)
+
+def test_isRegistered():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    id1 = "investor1"
+    id2 = "investor2"
+    registrar.addInvestor(id1, 3, 1, 4, 9999999999, [a[1]], {'from': a[0]})
+    check.equal(registrar.isRegistered(id1), True)
+    check.equal(registrar.isRegistered(id2), False)
+
+def getInvestor_of_uknown_address_reverts_with_message():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    check.reverts(registrar.getInvestor, [a[9]], revert_msg="Address not registered")

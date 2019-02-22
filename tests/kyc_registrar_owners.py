@@ -34,6 +34,11 @@ def setAuthorityThreshold_cannot_set_threshold_to_zero():
     authority_id = registrar.getID(a[3])
     check.reverts(registrar.setAuthorityThreshold, [authority_id, 0])
 
+def setAuthorityThreshold_cant_be_called_on_nonauthority():
+    registrar = a[0].deploy(KYCRegistrar, [accounts[0]], 1)
+    registrar.addInvestor(b"investor8", 1, b'abc', 1, 9999999999, [scratch1], {'from':owner1})
+    id_ = registrar.getID(scratch1)
+    txr = check.reverts(registrar.setAuthorityThreshold, (id_, 1, {'from': owner1}))
 
 #################################
 # addAuthority success path tests
@@ -52,7 +57,7 @@ def addAuthority_multisig():
     check.event_fired(txr, 'NewAuthority')
 
 #################################
-# setAuthorityRestriction
+# setAuthorityRestriction success path tests
 
 # See the _investors tests for tests that the restriction
 # is enforced
@@ -88,6 +93,18 @@ def setAuthorityRestriction_multisig():
     check.event_fired(txr, 'AuthorityRestriction')
     txr = registrar.addInvestor(b"investor8", 1, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
     check.event_fired(txr, 'NewInvestor')
+
+#################################
+# setAuthorityRestriction fail path tests
+
+def setAuthorityRestriction_cant_be_called_on_nonauthority():
+    registrar = a[0].deploy(KYCRegistrar, [accounts[0]], 1)
+    registrar.addInvestor(b"investor8", 1, b'abc', 1, 9999999999, [scratch1], {'from':owner1})
+    id_ = registrar.getID(scratch1)
+    txr = check.reverts(registrar.setAuthorityRestriction, (id_, False, {'from': owner1}))
+
+
+
 
 #######################################
 # setInvestorRestriction

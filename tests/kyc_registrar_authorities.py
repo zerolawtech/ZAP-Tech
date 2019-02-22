@@ -97,6 +97,16 @@ def setInvestorAuthority_fires_event():
     # There is no way to directly check the investor's authority, so use the event
     check.event_fired(txr, 'UpdatedInvestor', 1, { 'authority': authorityID2 })
 
+def setInvestorAuthority_multisig():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 2)
+    registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':owner1})
+    check.true(registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':owner2}).return_value)
+    check.false(registrar.addAuthority([authority2], countries, 1, {'from': owner1}).return_value)
+    check.true(registrar.addAuthority([authority2], countries, 1, {'from': owner2}).return_value)
+    authorityID2 = registrar.getID(authority2)
+    check.false(registrar.setInvestorAuthority([investorID], authorityID2, {'from': owner1}).return_value)
+    check.true (registrar.setInvestorAuthority([investorID], authorityID2, {'from': owner2}).return_value)
+
 def setInvestorAuthority_updates_multiple_investors():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
     registrar.addInvestor(investorID2, 3, b'abc', 1, 9999999999, [scratch2], {'from':authority1})
@@ -115,9 +125,9 @@ def authority_cant_change_authority_for_an_investor():
     authorityID2 = registrar.getID(authority2)
     check.reverts(registrar.setInvestorAuthority, ([investorID], authorityID2, {'from':authority1}))
 
-def authority_cant_be_set_to_an_non_authority_address():
+def setInvestorAuthority_cant_set_to_an_non_authority_address():
     registrar.addInvestor(investorID, 3, b'abc', 1, 9999999999, [scratch1], {'from':authority1})
-    check.reverts(registrar.setInvestorAuthority, ([investorID], investorID, {'from':authority1}))
+    check.reverts(registrar.setInvestorAuthority, ([investorID], investorID, {'from':owner1}), revert_msg='dev: not authority')
 
 
 #######################################

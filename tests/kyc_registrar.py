@@ -120,3 +120,7 @@ def test_isRegistered():
     registrar.addInvestor(id1, 3, 1, 4, 9999999999, [a[1]], {'from': a[0]})
     check.equal(registrar.isRegistered(id1), True)
     check.equal(registrar.isRegistered(id2), False)
+
+def getInvestor_of_uknown_address_reverts_with_message():
+    registrar = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    check.reverts(registrar.getInvestor, [a[9]], revert_msg="Address not registered")

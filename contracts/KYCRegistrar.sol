@@ -437,7 +437,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		Authority storage a = authorityData[_id];
 		if (a.addressCount > 0) {
 			/* Only the owner can register addresses for an authority. */
-			require(idMap[msg.sender].id == ownerID);
+			require(idMap[msg.sender].id == ownerID, "dev: not owner");
 			require(!idMap[msg.sender].restricted);
 			a.addressCount = a.addressCount.add(_addAddresses(_id, _addr));
 		} else {

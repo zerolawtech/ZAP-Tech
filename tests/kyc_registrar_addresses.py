@@ -122,6 +122,14 @@ def authority_can_add_a_new_investor_address_in_their_country():
     id2 = registrar.getID(investor2)
     check.equal(id_, id2)
 
+def authorities_cant_add_address_to_authority():
+    registrar = owner1.deploy(KYCRegistrar, [owner1, owner2], 1)
+    registrar.addAuthority([authority1], countries, 1, {'from':owner1})
+    registrar.addAuthority([authority2], countries, 1, {'from':owner1})
+    id_ = registrar.getID(authority2)
+    check.reverts(registrar.registerAddresses,(id_, [investor2], {'from':authority1}), revert_msg="dev: not owner")
+
+
 # Investors
 
 def investor_cant_add_a_new_address():

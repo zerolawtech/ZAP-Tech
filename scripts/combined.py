@@ -41,13 +41,13 @@ def send_tx(inputs, outputs, sender):
         "sender": sender
     })
     
-    json.dump(params, open("params.json",'w'), indent=4, default=str)
-    p = Popen(["node","get-proof"], stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
+    json.dump(params, open("aztec/params.json",'w'), indent=4, default=str)
+    p = Popen(["node","aztec/get-proof"], stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
     if p.wait():
         raise OSError("Could not generate transaction proofs")
-    data = json.load(open('txdata.json','r'))
-    os.unlink('txdata.json')
-    os.unlink('params.json')
+    data = json.load(open('aztec/txdata.json','r'))
+    os.unlink('aztec/txdata.json')
+    os.unlink('aztec/params.json')
 
     tx = data['tx']
     bridge.confidentialTransfer(
@@ -75,7 +75,7 @@ def setup_environment():
     global bridge, token
     owner = accounts.add()
     a[-2].transfer(owner, "50 ether")
-    kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 0)
+    kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
     issuer = accounts[1].deploy(IssuingEntity, [accounts[1], owner], 1)
     token = accounts[1].deploy(SecurityToken, issuer, "Test Token", "TST", "10000 ether")
     issuer.addToken(token)
@@ -114,6 +114,7 @@ def setup_environment():
 
 def main():
 
+    config['test']['default_contract_owner'] = True
     setup_environment()
 
     send_tx([], [

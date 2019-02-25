@@ -83,6 +83,52 @@ interface ISTModule {
 		returns (bool);
 }
 
+interface INFTModule {
+
+	/* 0x70aaf928 */
+	function checkTransfer(
+		address[2] _addr,
+		bytes32 _authID,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint256 _value
+	)
+		external
+		view
+		returns (bool);
+
+	/*  */
+	function checkTransferRange(
+		address[2] _addr,
+		bytes32 _authID,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint48[2] _range
+	)
+		external
+		view
+		returns (bool);
+
+	/*  */
+	function transferTokenRange(
+		address[2] _addr,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint48[2] _range
+	)
+		external
+		returns (bool);
+	
+
+}
+
+
+
+
+
 interface IIssuerModule {
 	function getPermissions()
 		external

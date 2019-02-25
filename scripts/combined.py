@@ -78,7 +78,9 @@ def setup_environment():
     kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
     issuer = accounts[1].deploy(IssuingEntity, [accounts[1], owner], 1)
     token = accounts[1].deploy(SecurityToken, issuer, "Test Token", "TST", "10000 ether")
+    
     issuer.addToken(token)
+    token.modifyTotalSupply(issuer, "10000 ether")
     issuer.setRegistrar(kyc, True)
     
     a[0].deploy(AZTEC)

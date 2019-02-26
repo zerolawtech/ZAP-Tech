@@ -54,6 +54,12 @@ contract NFToken is NFTModular {
 		uint256 stop,
 		uint32 time
 	);
+	event TotalSupplyChanged(
+		address indexed owner,
+		uint256 oldBalance,
+		uint256 newBalance
+	);
+	event AuthorizedSupplyChanged(uint256 oldAuthorized, uint256 newAuthorized);
 
 	modifier checkBounds(uint256 _idx) {
 		require(_idx != 0, "Index cannot be 0");
@@ -321,17 +327,37 @@ contract NFToken is NFTModular {
 				Range storage r = rangeMap[b.ranges[i]];
 				_range[_count] = b.ranges[i];
 				
-				if (r.stop - _range[_count] > _value) {
+				if (r.stop - _range[_count] >= _value) {
 					return _range;
 				}
 				_value -= (r.stop - _range[_count]);
 				_count++;
 			}
 		}
-		revert();
+		revert("Insufficient transferable tokens");
 	}
 
 
+	/**
+		@notice Modify authorized Supply
+		@dev Callable by issuer or via module
+		@param _value New authorized supply value
+		@return bool
+	 */
+	function modifyAuthorizedSupply(uint256 _value) external returns (bool) {
+		/* msg.sig = 0xc39f42ed */
+		if (!_checkPermitted()) return false;
+		require(_value >= totalSupply);
+		/* bytes4 signature for token module modifyAuthorizedSupply() */
+		_callModules(
+			0xb1a1a455,
+			0x00,
+			abi.encode(address(this), totalSupply, _value)
+		);
+		emit AuthorizedSupplyChanged(totalSupply, _value);
+		authorizedSupply = _value;
+		return true;
+	}
 
 	/**
 		@notice Mints new tokens
@@ -350,6 +376,8 @@ contract NFToken is NFTModular {
 		public
 		returns (bool)
 	{
+		if (!_checkPermitted()) return false;
+		require(_value > 0);
 		require(totalSupply + _value > totalSupply);
 		require(totalSupply + _value <= 2**48 - 2);
 		require(_time == 0 || _time > now);
@@ -367,6 +395,7 @@ contract NFToken is NFTModular {
 		}
 		balances[_owner].balance += _value;
 		totalSupply += _value;
+		_modifyTotalSupply(_owner, _value);
 		emit RangeSet(_tag, _start, _stop, _time);
 		emit Transfer(0x00, msg.sender, _value);
 		emit TransferRange(0x00, msg.sender, _start, _stop, _value);
@@ -384,6 +413,7 @@ contract NFToken is NFTModular {
 		public
 		returns (bool)
 	{
+		if (!_checkPermitted()) return false;
 		require(tokens[_pointer] == _pointer);
 		Range storage r = rangeMap[_pointer];
 		require(r.owner != 0x00);
@@ -391,9 +421,34 @@ contract NFToken is NFTModular {
 		uint48 _value = r.stop - _pointer;
 		totalSupply -= _value;
 		balances[r.owner].balance -= _value;
+		_modifyTotalSupply(r.owner, _value);
 		emit Transfer(r.owner, 0x00, _value);
 		emit TransferRange(r.owner, 0x00, _pointer, r.stop, _value);
 		r.owner = 0x00;
+		return true;
+	}
+
+
+	/**
+		@notice Internal shared logic for minting and burning
+		@param _owner Owner of the tokens
+		@param _old Previous balance
+		@return bool success
+	 */
+	function _modifyTotalSupply(address _owner, uint256 _old) internal returns (bool) {
+		uint256 _new = balances[_owner].balance;
+		(
+			bytes32 _id,
+			uint8 _rating,
+			uint16 _country
+		) = issuer.modifyTokenTotalSupply(_owner, _old, _new);
+		/* bytes4 signature for token module totalSupplyChanged() */
+		_callModules(
+			0x741b5078,
+			0x00,
+			abi.encode(_owner, _id, _rating, _country, _old, _new)
+		);
+		emit TotalSupplyChanged(_owner, _old, _new);
 		return true;
 	}
 
@@ -985,6 +1040,17 @@ contract NFToken is NFTModular {
 			}
 			i += _increment;
 		}
+	}
+
+	/**
+		@notice Checks that a call comes from a permitted module or the issuer
+		@dev If the caller is the issuer, requires multisig approval
+		@return bool multisig approved
+	 */
+	function _checkPermitted() internal returns (bool) {
+		if (isPermittedModule(msg.sender, msg.sig)) return true;
+		require(issuer.isApprovedAuthority(msg.sender, msg.sig));
+		return issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data));
 	}
 
 }

@@ -655,19 +655,14 @@ contract IssuingEntity is Modular, MultiSig {
 		onlyToken
 		returns (bool)
 	{
+
+		/* If no transfer of ownership, return true immediately */
+		if (_id[0] == _id[1]) return true;
+
 		/* custodian re-entrancy guard */
 		require (!mutex);
 		Account storage _from = accounts[_id[0]];
-		Account storage _to = accounts[_id[1]];
-		if (_zero[0]) {
-			_from.count = _from.count.sub(1);
-		}
-		if (_zero[1]) {
-			_to.count = _to.count.add(1);
-		}
-		
-		/* If no transfer of ownership, return true immediately */
-		if (_id[0] == _id[1]) return true;
+
 		/*
 			If receiver is a custodian and sender is an investor, notify
 			the custodian contract.
@@ -685,19 +680,26 @@ contract IssuingEntity is Modular, MultiSig {
 		} else if (custodians[_id[0]].addr == 0) {
 			emit TransferOwnership(msg.sender, _id[0], _id[1], _value);
 		}
-		
+
 		if (_rating[0] != 0) {
 			_setRating(_id[0], _rating[0], _country[0]);
-			/* If investor account balance was 0, increase investor counts */
-			if (_from.count == 0) {
-				_decrementCount(_rating[0], _country[0]);
+			if (_zero[0]) {
+				_from.count = _from.count.sub(1);
+				/* If investor account balance was 0, increase investor counts */
+				if (_from.count == 0) {
+					_decrementCount(_rating[0], _country[0]);
+				}
 			}
 		}
 		if (_rating[1] != 0) {
 			_setRating(_id[1], _rating[1], _country[1]);
-			/* If investor account balance was 0, increase investor counts */
-			if (_to.count == 1) {
-				_incrementCount(_rating[1], _country[1]);
+			if (_zero[1]) {
+				Account storage _to = accounts[_id[1]];
+				_to.count = _to.count.add(1);
+				/* If investor account balance was 0, increase investor counts */
+				if (_to.count == 1) {
+					_incrementCount(_rating[1], _country[1]);
+				}
 			}
 		}
 		/* bytes4 signature for issuer module transferTokens() */
@@ -784,15 +786,17 @@ contract IssuingEntity is Modular, MultiSig {
 			) = registrars[_key].addr.getInvestor(_owner);
 		}
 		Account storage a = accounts[_id];
-		if (_old == 0) {
-			a.count = a.count.add(1);
-			if (a.count == 1) {
-				_incrementCount(_rating, _country);
-			}
-		} else if (_new == 0) {
-			a.count = a.count.sub(1);
-			if (a.count == 0) {
-				_decrementCount(_rating, _country);
+		if (_id != ownerID) {
+			if (_old == 0) {
+				a.count = a.count.add(1);
+				if (a.count == 1) {
+					_incrementCount(_rating, _country);
+				}
+			} else if (_new == 0) {
+				a.count = a.count.sub(1);
+				if (a.count == 0) {
+					_decrementCount(_rating, _country);
+				}
 			}
 		}
 		/* bytes4 signature for token module tokenTotalSupplyChanged() */

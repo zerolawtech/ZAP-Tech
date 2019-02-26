@@ -27,7 +27,7 @@ The constructor takes the following arguments:
 
     After the contract is deployed it must be associated with the issuer via ``IssuingEntity.addToken``. Token transfers are not possible until this is done.
 
-    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The issuer may then mint tokens by calling ``modifyTotalSupply`` directly or via a module. See :ref:`security-token-mint-burn`.
+    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The issuer may then mint tokens by calling ``mint`` directly or via a module. See :ref:`security-token-mint-burn`.
 
 Constants
 =========
@@ -78,7 +78,7 @@ Along with the standard ERC20 methods, SecurityToken introduces three additional
 Token Supply, Minting and Burning
 =================================
 
-Along with the ERC20 standard ``totalSupply``, SecurityToken contracts include an ``authorizedSupply`` that represents the maximum allowable total supply. The issuer may mint new tokens using ``modifyTotalSupply`` until the total supply is equal to the authorized supply. The initial authorized supply is set during deployment and may be increased later using ``modifyAuthorizedSupply``.
+Along with the ERC20 standard ``totalSupply``, SecurityToken contracts include an ``authorizedSupply`` that represents the maximum allowable total supply. The issuer may mint new tokens using ``mint`` until the total supply is equal to the authorized supply. The initial authorized supply is set during deployment and may be increased later using ``modifyAuthorizedSupply``.
 
 A governance module can be used to dictate when the issuer is allowed to modify the authorized supply.
 
@@ -88,22 +88,7 @@ A governance module can be used to dictate when the issuer is allowed to modify 
 
 .. method:: SecurityToken.authorizedSupply
 
-    Returns the maximum authorized total supply of tokens. Whenever the authorized supply exceeds the total supply, the issuer may mint new tokens using ``modifyTotalSupply``.
-
-.. method:: SecurityToken.modifyTotalSupply(address _owner, uint256 _value)
-
-    Modifies the balance of a token holder, affecting the total supply.
-
-    * ``_owner``: The account balance to modify.
-    * ``_value``: The new balance of the account.
-
-    If the current account balance is less than the new balance, tokens will be minted by transferring from ``0x00`` and the total supply will increase. The new total supply cannot exceed ``authorizedSupply``.
-
-    If the current account balance is greater than the new balance, tokens will be burned by transferring to ``0x00`` and the total supply will decrease.
-
-    This method is callable directly by the issuer, implementing multi-sig via ``MultiSig.checkMultiSigExternal``. It may also be called by a permitted module.
-
-    Modules can hook into this method via ``STModule.totalSupplyChanged``. The modules are called after the total supply has has been changed.
+    Returns the maximum authorized total supply of tokens. Whenever the authorized supply exceeds the total supply, the issuer may mint new tokens using ``mint``.
 
 .. method:: SecurityToken.modifyAuthorizedSupply(uint256 _value)
 
@@ -112,6 +97,32 @@ A governance module can be used to dictate when the issuer is allowed to modify 
     This method is callable directly by the issuer, implementing multi-sig via ``MultiSig.checkMultiSigExternal``. It may also be called by a permitted module.
 
     Modules can hook into this method via ``STModule.modifyAuthorizedSupply``. The modules are called before the authorized supply is changed.
+
+.. method:: SecurityToken.mint(address _owner, uint256 _value)
+
+    Mints new tokens at the given address.
+
+    * ``_owner``: Account balance to mint tokens to.
+    * ``_value``: Number of tokens to mint.
+
+    A ``Transfer`` even will fire showing the new tokens as transferring from ``0x00`` and the total supply will increase. The new total supply cannot exceed ``authorizedSupply``.
+
+    This method is callable directly by the issuer, implementing multi-sig via ``MultiSig.checkMultiSigExternal``. It may also be called by a permitted module.
+
+    Modules can hook into this method via ``STModule.totalSupplyChanged``.
+
+.. method:: SecurityToken.burns(address _owner, uint256 _value)
+
+    Burns tokens at the given address.
+
+    * ``_owner``: Account balance to burn tokens from.
+    * ``_value``: Number of tokens to burn.
+
+    A ``Transfer`` even will fire showing the new tokens as transferring to ``0x00`` and the total supply will increase.
+
+    This method is callable directly by the issuer, implementing multi-sig via ``MultiSig.checkMultiSigExternal``. It may also be called by a permitted module.
+
+    Modules can hook into this method via ``STModule.totalSupplyChanged``.
 
 Token Transfers
 ===============

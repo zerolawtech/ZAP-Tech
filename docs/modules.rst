@@ -111,7 +111,7 @@ SecurityToken
 
     * Hook signature: ``0x741b5078``
 
-    Called after the total supply has been modified by ``SecurityToken.modifyTotalSupply``.
+    Called after the total supply has been modified by ``SecurityToken.mint`` or ``SecurityToken.burn``.
 
     * ``_addr``: Address where balance has changed.
     * ``_id``: ID that the address is associated to.
@@ -175,7 +175,7 @@ IssuingEntity
 
     * Hook signature: ``0xb446f3ca``
 
-    Called after a token's total supply has been modified by ``SecurityToken.modifyTotalSupply``.
+    Called after a token's total supply has been modified by ``SecurityToken.mint`` or ``SecurityToken.burn``.
 
     * ``_token``: Token address where balance has changed.
     * ``_id``: ID of the investor who's balance changed.
@@ -249,11 +249,19 @@ Any module applied to an IssuingEntity contract may also be permitted to call me
 
     Calling this method will also call any hooked in ``checkTransfer`` and ``transferTokens`` methods.
 
-.. method:: SecurityToken.modifyTotalSupply(address _owner, uint256 _value)
+.. method:: SecurityToken.mint(address _owner, uint256 _value)
 
-    * Permission signature: ``0x250dea06``
+    * Permission signature: ``0x40c10f19``
 
-    Sets the balance of ``_owner`` to ``_value`` and modifies ``totalSupply`` accordingly. This method is only callable by a module.
+    Mints new tokens to the given address.
+
+    Calling this method will also call any hooked in ``totalSupplyChanged`` methods.
+
+.. method:: SecurityToken.burn(address _owner, uint256 _value)
+
+    * Permission signature: ``0x9dc29fac``
+
+    Burns tokens at the given address.
 
     Calling this method will also call any hooked in ``totalSupplyChanged`` methods.
 

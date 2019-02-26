@@ -448,45 +448,61 @@ contract SecurityToken is Modular {
 	}
 
 	/**
-		@notice Modify the balance of an account, affecting the total supply
-		@dev Callable by issuer or via module
+		@notice Mint new tokens and increase total supply
+		@dev Callable by the issuer or via module
 		@param _owner Owner of the tokens
-		@param _value Balance to set
+		@param _value Number of tokens to mint
 		@return bool
 	 */
-	function modifyTotalSupply(
-		address _owner,
-		uint256 _value
-	)
-		external
-		returns (bool)
-	{
-		/* msg.sig = 0x413ed002 */
+	function mint(address _owner, uint256 _value) external returns (bool) {
+		/* msg.sig = 0x40c10f19 */
 		if (!_checkPermitted()) return false;
-		if (balances[_owner] == _value) return true;
-		if (balances[_owner] > _value) {
-			uint256 _amount = balances[_owner].sub(_value);
-			totalSupply = totalSupply.sub(_amount);
-			emit Transfer(_owner, 0x00, _amount);
-		} else {
-			_amount = _value.sub(balances[_owner]);
-			totalSupply = totalSupply.add(_amount);
-			require(totalSupply <= authorizedSupply);
-			emit Transfer(0x00, _owner, _amount);
-		}
+		require(_value > 0);
 		uint256 _old = balances[_owner];
-		balances[_owner] = _value;
+		balances[_owner] = _old.add(_value);
+		totalSupply = totalSupply.add(_value);
+		require(totalSupply <= authorizedSupply);
+		emit Transfer(0x00, _owner, _value);
+		return _modify(_owner, _old);
+	}
+
+	/**
+		@notice Burn tokens and decrease total supply
+		@dev Callable by the issuer or via module
+		@param _owner Owner of the tokens
+		@param _value Number of tokens to burn
+		@return bool
+	 */
+	function burn(address _owner, uint256 _value) external returns (bool) {
+		/* msg.sig = 0x9dc29fac */
+		if (!_checkPermitted()) return false;
+		require(_value > 0);
+		uint256 _old = balances[_owner];
+		balances[_owner] = _old.sub(_value);
+		totalSupply = totalSupply.sub(_value);
+		emit Transfer(_owner, 0x00, _value);
+		return _modify(_owner, _old);
+	}
+
+	/**
+		@notice Internal shared logic for minting and burning
+		@param _owner Owner of the tokens
+		@param _old Previous balance
+		@return bool success
+	 */
+	function _modify(address _owner, uint256 _old) internal returns (bool) {
+		uint256 _new = balances[_owner];
 		(
 			bytes32 _id,
 			uint8 _rating,
 			uint16 _country
-		) = issuer.modifyTokenTotalSupply(_owner, _old, _value);
+		) = issuer.modifyTokenTotalSupply(_owner, _old, _new);
 		/* bytes4 signature for token module totalSupplyChanged() */
 		_callModules(
 			0x741b5078,
-			abi.encode(_owner, _id, _rating, _country, _old, _value)
+			abi.encode(_owner, _id, _rating, _country, _old, _new)
 		);
-		emit TotalSupplyChanged(_owner, _old, _value);
+		emit TotalSupplyChanged(_owner, _old, _new);
 		return true;
 	}
 

@@ -4,6 +4,7 @@ from brownie import *
 from scripts.deploy_simple import main
 
 def setup():
+    config['test']['default_contract_owner'] = True
     main()
     global issuer, token, a
     issuer = IssuingEntity[0]
@@ -40,9 +41,9 @@ def transfer_from():
     check.confirms(token.transferFrom,(a[5],a[3],100), "Issuer cannot transferFrom")
     check.equal(token.balanceOf(a[3]), 100, "Wrong balance on account 3")
     check.equal(token.balanceOf(a[5]), 900, "Wrong balance on account 5")
-    check.reverts(token.transferFrom,(a[5],a[3],100, {'from':a[4]}), "Account 4 can transferFrom without approval")
+    check.reverts(token.transferFrom, (a[5],a[3],100, {'from':a[4]}))
     check.confirms(token.approve,(a[4],100,{'from':a[5]}), "approve reverted")
-    check.reverts(token.transferFrom,(a[5],a[3],200, {'from':a[4]}), "Account 4 can transferFrom exceeding approved amount")
+    check.reverts(token.transferFrom,(a[5],a[3],200, {'from':a[4]}))
     check.confirms(token.transferFrom,(a[5],a[3],50, {'from':a[4]}), "Account 4 cannot transferFrom")
     check.equal(token.allowance(a[5],a[4]), 50, "Allowed is wrong")
 

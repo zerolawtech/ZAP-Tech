@@ -435,12 +435,7 @@ contract SecurityToken is Modular {
 	 */
 	function modifyAuthorizedSupply(uint256 _value) external returns (bool) {
 		/* msg.sig = 0xc39f42ed */
-		if (!isPermittedModule(msg.sender, msg.sig)) {
-			require(issuer.isApprovedAuthority(msg.sender, msg.sig));
-			if (!issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data))) {
-				return false;
-			}
-		}
+		if (!_checkPermitted()) return false;
 		require(_value >= totalSupply);
 		/* bytes4 signature for token module modifyAuthorizedSupply() */
 		_callModules(
@@ -467,12 +462,7 @@ contract SecurityToken is Modular {
 		returns (bool)
 	{
 		/* msg.sig = 0x413ed002 */
-		if (!isPermittedModule(msg.sender, msg.sig)) {
-			require(issuer.isApprovedAuthority(msg.sender, msg.sig));
-			if (!issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data))) {
-				return false;
-			}
-		}
+		if (!_checkPermitted()) return false;
 		if (balances[_owner] == _value) return true;
 		if (balances[_owner] > _value) {
 			uint256 _amount = balances[_owner].sub(_value);
@@ -567,6 +557,17 @@ contract SecurityToken is Modular {
 			return true;
 		}
 		return issuer.isPermittedModule(_module, _sig);
+	}
+
+	/**
+		@notice Checks that a call comes from a permitted module or the issuer
+		@dev If the caller is the issuer, requires multisig approval
+		@return bool multisig approved
+	 */
+	function _checkPermitted() internal returns (bool) {
+		if (isPermittedModule(msg.sender, msg.sig)) return true;
+		require(issuer.isApprovedAuthority(msg.sender, msg.sig));
+		return issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data));
 	}
 
 }

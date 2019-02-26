@@ -458,6 +458,14 @@ contract SecurityToken is Modular {
 		/* msg.sig = 0x40c10f19 */
 		if (!_checkPermitted()) return false;
 		require(_value > 0);
+		issuer.checkTransfer(
+			address(this),
+			address(issuer),
+			address(issuer),
+			_owner,
+			false,
+			_value
+		);
 		uint256 _old = balances[_owner];
 		balances[_owner] = _old.add(_value);
 		totalSupply = totalSupply.add(_value);

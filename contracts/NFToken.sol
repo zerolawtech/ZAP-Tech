@@ -381,6 +381,15 @@ contract NFToken is NFTModular {
 		require(totalSupply + _value > totalSupply);
 		require(totalSupply + _value <= 2**48 - 2);
 		require(_time == 0 || _time > now);
+		require(_value > 0);
+		issuer.checkTransfer(
+			address(this),
+			address(issuer),
+			address(issuer),
+			_owner,
+			false,
+			_value
+		);
 		uint48 _start = uint48(totalSupply + 1);
 		uint48 _stop = _start + _value;
 		if (_compareRanges(tokens[totalSupply], _owner, _time, _tag)) {

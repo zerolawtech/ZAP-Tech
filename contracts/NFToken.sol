@@ -190,21 +190,7 @@ contract NFToken is NFTModular {
 		returns (bool)
 	{
 		/* Sending 0 balance is blocked to reduce logic around investor limits */
-		require(_value > 0, "Cannot send 0 tokens");
-		(
-			bytes32 _authID,
-			bytes32[2] memory _id,
-			uint8[2] memory _rating,
-			uint16[2] memory _country
-		) = issuer.checkTransfer(
-			address(this),
-			_from,
-			_from,
-			_to,
-			_value == balances[_from].balance,
-			_value
-		);
-		_checkTransfer([_from, _to], _id[0], _id, _rating, _country, _value);
+		_checkToSend(_from, [_from, _to], _value);
 		return true;
 	}
 
@@ -236,6 +222,7 @@ contract NFToken is NFTModular {
 		)
 	{
 		require(_value > 0, "Cannot send 0 tokens");
+		require(uint48(_value) == _value);
 		(_authID, _id, _rating, _country) = issuer.checkTransfer(
 			address(this),
 			_auth,
@@ -280,7 +267,6 @@ contract NFToken is NFTModular {
 			uint48[] _range
 		)
 	{
-		require(uint48(_value) == _value);
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
 			_addr[0] = address(issuer);

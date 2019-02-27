@@ -1,0 +1,146 @@
+
+import itertools
+from brownie import *
+
+def setup():
+    global token, issuer
+    config['test']['always_transact'] = False
+    kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
+    issuer = accounts[0].deploy(IssuingEntity, [accounts[0]], 1)
+    token = accounts[0].deploy(NFToken, issuer, "Test NFT", "NFT", 1000000)
+    issuer.addToken(token, {'from': accounts[0]})
+    token.mint(issuer, 1000000, 0, "0x00", {'from': accounts[0]})
+    issuer.setRegistrar(kyc, True, {'from': accounts[0]})
+    
+    # Approves accounts[1:7] in KYCRegistrar, with investor ratings 1-2 and country codes 1-3
+    for count,country,rating in [(c,i[0],i[1]) for c,i in enumerate(itertools.product([1,2,3], [1,2]), start=1)]:
+        kyc.addInvestor("investor"+str(count), country, 'aws', rating, 9999999999, [accounts[count]], {'from': accounts[0]})
+    
+    # Approves investors from country codes 1-3 in IssuingEntity
+    issuer.setCountries([1,2,3],[1,1,1],[0,0,0], {'from': accounts[0]})
+
+def simple():
+    '''Simple transfer'''
+    _transfer(0, 1, 123456)
+    
+def fail():
+    '''Failed transfers'''
+    check.reverts(
+        token.transfer,
+        (a[1], 0, {'from':a[0]}),
+        "Cannot send 0 tokens"
+    )
+    check.reverts(
+        token.transfer,
+        (a[1], 1000001, {'from':a[0]}),
+        "Insufficient Balance"
+    )
+    check.reverts(
+        token.transfer,
+        (a[0], 1000, {'from':a[0]}),
+        "Cannot send to self"
+    )
+    check.reverts(
+        token.transfer,
+        (a[3], 10000, {'from':a[2]}),
+        "Insufficient Balance"
+    )
+
+def no_intersect():
+    '''No intersection'''
+    _transfer(0,1,10)
+    _transfer(0,2,1000)
+    _transfer(0,3,10)
+    _transfer(2,4,50)
+    _transfer(2,4,900)
+    _transfer(2,4,49)
+    _transfer(2,4,1)
+    _transfer(4,2,1000)
+    _totalSupply(5)
+
+def middle():
+    '''Intersect on both sides'''
+    _transfer(0,1,100)
+    _transfer(0,2,120)
+    _transfer(0,1,3)
+    _transfer(2,1,120)
+    _totalSupply(3)
+
+def start():
+    '''Intersect at start'''
+    _transfer(0,1,3040)
+    _transfer(0,2,33)
+    _transfer(1,2,41)
+    _transfer(1,2,2999)
+    _totalSupply(3)
+
+def stop():
+    '''Intersect at end'''
+    _transfer(0,1,100)
+    _transfer(0,2,100)
+    _transfer(0,3,42)
+    _transfer(3,2,19)
+    _transfer(3,2,22)
+    _transfer(3,2,1)
+    _totalSupply(4)
+
+def one():
+    '''One token'''
+    _transfer(0,1,1)
+    _transfer(0,2,1)
+    _transfer(0,3,1)
+    _transfer(0,4,1)
+    _transfer(0,5,1)
+    _transfer(1,4,1)
+    _transfer(2,3,1)
+    _transfer(5,4,1)
+    _transfer(3,4,2)
+    _totalSupply(6)
+
+def split():
+    '''many ranges'''
+    token.modifyAuthorizedSupply("1000 gwei",{'from': accounts[0]})
+    token.mint(issuer, "100 gwei", 0, "0x00", {'from': accounts[0]})
+    for i in range(2,7):
+        _transfer(0, 1, 12345678)
+        _transfer(0, i, 12345678)
+        _transfer(0, 1, 12345678)
+        _transfer(0, i, 12345678)
+    for i in range(6, 1):
+        _transfer(1, i, token.balanceOf(a[1])//2)
+    for i in range(1,5):
+        _transfer(i, 6, token.balanceOf(a[i]))
+    
+def _totalSupply(limit):
+    b = token.balanceOf(issuer)
+    for i in range(limit):
+        c = token.balanceOf(a[i])
+        b += c
+    check.true(token.totalSupply()==b)
+
+def _transfer(from_, to, amount):
+    if from_ == 0:
+        from_bal = token.balanceOf(issuer)
+    else:
+        from_bal = token.balanceOf(a[from_])
+    if to == 0:
+        to_bal = token.balanceOf(issuer)
+    else:
+        to_bal = token.balanceOf(a[to])
+    check.confirms(
+        token.transfer,
+        (a[to], amount, {'from':a[from_]}),
+        "Transfer failed: {} tokens from {} to {}".format(amount, from_, to)
+    )
+    if from_ == 0 or to == 0:
+        return
+    check.equal(token.balanceOf(a[from_]), from_bal - amount)
+    check.equal(token.balanceOf(a[to]), to_bal + amount)
+    check.equal(
+        token.balanceOf(a[from_]),
+        sum((i[1]-i[0]) for i in token.rangesOf(a[from_]))
+    )
+    check.equal(
+        token.balanceOf(a[to]),
+        sum((i[1]-i[0]) for i in token.rangesOf(a[to]))
+    )

@@ -123,22 +123,7 @@ contract SecurityToken is Modular {
 		view
 		returns (bool)
 	{
-		/* Sending 0 balance is blocked to reduce logic around investor limits */
-		require(_value > 0, "Cannot send 0 tokens");
-		(
-			bytes32 _authID,
-			bytes32[2] memory _id,
-			uint8[2] memory _rating,
-			uint16[2] memory _country
-		) = issuer.checkTransfer(
-			address(this),
-			_from,
-			_from,
-			_to,
-			_value == balances[_from],
-			_value
-		);
-		_checkTransfer([_from, _to], _id[0], _id, _rating, _country, _value);
+		_checkToSend(_from, _from, _to, _value);
 		return true;
 	}
 
@@ -450,12 +435,7 @@ contract SecurityToken is Modular {
 	 */
 	function modifyAuthorizedSupply(uint256 _value) external returns (bool) {
 		/* msg.sig = 0xc39f42ed */
-		if (!isPermittedModule(msg.sender, msg.sig)) {
-			require(issuer.isApprovedAuthority(msg.sender, msg.sig));
-			if (!issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data))) {
-				return false;
-			}
-		}
+		if (!_checkPermitted()) return false;
 		require(_value >= totalSupply);
 		/* bytes4 signature for token module modifyAuthorizedSupply() */
 		_callModules(
@@ -468,50 +448,75 @@ contract SecurityToken is Modular {
 	}
 
 	/**
-		@notice Modify the balance of an account, affecting the total supply
-		@dev Callable by issuer or via module
+		@notice Mint new tokens and increase total supply
+		@dev Callable by the issuer or via module
 		@param _owner Owner of the tokens
-		@param _value Balance to set
+		@param _value Number of tokens to mint
 		@return bool
 	 */
-	function modifyTotalSupply(
+	function mint(address _owner, uint256 _value) external returns (bool) {
+		/* msg.sig = 0x40c10f19 */
+		if (!_checkPermitted()) return false;
+		require(_value > 0);
+		issuer.checkTransfer(
+			address(this),
+			address(issuer),
+			address(issuer),
+			_owner,
+			false,
+			_value
+		);
+		uint256 _old = balances[_owner];
+		balances[_owner] = _old.add(_value);
+		totalSupply = totalSupply.add(_value);
+		require(totalSupply <= authorizedSupply);
+		emit Transfer(0x00, _owner, _value);
+		return _modifyTotalSupply(_owner, _old);
+	}
+
+	/**
+		@notice Burn tokens and decrease total supply
+		@dev Callable by the issuer or via module
+		@param _owner Owner of the tokens
+		@param _value Number of tokens to burn
+		@return bool
+	 */
+	function burn(address _owner, uint256 _value) external returns (bool) {
+		/* msg.sig = 0x9dc29fac */
+		if (!_checkPermitted()) return false;
+		require(_value > 0);
+		uint256 _old = balances[_owner];
+		balances[_owner] = _old.sub(_value);
+		totalSupply = totalSupply.sub(_value);
+		emit Transfer(_owner, 0x00, _value);
+		return _modifyTotalSupply(_owner, _old);
+	}
+
+	/**
+		@notice Internal shared logic for minting and burning
+		@param _owner Owner of the tokens
+		@param _old Previous balance
+		@return bool success
+	 */
+	function _modifyTotalSupply(
 		address _owner,
-		uint256 _value
+		uint256 _old
 	)
-		external
+		internal
 		returns (bool)
 	{
-		/* msg.sig = 0x413ed002 */
-		if (!isPermittedModule(msg.sender, msg.sig)) {
-			require(issuer.isApprovedAuthority(msg.sender, msg.sig));
-			if (!issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data))) {
-				return false;
-			}
-		}
-		if (balances[_owner] == _value) return true;
-		if (balances[_owner] > _value) {
-			uint256 _amount = balances[_owner].sub(_value);
-			totalSupply = totalSupply.sub(_amount);
-			emit Transfer(_owner, 0x00, _amount);
-		} else {
-			_amount = _value.sub(balances[_owner]);
-			totalSupply = totalSupply.add(_amount);
-			require(totalSupply <= authorizedSupply);
-			emit Transfer(0x00, _owner, _amount);
-		}
-		uint256 _old = balances[_owner];
-		balances[_owner] = _value;
+		uint256 _new = balances[_owner];
 		(
 			bytes32 _id,
 			uint8 _rating,
 			uint16 _country
-		) = issuer.modifyTokenTotalSupply(_owner, _old, _value);
+		) = issuer.modifyTokenTotalSupply(_owner, _old, _new);
 		/* bytes4 signature for token module totalSupplyChanged() */
 		_callModules(
 			0x741b5078,
-			abi.encode(_owner, _id, _rating, _country, _old, _value)
+			abi.encode(_owner, _id, _rating, _country, _old, _new)
 		);
-		emit TotalSupplyChanged(_owner, _old, _value);
+		emit TotalSupplyChanged(_owner, _old, _new);
 		return true;
 	}
 
@@ -577,11 +582,22 @@ contract SecurityToken is Modular {
 	{
 		if (
 			moduleData[_module].active && 
-			moduleData[_module].signatures[_sig][1]
+			moduleData[_module].permissions[_sig]
 		) {
 			return true;
 		}
 		return issuer.isPermittedModule(_module, _sig);
+	}
+
+	/**
+		@notice Checks that a call comes from a permitted module or the issuer
+		@dev If the caller is the issuer, requires multisig approval
+		@return bool multisig approved
+	 */
+	function _checkPermitted() internal returns (bool) {
+		if (isPermittedModule(msg.sender, msg.sig)) return true;
+		require(issuer.isApprovedAuthority(msg.sender, msg.sig));
+		return issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data));
 	}
 
 }

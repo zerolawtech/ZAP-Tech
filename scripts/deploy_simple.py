@@ -9,7 +9,7 @@ def main():
     issuer = accounts[1].deploy(IssuingEntity, [accounts[1]], 1)
     token = accounts[1].deploy(SecurityToken, issuer, "Test Token", "TST", 1000000)
     issuer.addToken(token, {'from': accounts[1]})
-    token.modifyTotalSupply(issuer, 1000000, {'from': accounts[1]})
+    token.mint(issuer, 1000000, {'from': accounts[1]})
     issuer.setRegistrar(kyc, True, {'from': accounts[1]})
     
     # Approves accounts[2:8] in KYCRegistrar, with investor ratings 1-2 and country codes 1-3

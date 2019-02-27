@@ -237,42 +237,7 @@ contract NFToken is NFTModular {
 			_value == balances[_addr[0]].balance,
 			_value
 		);
-		(_addr, _range) = _checkTransfer(
-			_addr,
-			_authID,
-			_id,
-			_rating,
-			_country,
-			_value
-		);
-		return(_authID, _id, _addr, _rating, _country, _range);
-	}
 
-	/**
-		@notice internal check of transfer permission
-		@dev common logic for checkTransfer() and _checkToSend()
-		@param _addr address array of investors 
-		@param _authID ID of caller
-		@param _id ID array of investor IDs
-		@param _rating array of investor ratings
-		@param _country array of investor countries
-		@param _value Amount being transferred
-		@return array of investor addresses
-	 */
-	function _checkTransfer(
-		address[2] _addr,
-		bytes32 _authID,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value
-	)
-		internal
-		returns (
-			address[2],
-			uint48[] _range
-		)
-	{
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
 			_addr[0] = address(issuer);
@@ -292,7 +257,7 @@ contract NFToken is NFTModular {
 			_value
 		));
 		_range = _findTransferrableRanges(_addr, _authID, _id, _rating, _country, _value);
-		return (_addr, _range);
+		return(_authID, _id, _addr, _rating, _country, _range);
 	}
 
 	
@@ -686,7 +651,6 @@ contract NFToken is NFTModular {
 	// 	require(msg.sender == rangeMap[_pointer].owner);
 	// 	require(_pointer <= _range[0]);
 	// 	require(_checkTime(_pointer));
-	// 	uint48 _value = _range[1] - _range[0];
 	// 	address[2] memory _addr = [msg.sender, _to];
 		
 	// 	/* issuer check transfer */
@@ -700,8 +664,8 @@ contract NFToken is NFTModular {
 	// 		msg.sender,
 	// 		msg.sender,
 	// 		_addr[1],
-	// 		_value == balances[msg.sender].balance,
-	// 		_value
+	// 		_range[1] - _range[0] == balances[msg.sender].balance,
+	// 		_range[1] - _range[0]
 	// 	);
 
 	// 	/* bytes4 signature for token module checkTransfer() */
@@ -711,7 +675,7 @@ contract NFToken is NFTModular {
 	// 		_id,
 	// 		_rating,
 	// 		_country,
-	// 		_value
+	// 		_range[1] - _range[0]
 	// 	));
 
 	// 	/* range check transfer */
@@ -730,7 +694,7 @@ contract NFToken is NFTModular {
 		
 	// 	uint48[] memory _newRange = new uint48[](1);
 	// 	_newRange[0] = _range[0];
-	// 	_transfer(_authID, _id, _addr, _rating, _country, _newRange, _value);
+	// 	_transfer(_authID, _id, _addr, _rating, _country, _newRange, _range[1] - _range[0]);
 	// 	return true;
 	// }
 

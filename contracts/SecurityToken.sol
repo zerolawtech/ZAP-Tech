@@ -471,7 +471,7 @@ contract SecurityToken is Modular {
 		totalSupply = totalSupply.add(_value);
 		require(totalSupply <= authorizedSupply);
 		emit Transfer(0x00, _owner, _value);
-		return _modify(_owner, _old);
+		return _modifyTotalSupply(_owner, _old);
 	}
 
 	/**
@@ -489,7 +489,7 @@ contract SecurityToken is Modular {
 		balances[_owner] = _old.sub(_value);
 		totalSupply = totalSupply.sub(_value);
 		emit Transfer(_owner, 0x00, _value);
-		return _modify(_owner, _old);
+		return _modifyTotalSupply(_owner, _old);
 	}
 
 	/**
@@ -498,7 +498,13 @@ contract SecurityToken is Modular {
 		@param _old Previous balance
 		@return bool success
 	 */
-	function _modify(address _owner, uint256 _old) internal returns (bool) {
+	function _modifyTotalSupply(
+		address _owner,
+		uint256 _old
+	)
+		internal
+		returns (bool)
+	{
 		uint256 _new = balances[_owner];
 		(
 			bytes32 _id,

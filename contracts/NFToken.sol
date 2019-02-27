@@ -373,9 +373,10 @@ contract NFToken is NFTModular {
 		uint32 _time,
 		bytes2 _tag
 	)
-		public
+		external
 		returns (bool)
 	{
+		/* msg.sig = 0x15077ec8 */
 		if (!_checkPermitted()) return false;
 		require(_value > 0);
 		require(totalSupply + _value > totalSupply);
@@ -413,19 +414,25 @@ contract NFToken is NFTModular {
 
 	/**
 		@notice Burns tokens
-		@param _pointer Start index of range to burn
+		@param _start Start index of range to burn
+		@param _stop Stop index of range to burn
 		@return Bool success
 	 */
-	function burn(
-		uint48 _pointer
-	)
-		public
-		returns (bool)
-	{
+	function burn(uint48 _start, uint48 _stop) external returns (bool) {
+		/* msg.sig = 0x9a0d378b */
 		if (!_checkPermitted()) return false;
-		require(tokens[_pointer] == _pointer);
+		require(_stop > _start);
+		uint48 _pointer = _getPointer(_stop);
+		require(rangeMap[_pointer].stop >= _stop);
+		require(rangeMap[_pointer].owner != 0x00);
+		if (_pointer != _stop) {
+			_splitRange(_stop);
+		}
+		_pointer = _getPointer(_start);
+		if (_pointer != _start) {
+			_splitRange(_start);
+		}
 		Range storage r = rangeMap[_pointer];
-		require(r.owner != 0x00);
 		_replaceInBalanceRange(r.owner, _pointer, 0);
 		uint48 _value = r.stop - _pointer;
 		totalSupply -= _value;
@@ -444,7 +451,13 @@ contract NFToken is NFTModular {
 		@param _old Previous balance
 		@return bool success
 	 */
-	function _modifyTotalSupply(address _owner, uint256 _old) internal returns (bool) {
+	function _modifyTotalSupply(
+		address _owner,
+		uint256 _old
+	)
+		internal
+		returns (bool)
+	{
 		uint256 _new = balances[_owner].balance;
 		(
 			bytes32 _id,

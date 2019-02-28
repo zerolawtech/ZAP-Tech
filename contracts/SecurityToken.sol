@@ -193,7 +193,6 @@ contract SecurityToken is Modular {
 	{
 		require(_value > 0, "Cannot send 0 tokens");
 		(_authID, _id, _rating, _country) = issuer.checkTransfer(
-			address(this),
 			_auth,
 			_from,
 			_to,
@@ -459,7 +458,6 @@ contract SecurityToken is Modular {
 		if (!_checkPermitted()) return false;
 		require(_value > 0);
 		issuer.checkTransfer(
-			address(this),
 			address(issuer),
 			address(issuer),
 			_owner,

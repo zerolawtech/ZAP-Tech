@@ -230,7 +230,6 @@ contract NFToken is NFTModular {
 		require(_value > 0, "Cannot send 0 tokens");
 		require(uint48(_value) == _value);
 		(_authID, _id, _rating, _country) = issuer.checkTransfer(
-			address(this),
 			_auth,
 			_addr[0],
 			_addr[1],
@@ -349,7 +348,6 @@ contract NFToken is NFTModular {
 		require(_time == 0 || _time > now);
 		require(_value > 0);
 		issuer.checkTransfer(
-			address(this),
 			address(issuer),
 			address(issuer),
 			_owner,
@@ -632,71 +630,94 @@ contract NFToken is NFTModular {
 		return true;
 	}
 
-	// /**
-	// 	@notice transfer tokens with a specific index range
-	// 	@param _to Receipient address
-	// 	@return bool success
-	//  */
-	// function transferRange(
-	// 	address _to,
-	// 	uint48[2] _range
-	// )
-	// 	external
-	// 	checkBounds(_range[0])
-	// 	checkBounds(_range[1]-1)
-	// 	returns (bool)
-	// {
-	// 	require(_range[0] < _range[1]);
-	// 	uint48 _pointer = _getPointer(_range[1]-1);
-	// 	require(msg.sender == rangeMap[_pointer].owner);
-	// 	require(_pointer <= _range[0]);
-	// 	require(_checkTime(_pointer));
-	// 	address[2] memory _addr = [msg.sender, _to];
+	/**
+		@notice transfer tokens with a specific index range
+		@param _to Receipient address
+		@param _start Transfer start index
+		@param _stop Transfer stop index
+		@return bool success
+	 */
+	function transferRange(
+		address _to,
+		uint48 _start,
+		uint48 _stop
+	)
+		public
+		checkBounds(_start)
+		checkBounds(_stop-1)
+		returns (bool)
+	{
+		uint48[2] memory _range = [_start, _stop];
+		require(_range[0] < _range[1]);
+		uint48 _pointer = _getPointer(_range[1]-1);
+		require(msg.sender == rangeMap[_pointer].owner);
+		require(_pointer <= _range[0]);
+		require(_checkTime(_pointer));
 		
-	// 	/* issuer check transfer */
-	// 	(
-	// 		bytes32 _authID,
-	// 		bytes32[2] memory _id,
-	// 		uint8[2] memory _rating,
-	// 		uint16[2] memory _country
-	// 	) = issuer.checkTransfer(
-	// 		address(this),
-	// 		msg.sender,
-	// 		msg.sender,
-	// 		_addr[1],
-	// 		_range[1] - _range[0] == balances[msg.sender].balance,
-	// 		_range[1] - _range[0]
-	// 	);
-
-	// 	/* bytes4 signature for token module checkTransfer() */
-	// 	_callModules(0x70aaf928, 0x00, abi.encode(
-	// 		_addr,
-	// 		_authID,
-	// 		_id,
-	// 		_rating,
-	// 		_country,
-	// 		_range[1] - _range[0]
-	// 	));
-
-	// 	/* range check transfer */
-	// 	require(_callModules(
-	// 			0x12345678,
-	// 			rangeMap[_pointer].tag,
-	// 			abi.encode(
-	// 				_addr,
-	// 				_authID,
-	// 				_id,
-	// 				_rating,
-	// 				_country,
-	// 				_range
-	// 			)
-	// 		));
 		
-	// 	uint48[] memory _newRange = new uint48[](1);
-	// 	_newRange[0] = _range[0];
-	// 	_transfer(_authID, _id, _addr, _rating, _country, _newRange, _range[1] - _range[0]);
-	// 	return true;
-	// }
+		_transferRangeInternal([msg.sender, _to], _pointer, _range);
+		return true;
+	}
+
+	function _transferRangeInternal(
+		address[2] _addr,
+		uint48 _pointer,
+		uint48[2] _range
+	)
+		internal
+	{
+		
+		uint48 _value = _range[1] - _range[0];
+		/* issuer check transfer */
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.checkTransfer(
+			_addr[0],
+			_addr[0],
+			_addr[1],
+			_value == balances[msg.sender].balance,
+			_value
+		);
+
+		/* Issuer tokens are held at the IssuingEntity contract address */
+		if (_id[0] == ownerID) {
+			_addr[0] = address(issuer);
+		}
+		if (_id[1] == ownerID) {
+			_addr[1] = address(issuer);
+		}
+
+		/* bytes4 signature for token module checkTransfer() */
+		_callModules(0x70aaf928, 0x00, abi.encode(
+			_addr,
+			_authID,
+			_id,
+			_rating,
+			_country,
+			_range[1] - _range[0]
+		));
+
+		/* range check transfer */
+		require(_callModules(
+				0x12345678,
+				rangeMap[_pointer].tag,
+				abi.encode(
+					_addr,
+					_authID,
+					_id,
+					_rating,
+					_country,
+					_range
+				)
+			));
+		
+		uint48[] memory _newRange = new uint48[](1);
+		_newRange[0] = _range[0];
+		_transfer(_authID, _id, _addr, _rating, _country, _newRange, _value);
+	}
 
 
 
@@ -712,7 +733,9 @@ contract NFToken is NFTModular {
 		uint16[2] memory _country,
 		uint48[] memory _range,
 		uint48 _value
-	) internal {
+	)
+		internal
+	{
 		Balance storage _from = balances[_addr[0]];
 		Balance storage _to = balances[_addr[1]];
 		require(_value <= _from.balance);
@@ -727,27 +750,6 @@ contract NFToken is NFTModular {
 			[_from.balance == 0, _to.balance == _value]
 		));
 
-		_transferFromRange(_range, _addr, _id, _rating, _country, _value);
-		emit Transfer(_addr[0], _addr[1], _value);
-	}
-
-	/**
-		@notice Transfer tokens from a balance range array
-		@param _range Balance range array
-		@param _value Amount to transfer
-		@return Remaining value
-	 */
-	function _transferFromRange(
-		uint48[] _range,
-		address[2] _addr,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint48 _value
-	)
-		internal
-		returns (uint48)
-	{
 		for (uint256 i; i < _range.length; i++) {
 			if (_range[i] == 0) continue;
 			uint48 _start = _range[i];
@@ -766,9 +768,13 @@ contract NFToken is NFTModular {
 				rangeMap[_range[i]].tag,
 				abi.encode(_addr, _id, _rating, _country, uint48[2]([_start, _stop]))
 			);
-			if (_value == 0) return;
+			if (_value == 0) {
+				emit Transfer(_addr[0], _addr[1], _value);
+				return;
+			}
 		}
 		revert();
+		
 	}
 
 	/**

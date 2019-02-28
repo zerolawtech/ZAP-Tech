@@ -212,7 +212,6 @@ contract IssuingEntity is Modular, MultiSig {
 	/**
 		@notice Check if transfer is possible based on issuer level restrictions
 		@dev function is not called directly - see SecurityToken.checkTransfer
-		@param _token address of token being transferred
 		@param _auth address of the caller attempting the transfer
 		@param _from address of the sender
 		@param _to address of the receiver
@@ -224,7 +223,6 @@ contract IssuingEntity is Modular, MultiSig {
 		@return uint16[] countries of sender and receiver
 	 */
 	function checkTransfer(
-		address _token,
 		address _auth,
 		address _from,
 		address _to,
@@ -261,7 +259,7 @@ contract IssuingEntity is Modular, MultiSig {
 		);
 		Account storage a = accounts[_id[0]];
 		_checkTransfer(
-			_token,
+			msg.sender,
 			_authID,
 			_id,
 			_allowed,

@@ -383,9 +383,10 @@ contract NFToken is NFTModular {
 			rangeMap[_start] = Range(_owner, _stop, _time, _tag);
 			balances[_owner].ranges.push(_start);
 		}
+		uint48 _old = balances[_owner].balance;
 		balances[_owner].balance += _value;
 		totalSupply += _value;
-		_modifyTotalSupply(_owner, _value);
+		_modifyTotalSupply(_owner, _old);
 		emit RangeSet(_tag, _start, _stop, _time);
 		emit Transfer(0x00, msg.sender, _value);
 		emit TransferRange(0x00, msg.sender, _start, _stop, _value);
@@ -394,6 +395,7 @@ contract NFToken is NFTModular {
 
 	/**
 		@notice Burns tokens
+		@dev Canoot burn multiple ranges in a single call
 		@param _start Start index of range to burn
 		@param _stop Stop index of range to burn
 		@return Bool success
@@ -402,25 +404,25 @@ contract NFToken is NFTModular {
 		/* msg.sig = 0x9a0d378b */
 		if (!_checkPermitted()) return false;
 		require(_stop > _start);
-		uint48 _pointer = _getPointer(_stop);
-		require(rangeMap[_pointer].stop >= _stop);
-		require(rangeMap[_pointer].owner != 0x00);
-		if (_pointer != _stop) {
+		uint48 _pointer = _getPointer(_stop-1);
+		require(_pointer <= _start);
+		address _owner = rangeMap[_pointer].owner;
+		require(_owner != 0x00);
+		if (rangeMap[_pointer].stop > _stop) {
 			_splitRange(_stop);
 		}
-		_pointer = _getPointer(_start);
-		if (_pointer != _start) {
+		if (_pointer < _start) {
 			_splitRange(_start);
 		}
-		Range storage r = rangeMap[_pointer];
-		_replaceInBalanceRange(r.owner, _pointer, 0);
-		uint48 _value = r.stop - _pointer;
+		_replaceInBalanceRange(_owner, _start, 0);
+		uint48 _value = _stop - _start;
 		totalSupply -= _value;
-		balances[r.owner].balance -= _value;
-		_modifyTotalSupply(r.owner, _value);
-		emit Transfer(r.owner, 0x00, _value);
-		emit TransferRange(r.owner, 0x00, _pointer, r.stop, _value);
-		r.owner = 0x00;
+		uint48 _old = balances[_owner].balance;
+		balances[_owner].balance -= _value;
+		_modifyTotalSupply(_owner, _old);
+		emit Transfer(_owner, 0x00, _value);
+		emit TransferRange(_owner, 0x00, _start, _stop, _value);
+		rangeMap[_start].owner = 0x00;
 		return true;
 	}
 

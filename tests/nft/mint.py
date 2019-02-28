@@ -47,5 +47,5 @@ def burn():
     token.burn(10001, 15001)
     check.equal(token.totalSupply(), 15000)
     check.equal(token.rangesOf(a[1]), ((1,10001),(15001,20001)))
-    check.false(token.rangesOf(a[2]))
+    check.equal(token.rangesOf(a[2]), tuple())
     check.equal(token.balanceOf(a[2]), 0)

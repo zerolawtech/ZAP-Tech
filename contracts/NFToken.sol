@@ -255,25 +255,42 @@ contract NFToken is NFTModular {
 			_country,
 			_value
 		));
-		_range = _findTransferrableRanges(_addr, _authID, _id, _rating, _country, _value);
-		return(_authID, _id, _addr, _rating, _country, _range);
+		_range = _findTransferrableRanges(
+			_authID,
+			_id,
+			_addr,
+			_rating,
+			_country,
+			_value
+		);
+		return (_authID, _id, _addr, _rating, _country, _range);
 	}
 
 	
+	/**
+		@notice Find ranges that are permitted to transfer
+		@param _authID ID of calling authority
+		@param _id Array of investor IDs
+		@param _addr Investor address array
+		@param _rating Investor rating array
+		@param _country Investor country array
+		@param _value Value of transfer
+		@return dynamic array of range pointers that to transfer
+	 */
 	function _findTransferrableRanges(
-		address[2] _addr,
 		bytes32 _authID,
 		bytes32[2] _id,
+		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint256 _value
 	)
 		internal
-		returns (uint48[])
+		returns (uint48[] _range)
 	{
 		Balance storage b = balances[_addr[0]];
 		uint256 _count;
-		uint48[] memory _range = new uint48[](b.ranges.length);
+		_range = new uint48[](b.ranges.length);
 		for (uint256 i; i < b.ranges.length; i++) {
 			if(!_checkTime(b.ranges[i])) continue;
 			if (_callModules(
@@ -582,7 +599,7 @@ contract NFToken is NFTModular {
 			uint16[2] memory _country,
 			uint48[] memory _range
 		) = _checkToSend(msg.sender, [msg.sender, _to], _value);
-		_transfer(_authID, _id, _addr, _rating, _country, _range, uint48(_value));
+		_transfer(_id, _addr, _rating, _country, _range, uint48(_value));
 		return true;
 	}
 
@@ -626,7 +643,7 @@ contract NFToken is NFTModular {
 			require(allowed[_from][_auth] >= _value, "Insufficient allowance");
 			allowed[_from][_auth] = allowed[_from][_auth].sub(_value);
 		}
-		_transfer(_authID, _id, _addr, _rating, _country, _range, uint48(_value));
+		_transfer(_id, _addr, _rating, _country, _range, uint48(_value));
 		return true;
 	}
 
@@ -659,6 +676,13 @@ contract NFToken is NFTModular {
 		return true;
 	}
 
+	/**
+		@notice internal - transfer tokens with a specific index range
+		@dev split from the previous function to avoid a stack depth error
+		@param _addr Array of sender/reciever addresses
+		@param _pointer Range pointer
+		@param _range Transfer start and stop indexes
+	 */
 	function _transferRangeInternal(
 		address[2] _addr,
 		uint48 _pointer,
@@ -666,7 +690,6 @@ contract NFToken is NFTModular {
 	)
 		internal
 	{
-		
 		uint48 _value = _range[1] - _range[0];
 		/* issuer check transfer */
 		(
@@ -716,17 +739,22 @@ contract NFToken is NFTModular {
 		
 		uint48[] memory _newRange = new uint48[](1);
 		_newRange[0] = _range[0];
-		_transfer(_authID, _id, _addr, _rating, _country, _newRange, _value);
+		_transfer(_id, _addr, _rating, _country, _newRange, _value);
 	}
 
 
 
 	/**
-		@notice shared logic for transfer and transferFrom
-		
+		@notice Internal transfer function
+		@dev common logic for transfer(), transferFrom() and transferRange()
+		@param _id Array of sender/receiver IDs
+		@param _addr Array of sender/receiver addresses
+		@param _rating Array of sender/receiver ratings
+		@param _country Array of sender/receiver countries
+		@param _range Array of range pointers to transfer
+		@param _value Amount to transfer
 	 */
 	function _transfer(
-		bytes32,
 		bytes32[2] memory _id,
 		address[2] memory _addr,
 		uint8[2] memory _rating,

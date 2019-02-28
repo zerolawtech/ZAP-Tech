@@ -2,7 +2,7 @@ pragma solidity >=0.4.24 <0.5.0;
 
 import "./open-zeppelin/SafeMath.sol";
 import "./IssuingEntity.sol";
-import "./components/NFTModular.sol";
+import "./interfaces/IModules.sol";
 
 /**
 	@title Non-Fungible SecurityToken 
@@ -10,7 +10,7 @@ import "./components/NFTModular.sol";
 		Expands upon the ERC20 token standard
 		https://theethereum.wiki/w/index.php/ERC20_Token_Standard
  */
-contract NFToken is NFTModular {
+contract NFToken {
 
 	using SafeMath for uint256;
 
@@ -24,9 +24,11 @@ contract NFToken is NFTModular {
 	uint256 public authorizedSupply;
 
 	uint48[281474976710656] tokens;
+	address[] activeModules;
 	mapping (uint48 => Range) rangeMap;
 	mapping (address => Balance) balances;
 	mapping(address => mapping (address => uint256)) allowed;
+	mapping (address => Module) moduleData;
 
 	struct Balance {
 		uint48 balance;
@@ -38,6 +40,20 @@ contract NFToken is NFTModular {
 		uint48 stop;
 		uint32 time;
 		bytes2 tag;
+	}
+
+	struct Module {
+		bool active;
+		bool set;
+		/* hooks, permissions */
+		mapping(bytes4 => Hook) hooks;
+		mapping(bytes4 => bool) permissions;
+	}
+
+	struct Hook {
+		bool permitted;
+		bool set;
+		mapping(bytes2 => bool) tag;
 	}
 
 	event Approval(
@@ -65,6 +81,8 @@ contract NFToken is NFTModular {
 		uint256 newBalance
 	);
 	event AuthorizedSupplyChanged(uint256 oldAuthorized, uint256 newAuthorized);
+	event ModuleAttached(address module, bytes4[] hooks, bytes4[] permissions);
+	event ModuleDetached(address module);
 
 	modifier checkBounds(uint256 _idx) {
 		require(_idx != 0, "Index cannot be 0");
@@ -1063,6 +1081,136 @@ contract NFToken is NFTModular {
 		if (isPermittedModule(msg.sender, msg.sig)) return true;
 		require(issuer.isApprovedAuthority(msg.sender, msg.sig));
 		return issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data));
+	}
+
+	/**
+		@notice Attach a security token module
+		@dev Can only be called indirectly from IssuingEntity.attachModule()
+		@param _module Address of the module contract
+		@return bool success
+	 */
+	function attachModule(address _module) external returns (bool) {
+		require(msg.sender == address(issuer));
+		require (!moduleData[_module].active);
+		IBaseModule b = IBaseModule(_module);
+		require (b.getOwner() == address(this));
+		moduleData[_module].active = true;
+		activeModules.push(_module);
+		/* signatures can only be set the first time a module is attached */
+		if (!moduleData[_module].set) {
+			(
+				bytes4[] memory _hooks,
+				bytes4[] memory _permissions
+			) = b.getPermissions();
+			for (uint256 i; i < _hooks.length; i++) {
+				moduleData[_module].hooks[_hooks[i]].permitted = true;
+			}
+			for (i = 0; i < _hooks.length; i++) {
+				moduleData[_module].permissions[_permissions[i]] = true;
+			}
+			moduleData[_module].set = true;
+		}
+		emit ModuleAttached(_module, _hooks, _permissions);
+		return true;
+	}
+
+	/**
+		@notice Attach a security token module
+		@dev
+			Called indirectly from IssuingEntity.attachModule() or by the
+			module that is attached.
+		@param _module Address of the module contract
+		@return bool success
+	 */
+	function detachModule(address _module) external returns (bool) {
+		if (_module != msg.sender) {
+			require(msg.sender == address(issuer));
+		} else {
+			/* msg.sig = 0xbb2a8522 */
+			require(isPermittedModule(msg.sender, msg.sig));
+		}
+		require (
+			moduleData[_module].active &&
+			activeModules.length > 0
+		);
+		moduleData[_module].active = false;
+		emit ModuleDetached(_module);
+		if (activeModules[activeModules.length - 1] == _module) {
+			activeModules.length--;
+			return;
+		}
+		for (uint256 i = 0; i < activeModules.length - 1; i++) {
+			if (activeModules[i] == _module) {
+				activeModules[i] = activeModules[activeModules.length - 1];
+				activeModules.length--;
+				return true;
+			}
+		}
+		revert();
+	}
+
+	/**
+		@notice Internal function to iterate and call modules
+		@param _sig bytes4 signature to call module with
+		@param _tag bytes2 tag of related token range
+		@param _data calldata to send to module
+	 */
+	function _callModules(bytes4 _sig, bytes2 _tag, bytes _data) internal returns (bool) {
+		for (uint256 i = 0; i < activeModules.length; i++) {
+			Hook storage h = moduleData[activeModules[i]].hooks[_sig];
+			if (!h.permitted) continue;
+			if (h.set) {
+				if (!activeModules[i].call(_sig, _data)) return false;
+				continue; 
+			}
+			if (_tag == 0x00) continue;
+			if (h.tag[bytes2(_tag[0])]) {
+				if (!activeModules[i].call(_sig, _data)) return false;
+				continue;
+			}
+			if (h.tag[_tag]) {
+				if (!activeModules[i].call(_sig, _data)) return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+		@notice Check if a module is active on this token
+		@dev
+			IssuingEntity modules are considered active on all tokens
+			associated with that issuer.
+		@param _module Deployed module address
+	 */
+	function isActiveModule(address _module) public view returns (bool) {
+		if (moduleData[_module].active) return true;
+		return issuer.isActiveModule(_module);
+	}
+
+	/**
+		@notice Check if a module is permitted to access a specific function
+		@dev
+			This returns false instead of throwing because an issuer level 
+			module must be checked twice
+		@param _module Module address
+		@param _sig Function signature
+		@return bool permission
+	 */
+	function isPermittedModule(
+		address _module,
+		bytes4 _sig
+	)
+		public
+		view
+		returns (bool)
+	{
+		if (
+			moduleData[_module].active && 
+			moduleData[_module].permissions[_sig]
+		) {
+			return true;
+		}
+		return issuer.isPermittedModule(_module, _sig);
 	}
 
 }

@@ -774,7 +774,6 @@ contract NFToken is NFTModular {
 			}
 		}
 		revert();
-		
 	}
 
 	/**

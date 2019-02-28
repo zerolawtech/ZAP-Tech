@@ -10,7 +10,6 @@ def main():
     issuer = accounts[0].deploy(IssuingEntity, [accounts[0]], 1)
     token = accounts[0].deploy(NFToken, issuer, "Test NFT", "NFT", 1000000)
     issuer.addToken(token, {'from': accounts[0]})
-    token.mint(issuer, 1000000, 0, "0x00", {'from': accounts[0]})
     issuer.setRegistrar(kyc, True, {'from': accounts[0]})
     
     # Approves accounts[1:7] in KYCRegistrar, with investor ratings 1-2 and country codes 1-3

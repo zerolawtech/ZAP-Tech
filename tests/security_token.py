@@ -26,8 +26,7 @@ def setup():
     registrar.addInvestor(investorID2, 3, b'abc', 1, 9999999999, [investor2], {'from':owner1})
 
 
-def initial_total_supply_is_allocated_to_issuer():
+def initial_total_supply_of_issuer_is_zero():
     issuer = owner1.deploy(IssuingEntity, [owner1], 1)
     token = owner1.deploy(SecurityToken, issuer.address, "TOKEN", "TKN", 1000)
-    # issuer.addToken(token.address)
-    check.equal(token.balanceOf(issuer.address), 1000, "Issuer balance is wrong")
+    check.equal(token.balanceOf(issuer.address), 0, "Issuer balance is wrong")

@@ -742,8 +742,6 @@ contract NFToken is NFTModular {
 		_transfer(_id, _addr, _rating, _country, _newRange, _value);
 	}
 
-
-
 	/**
 		@notice Internal transfer function
 		@dev common logic for transfer(), transferFrom() and transferRange()
@@ -790,7 +788,7 @@ contract NFToken is NFTModular {
 			else {
 				_value -= _amount;
 			}
-			_transferRange(_start, _addr[0], _addr[1], _start, _stop);
+			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop);
 			_callModules(
 				0x12345678,
 				rangeMap[_range[i]].tag,
@@ -812,7 +810,7 @@ contract NFToken is NFTModular {
 		@param _start Start index of range
 		@param _stop Stop index of range
 	 */
-	function _transferRange(
+	function _transferSingleRange(
 		uint48 _pointer,
 		address _from,
 		address _to,

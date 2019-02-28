@@ -4,7 +4,12 @@ import "./open-zeppelin/SafeMath.sol";
 import "./IssuingEntity.sol";
 import "./components/NFTModular.sol";
 
-/** Non-Fungible ERC20 Contract */
+/**
+	@title Non-Fungible SecurityToken 
+	@dev
+		Expands upon the ERC20 token standard
+		https://theethereum.wiki/w/index.php/ERC20_Token_Standard
+ */
 contract NFToken is NFTModular {
 
 	using SafeMath for uint256;
@@ -247,14 +252,11 @@ contract NFToken is NFTModular {
 		require(_addr[0] != _addr[1], "Cannot send to self");
 		require(balances[_addr[0]].balance >= _value, "Insufficient Balance");
 		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, 0x00, abi.encode(
-			_addr,
-			_authID,
-			_id,
-			_rating,
-			_country,
-			_value
-		));
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
@@ -293,13 +295,14 @@ contract NFToken is NFTModular {
 		_range = new uint48[](b.ranges.length);
 		for (uint256 i; i < b.ranges.length; i++) {
 			if(!_checkTime(b.ranges[i])) continue;
+			/** hook point for NFToken.checkTransferRange() */
 			if (_callModules(
-				0x12345678,
+				0x5a5a8ad8,
 				rangeMap[b.ranges[i]].tag,
 				abi.encode(
-					_addr,
 					_authID,
 					_id,
+					_addr,
 					_rating,
 					_country,
 					uint48[2]([b.ranges[i],r.stop])
@@ -446,7 +449,7 @@ contract NFToken is NFTModular {
 			uint8 _rating,
 			uint16 _country
 		) = issuer.modifyTokenTotalSupply(_owner, _old, _new);
-		/* bytes4 signature for token module totalSupplyChanged() */
+		/* hook point for NFTModule.totalSupplyChanged() */
 		_callModules(
 			0x741b5078,
 			0x00,
@@ -693,7 +696,6 @@ contract NFToken is NFTModular {
 		internal
 	{
 		uint48 _value = _range[1] - _range[0];
-		/* issuer check transfer */
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
@@ -715,28 +717,18 @@ contract NFToken is NFTModular {
 			_addr[1] = address(issuer);
 		}
 
-		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, 0x00, abi.encode(
-			_addr,
-			_authID,
-			_id,
-			_rating,
-			_country,
-			_range[1] - _range[0]
-		));
+		/* hook point for NFTModule.checkTransfer() */
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
 
-		/* range check transfer */
+		/* hook point for NFTModule.checkTransferRange */
 		require(_callModules(
-				0x12345678,
+				0x5a5a8ad8,
 				rangeMap[_pointer].tag,
-				abi.encode(
-					_addr,
-					_authID,
-					_id,
-					_rating,
-					_country,
-					_range
-				)
+				abi.encode(_authID, _id, _addr, _rating, _country, _range)
 			));
 		
 		uint48[] memory _newRange = new uint48[](1);
@@ -791,10 +783,11 @@ contract NFToken is NFTModular {
 				_value -= _amount;
 			}
 			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop);
+			/** hook point for NFToken.transferTokenRange() */
 			_callModules(
-				0x12345678,
+				0x979c114f,
 				rangeMap[_range[i]].tag,
-				abi.encode(_addr, _id, _rating, _country, uint48[2]([_start, _stop]))
+				abi.encode(_id, _addr, _rating, _country, uint48[2]([_start, _stop]))
 			);
 			if (_value == 0) {
 				emit Transfer(_addr[0], _addr[1], _value);

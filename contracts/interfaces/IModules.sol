@@ -1,5 +1,9 @@
 pragma solidity >=0.4.24 <0.5.0;
 
+/**
+	Common interface for all modules - these are the minimum required methods
+	that must be included to attach the contract
+*/
 interface IBaseModule {
 	function getPermissions()
 		external
@@ -13,6 +17,7 @@ interface IBaseModule {
 	function name() external view returns (string);
 }
 
+/** SecurityToken module interface */
 interface ISTModule {
 	function getPermissions()
 		external
@@ -83,6 +88,7 @@ interface ISTModule {
 		returns (bool);
 }
 
+/** NFToken module interface */
 interface INFTModule {
 
 	/* 0x70aaf928 */
@@ -98,11 +104,11 @@ interface INFTModule {
 		view
 		returns (bool);
 
-	/*  */
+	/* 5a5a8ad8 */
 	function checkTransferRange(
-		address[2] _addr,
 		bytes32 _authID,
 		bytes32[2] _id,
+		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint48[2] _range
@@ -111,24 +117,40 @@ interface INFTModule {
 		view
 		returns (bool);
 
-	/*  */
+	/* 0x979c114f */
 	function transferTokenRange(
-		address[2] _addr,
 		bytes32[2] _id,
+		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint48[2] _range
 	)
 		external
 		returns (bool);
-	
 
+	/* 0xb1a1a455 */
+	function modifyAuthorizedSupply(
+		address _token,
+		uint256 _oldSupply,
+		uint256 _newSupply
+	)
+		external
+		returns (bool);
+
+	/* 0x741b5078 */
+	function totalSupplyChanged(
+		address _addr,
+		bytes32 _id,
+		uint8 _rating,
+		uint16 _country,
+		uint256 _old,
+		uint256 _new
+	)
+		external
+		returns (bool);
 }
 
-
-
-
-
+/** IssuingEntity module interface */
 interface IIssuerModule {
 	function getPermissions()
 		external
@@ -190,6 +212,7 @@ interface IIssuerModule {
 		returns (bool);
 }
 
+/** Custodian module interface */
 interface ICustodianModule {
 	function getPermissions()
 		external

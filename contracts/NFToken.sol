@@ -40,12 +40,6 @@ contract NFToken is TokenBase  {
 		uint32 time
 	);
 
-	modifier checkBounds(uint256 _idx) {
-		require(_idx != 0, "Index cannot be 0");
-		require(_idx <= totalSupply, "Index exceeds totalSupply");
-		_;
-	}
-
 	/**
 		@notice Security token constructor
 		@dev Initially the total supply is credited to the issuer
@@ -71,6 +65,11 @@ contract NFToken is TokenBase  {
 		return;
 	}
 
+	function _checkBounds(uint256 _idx) internal view {
+		require(_idx != 0, "Index cannot be 0");
+		require(_idx <= totalSupply, "Index exceeds totalSupply");
+	}
+
 	/**
 		@notice ERC-20 balanceOf standard
 		@param _owner Address of balance to query
@@ -90,7 +89,6 @@ contract NFToken is TokenBase  {
 	)
 		external
 		view
-		checkBounds(_idx)
 		returns (
 			address _owner,
 			uint48 _start,
@@ -99,6 +97,7 @@ contract NFToken is TokenBase  {
 			bytes2 _tag
 		)
 	{
+		_checkBounds(_idx);
 		_start = _getPointer(_idx);
 		Range storage r = rangeMap[_start];
 		return (r.owner, _start, r.stop, r.time, r.tag);
@@ -363,9 +362,9 @@ contract NFToken is TokenBase  {
 		bytes2 _tag
 	)
 		public
-		checkBounds(_pointer)
 		returns (bool)
 	{
+		_checkBounds(_pointer);
 		require(tokens[_pointer] == _pointer);
 		Range storage r = rangeMap[_pointer];
 		require(r.owner != 0x00);
@@ -415,10 +414,10 @@ contract NFToken is TokenBase  {
 		bytes2 _tag
 	)
 		public
-		checkBounds(_start)
-		checkBounds(_stop-1)
 		returns (bool)
 	{
+		_checkBounds(_start);
+		_checkBounds(_stop-1);
 		require(_time == 0 || _time > now);
 		uint48 _pointer = _getPointer(_stop);
 		if (_pointer != _stop) {
@@ -538,19 +537,18 @@ contract NFToken is TokenBase  {
 		uint48 _stop
 	)
 		public
-		checkBounds(_start)
-		checkBounds(_stop-1)
 		returns (bool)
 	{
-		uint48[2] memory _range = [_start, _stop];
-		require(_range[0] < _range[1]);
-		uint48 _pointer = _getPointer(_range[1]-1);
+		_checkBounds(_start);
+		_checkBounds(_stop-1);
+		require(_start < _stop);
+		uint48 _pointer = _getPointer(_stop-1);
 		require(msg.sender == rangeMap[_pointer].owner);
-		require(_pointer <= _range[0]);
+		require(_pointer <= _start);
 		require(_checkTime(_pointer));
 		
 		
-		_transferRangeInternal([msg.sender, _to], _pointer, _range);
+		_transferRangeInternal([msg.sender, _to], _pointer, [_start, _stop]);
 		return true;
 	}
 

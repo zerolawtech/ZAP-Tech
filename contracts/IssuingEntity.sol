@@ -84,12 +84,6 @@ contract IssuingEntity is Modular, MultiSig {
 	event InvestorRestriction(bytes32 indexed id, bool allowed);
 	event TokenRestriction(address indexed token, bool allowed);
 	event GlobalRestriction(bool allowed);
-	
-	/** @dev check that call originates from a registered, unrestricted token */
-	modifier onlyToken() {
-		require(tokens[msg.sender].set && !tokens[msg.sender].restricted);
-		_;
-	}
 
 	/**
 		@notice Issuing entity constructor
@@ -106,6 +100,12 @@ contract IssuingEntity is Modular, MultiSig {
 		/* First registrar is empty so Account.regKey == 0 means it is unset. */
 		registrars.push(RegistrarContract(KYCRegistrar(0), false));
 		idMap[address(this)].id = ownerID;
+	}
+
+	/** @dev check that call originates from a registered, unrestricted token */
+	function _onlyToken() internal view {
+		require(tokens[msg.sender].set);
+		require(!tokens[msg.sender].restricted);
 	}
 
 	/**
@@ -632,10 +632,9 @@ contract IssuingEntity is Modular, MultiSig {
 		bool[2] _zero
 	)
 		external
-		onlyToken
 		returns (bool)
 	{
-
+		_onlyToken();
 		/* If no transfer of ownership, return true immediately */
 		if (_id[0] == _id[1]) return true;
 
@@ -712,10 +711,9 @@ contract IssuingEntity is Modular, MultiSig {
 		bool _stillOwner
 	)
 		external
-		onlyToken
 		returns (bool)
 	{
-
+		_onlyToken();
 		_setBeneficialOwners(_custID, _id[0], _stillOwner);
 		_setBeneficialOwners(_custID, _id[1], true);
 
@@ -745,13 +743,13 @@ contract IssuingEntity is Modular, MultiSig {
 		uint256 _new
 	)
 		external
-		onlyToken
 		returns (
 			bytes32 _id,
 			uint8 _rating,
 			uint16 _country
 		)
 	{
+		_onlyToken();
 		if (_owner == address(this)) {
 			_id = ownerID;
 			_rating = 0;

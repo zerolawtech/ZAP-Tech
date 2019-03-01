@@ -301,7 +301,7 @@ contract NFToken is TokenBase  {
 			rangeMap[_pointer].stop = _stop;
 		} else {
 			/* create new range */
-			_addRangePointers(_start, _stop);
+			_setRangePointers(_start, _stop, _start);
 			rangeMap[_start] = Range(_owner, _stop, _time, _tag);
 			balances[_owner].ranges.push(_start);
 		}
@@ -372,9 +372,9 @@ contract NFToken is TokenBase  {
 		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag)) {
 			/* merge with previous range */
 			uint48 _prev = tokens[_pointer-1];
-			_removeRangePointers(_prev, _pointer);
-			_removeRangePointers(_pointer, r.stop);
-			_addRangePointers(_prev, r.stop);
+			_setRangePointers(_prev, _pointer, 0);
+			_setRangePointers(_pointer, r.stop, 0);
+			_setRangePointers(_prev, r.stop, _prev);
 			_replaceInBalanceRange(r.owner, _pointer, 0);
 			rangeMap[_prev].stop = r.stop;
 			delete rangeMap[_pointer];
@@ -384,9 +384,9 @@ contract NFToken is TokenBase  {
 		if (_compareRanges(r.stop, r.owner, _time, _tag)) {
 			/* merge with next range */
 			uint48 _next = rangeMap[r.stop].stop;
-			_removeRangePointers(r.stop, _next);
-			_removeRangePointers(_pointer, r.stop);
-			_addRangePointers(_pointer, _next);
+			_setRangePointers(r.stop, _next, 0);
+			_setRangePointers(_pointer, r.stop, 0);
+			_setRangePointers(_pointer, _next, _pointer);
 			_replaceInBalanceRange(r.owner, r.stop, 0);
 			delete rangeMap[r.stop];
 			r.stop = _next;
@@ -444,9 +444,9 @@ contract NFToken is TokenBase  {
 			if (r.stop < _stop && rangeMap[r.stop].owner == r.owner) {
 				/* merge with next range */
 				uint48 _next = rangeMap[r.stop].stop;
-				_removeRangePointers(r.stop, _next);
-				_removeRangePointers(_start, r.stop);
-				_addRangePointers(_start, _next);
+				_setRangePointers(r.stop, _next, 0);
+				_setRangePointers(_start, r.stop, 0);
+				_setRangePointers(_start, _next, _start);
 				_replaceInBalanceRange(r.owner, r.stop, 0);
 				delete rangeMap[r.stop];
 				r.stop = _next;
@@ -702,26 +702,26 @@ contract NFToken is TokenBase  {
 					rangeMap[_pointer].owner = _to;
 					return;
 				}
-				_removeRangePointers(_pointer, _stop);
+				_setRangePointers(_pointer, _stop, 0);
 				// join left
 				if (!_right) {
 					delete rangeMap[_pointer];
 					rangeMap[_prev].stop = _stop;
-					_addRangePointers(_prev, _stop);
+					_setRangePointers(_prev, _stop, _prev);
 					return;
 				}
 				// join right
 				if (!_left) {
 					_replaceInBalanceRange(_to, _stop, _start);
 					rangeMap[_pointer] = Range(_to, rangeMap[_stop].stop, 0, _tag);
-					_addRangePointers(_pointer, rangeMap[_stop].stop);
+					_setRangePointers(_pointer, rangeMap[_stop].stop, _pointer);
 				// join both
 				} else {
 					_replaceInBalanceRange(_to, _stop, 0);
 					delete rangeMap[_pointer];
 					rangeMap[_prev].stop = rangeMap[_stop].stop;
-					_removeRangePointers(_prev, _start);
-					_removeRangePointers(_stop, rangeMap[_stop].stop);
+					_setRangePointers(_prev, _start, 0);
+					_setRangePointers(_stop, rangeMap[_stop].stop, 0);
 				}
 				delete rangeMap[_stop];
 				return;
@@ -729,34 +729,34 @@ contract NFToken is TokenBase  {
 
 			// touches left
 			delete rangeMap[_pointer];
-			_removeRangePointers(_start, _rangeStop);
+			_setRangePointers(_start, _rangeStop, 0);
 			_replaceInBalanceRange(_from, _start, _stop);
 			
 			// same owner left
 			if (_compareRanges(_prev, _to, 0, _tag)) {
-				_removeRangePointers(_prev, _start);
+				_setRangePointers(_prev, _start, 0);
 				_start = _prev;
 			} else {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
 			rangeMap[_start] = Range(_to, _stop, 0, _tag);
-			_addRangePointers(_start, _stop);
+			_setRangePointers(_start, _stop, _start);
 			rangeMap[_stop] = Range(_from, _rangeStop, 0, _tag);
-			_addRangePointers(_stop, _rangeStop);
+			_setRangePointers(_stop, _rangeStop, _stop);
 			return;
 		}
 
 		// shared logic - touches right and touches nothing
-		_removeRangePointers(_pointer, _rangeStop);
+		_setRangePointers(_pointer, _rangeStop, 0);
 		rangeMap[_pointer].stop = _start;
-		_addRangePointers(_pointer, _start);
+		_setRangePointers(_pointer, _start, _pointer);
 
 		// touches right
 		if (_rangeStop == _stop) {
 			// same owner right
 			if (_compareRanges(_stop, _to, 0, _tag)) {
 				_replaceInBalanceRange(_to, _stop, _start);
-				_removeRangePointers(_stop, rangeMap[_stop].stop);
+				_setRangePointers(_stop, rangeMap[_stop].stop, 0);
 				uint48 _next = rangeMap[_stop].stop;
 				delete rangeMap[_stop];
 				_stop = _next;
@@ -764,18 +764,18 @@ contract NFToken is TokenBase  {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
 			rangeMap[_start] = Range(_to, _stop, 0, _tag);
-			_addRangePointers(_start, _stop);
+			_setRangePointers(_start, _stop, _start);
 			return;
 		}
 
 		//touches nothing
 		_replaceInBalanceRange(_to, 0, _start);
 		rangeMap[_start] = Range(_to, _stop, 0, _tag);
-		_addRangePointers(_start, _stop);
+		_setRangePointers(_start, _stop, _start);
 		
 		_replaceInBalanceRange(_from, 0, _stop);
 		rangeMap[_stop] = Range(_from, _rangeStop, 0, _tag);
-		_addRangePointers(_stop, _rangeStop);
+		_setRangePointers(_stop, _rangeStop, _stop);
 	}
 
 	/**
@@ -831,9 +831,9 @@ contract NFToken is TokenBase  {
 		r.stop = _split;
 		rangeMap[_split] = Range(r.owner, _stop, r.time, r.tag);
 		_replaceInBalanceRange(r.owner, 0, _split);
-		_removeRangePointers(_pointer, _stop);
-		_addRangePointers(_pointer, _split);
-		_addRangePointers(_split, _stop);
+		_setRangePointers(_pointer, _stop, 0);
+		_setRangePointers(_pointer, _split, _pointer);
+		_setRangePointers(_split, _stop, _pointer);
 	}
 
 	/**
@@ -862,47 +862,23 @@ contract NFToken is TokenBase  {
 	}
 
 	/**
-		@notice Add pointers to the token range
+		@notice Modify pointers in the token range
 		@param _start Start index of range
 		@param _stop Stop index of range
+		@param _value Pointer value
 	 */
-	function _addRangePointers(uint48 _start, uint48 _stop) internal {
-		tokens[_start] = _start;
+	function _setRangePointers(uint48 _start, uint48 _stop, uint48 _value) internal {
+		tokens[_start] = _value;
 		_stop -= 1;
 		if (_start == _stop) return;
-		tokens[_stop] = _start;
+		tokens[_stop] = _value;
 		uint256 _interval = 16;
 		while (true) {
 			uint256 i = (_stop / _interval * _interval);
 			if (i == 0) return;
 			_interval *= 16;
 			if (i % _interval == 0) continue;
-			if (i > _start) tokens[i] = _start;
-		}
-	}
-
-	/**
-		@notice Remove pointers from a range
-		@dev
-			Only called after all new range pointers have been added, to
-			minimize storage costs.
-		@param _start Start index of range
-		@param _stop Stop index of range
-	 */
-	function _removeRangePointers(uint48 _start, uint48 _stop) internal {
-		delete tokens[_start];
-		_stop -= 1;
-		if (_start == _stop) return;
-		delete tokens[_stop];
-		uint256 _interval = 16;
-		while (true) {
-			uint256 i = (_stop / _interval * _interval);
-			if (i == 0) return;
-			_interval *= 16;
-			if (i % _interval == 0) continue;
-			if (i > _start) {
-				delete tokens[i];
-			}
+			if (i > _start) tokens[i] = _value;
 		}
 	}
 

@@ -105,6 +105,7 @@ contract IssuingEntity is Modular, MultiSig {
 	{
 		/* First registrar is empty so Account.regKey == 0 means it is unset. */
 		registrars.push(RegistrarContract(KYCRegistrar(0), false));
+		idMap[address(this)].id = ownerID;
 	}
 
 	/**
@@ -182,7 +183,7 @@ contract IssuingEntity is Modular, MultiSig {
 		require(_country.length == _minRating.length);
 		require(_country.length == _limit.length);
 		if (!_checkMultiSig()) return false;
-		for (uint256 i = 0; i < _country.length; i++) {
+		for (uint256 i; i < _country.length; i++) {
 			require(_minRating[i] != 0);
 			Country storage c = countries[_country[i]];
 			c.allowed = true;
@@ -253,8 +254,8 @@ contract IssuingEntity is Modular, MultiSig {
 		bool[2] memory _allowed;
 
 		(_allowed, _rating, _country) = _getInvestors(
-			[_addr, _to],
 			_id,
+			[_addr, _to],
 			[accounts[idMap[_addr].id].regKey, accounts[_id[1]].regKey]
 		);
 		Account storage a = accounts[_id[0]];
@@ -280,8 +281,9 @@ contract IssuingEntity is Modular, MultiSig {
 	function _checkAuth(address _auth, bytes4 _sig) internal view {
 		Authority storage a = authorityData[idMap[_auth].id];
 		require(
-			a.approvedUntil >= now &&	
-			a.signatures[_sig], "Authority is not permitted"
+			a.approvedUntil >= now &&
+			a.signatures[_sig],
+			"Authority not permitted"
 		);
 	}
 
@@ -323,8 +325,8 @@ contract IssuingEntity is Modular, MultiSig {
 			_rating,
 			_country
 		) = _getInvestors(
-			[address(0), address(0)],
 			_id,
+			[address(0), address(0)],
 			[accounts[_id[0]].regKey, accounts[_id[1]].regKey]
 		);
 		_setRating(_id[0], _rating[0], _country[0]);
@@ -463,27 +465,7 @@ contract IssuingEntity is Modular, MultiSig {
 		@return bytes32 investor ID
 	 */
 	function getID(address _addr) external view returns (bytes32) {
-		(bytes32 _id, uint8 _key) = _getIDView(_addr, 0);
-		return _id;
-	}
-
-	/**
-		@notice internal investor ID fetch, updates local record
-		@dev Either of the params may be given as 0
-		@param _addr Investor address
-		@param _id Investor ID
-		@return bytes32 investor ID
-	 */
-	function _getID(address _addr, bytes32 _id) internal returns (bytes32) {
-		uint8 _key;
-		(_id, _key) = _getIDView(_addr, _id);
-		if (_addr != 0 && idMap[_addr].id == 0) {
-			idMap[_addr].id = _id;
-		}
-		if (accounts[_id].regKey != _key) {
-			accounts[_id].regKey = _key;
-		}
-		return _id;
+		return _getID(_addr, 0);
 	}
 
 	/**
@@ -494,56 +476,55 @@ contract IssuingEntity is Modular, MultiSig {
 		@param _id Investor ID
 		@return bytes32 investor ID, uint8 registrar index
 	 */
-	function _getIDView(
+	function _getID(
 		address _addr,
 		bytes32 _id
 	)
 		internal
-		view
-		returns (bytes32, uint8)
+		returns (bytes32)
 	{
+		Address storage _map = idMap[_addr];
 		if (_id == 0) {
-			_id = idMap[_addr].id;
+			_id = _map.id;
+		}
+		if (_addr == address(this) || authorityData[_id].addressCount > 0) {
+			return ownerID;
 		}
 		if (
-			authorityData[_id].addressCount > 0 ||
-			_addr == address(this)
+			(
+				accounts[_id].regKey > 0 &&
+				!registrars[accounts[_id].regKey].restricted
+			) || custodians[_id].addr != 0
 		) {
-			return (ownerID, 0);
+			// IF SOMETHING BREAKS, UNCOMMENT ME!
+			//if (_addr != 0 && _map.id == 0) {
+			//	_map.id = _id;
+			//}
+			return _id;
 		}
 		if (_id == 0) {
 			for (uint256 i = 1; i < registrars.length; i++) {
 				if (!registrars[i].restricted) {
 					_id = registrars[i].addr.getID(_addr);
 					if (_id != 0) {
-						return (_id, uint8(i));
+						_map.id = _id;
+						accounts[_id].regKey = uint8(i);
+						return _id;
 					}
 				}
 			}
-			revert("Address not registered");
-		}
-		if (custodians[_id].addr != 0) {
-			return (_id, 0);
-		}
-		if (
-			accounts[_id].regKey == 0 ||
-			registrars[accounts[_id].regKey].restricted
-		) {
+		} else {
 			for (i = 1; i < registrars.length; i++) {
 				if (registrars[i].restricted) continue;
-				if (
-					(_addr != 0 && _id == registrars[i].addr.getID(_addr)) ||
-					(_addr == 0 && registrars[i].addr.isRegistered(_id))
-				) {
-					return (_id, uint8(i));
-				}
+				if (_addr != 0) {
+					if (!registrars[i].addr.isRegistered(_id)) continue;
+				} else if (_id != registrars[i].addr.getID(_addr)) continue;
+				accounts[_id].regKey = uint8(i);
+				return _id;
 			}
-			if (registrars[accounts[_id].regKey].restricted) {
-				revert("Registrar restricted");
-			}
-			revert("Address not registered");
+			revert("Registrar restricted");
 		}
-		return (_id, accounts[_id].regKey);
+		revert("Address not registered");
 	}
 
 	/**
@@ -555,8 +536,8 @@ contract IssuingEntity is Modular, MultiSig {
 		@return permissions, ratings, and countries of investors
 	 */
 	function _getInvestors(
-		address[2] _addr,
 		bytes32[2] _id,
+		address[2] _addr,
 		uint8[2] _key
 	)
 		internal

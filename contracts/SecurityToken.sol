@@ -10,8 +10,6 @@ import "./TokenBase.sol";
  */
 contract SecurityToken is TokenBase {
 
-	using SafeMath for uint256;
-
 	mapping (address => uint256) balances;
 
 	/**
@@ -35,7 +33,9 @@ contract SecurityToken is TokenBase {
 			_symbol,
 			_authorizedSupply
 		)
-	{	}
+	{
+		return;
+	}
 
 	/**
 		@notice Fetch the current balance at an address

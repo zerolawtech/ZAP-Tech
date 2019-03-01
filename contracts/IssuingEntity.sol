@@ -452,6 +452,7 @@ contract IssuingEntity is Modular, MultiSig {
 		/* bytes4 signature for issuer module checkTransfer() */
 		_callModules(
 			0x47fca5df,
+			0x00,
 			abi.encode(_token, _authID, _id, _rating, _country, _value)
 		);
 	}
@@ -703,6 +704,7 @@ contract IssuingEntity is Modular, MultiSig {
 		/* bytes4 signature for issuer module transferTokens() */
 		_callModules(
 			0x0cfb54c9,
+			0x00,
 			abi.encode(msg.sender, _id, _rating, _country, _value)
 		);
 		
@@ -737,7 +739,7 @@ contract IssuingEntity is Modular, MultiSig {
 		_setBeneficialOwners(_custID, _id[1], true);
 
 		/* bytes4 signature for token module transferTokensCustodian() */
-		_callModules(0x3b59c439, abi.encode(
+		_callModules(0x3b59c439, 0x00, abi.encode(
 			msg.sender,
 			custodians[_custID].addr,
 			_id,
@@ -800,6 +802,7 @@ contract IssuingEntity is Modular, MultiSig {
 		/* bytes4 signature for token module tokenTotalSupplyChanged() */
 		_callModules(
 			0xb446f3ca,
+			0x00,
 			abi.encode(msg.sender, _id, _rating, _country, _old, _new)
 		);
 		return (_id, _rating, _country);

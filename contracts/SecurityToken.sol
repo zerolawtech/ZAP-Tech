@@ -242,7 +242,7 @@ contract SecurityToken is Modular {
 		}
 		require(balances[_addr[0]] >= _value, "Insufficient Balance");
 		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, abi.encode(
+		_callModules(0x70aaf928, 0x00, abi.encode(
 			_addr,
 			_authID,
 			_id,
@@ -371,6 +371,7 @@ contract SecurityToken is Modular {
 		/* bytes4 signature for token module transferTokens() */
 		_callModules(
 			0x35a341da,
+			0x00,
 			abi.encode(_addr, _id, _rating, _country, _value)
 		);
 		emit Transfer(_addr[0], _addr[1], _value);
@@ -421,6 +422,7 @@ contract SecurityToken is Modular {
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
 			0x6eaf832c,
+			0x00,
 			abi.encode(msg.sender, _id, _rating, _country, _value)
 		);
 		return true;
@@ -439,6 +441,7 @@ contract SecurityToken is Modular {
 		/* bytes4 signature for token module modifyAuthorizedSupply() */
 		_callModules(
 			0xb1a1a455,
+			0x00,
 			abi.encode(address(this), totalSupply, _value)
 		);
 		emit AuthorizedSupplyChanged(totalSupply, _value);
@@ -512,6 +515,7 @@ contract SecurityToken is Modular {
 		/* bytes4 signature for token module totalSupplyChanged() */
 		_callModules(
 			0x741b5078,
+			0x00,
 			abi.encode(_owner, _id, _rating, _country, _old, _new)
 		);
 		emit TotalSupplyChanged(_owner, _old, _new);

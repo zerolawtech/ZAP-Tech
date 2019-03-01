@@ -11,6 +11,8 @@ interface IBaseModule {
 		returns
 	(
 		bytes4[] hooks,
+		bool[] hooksActive,
+		bool[] hooksAlways,
 		bytes4[] permissions
 	);
 	function getOwner() external view returns (address);
@@ -25,6 +27,7 @@ interface ISTModule {
 		returns
 	(
 		bytes4[] hooks,
+		bool[2][] hookParams,
 		bytes4[] permissions
 	);
 	function getOwner() external view returns (address);
@@ -158,6 +161,7 @@ interface IIssuerModule {
 		returns
 	(
 		bytes4[] hooks,
+		bool[2][] hookParams,
 		bytes4[] permissions
 	);
 	function getOwner() external view returns (address);
@@ -220,6 +224,7 @@ interface ICustodianModule {
 		returns
 	(
 		bytes4[] hooks,
+		bool[2][] hookParams,
 		bytes4[] permissions
 	);
 	function getOwner() external view returns (address);

@@ -166,12 +166,11 @@ contract OwnedCustodian is Modular, MultiSig {
 			}
 		}
 		/* bytes4 signature for custodian module sentTokens() */
-		_callModules(0x31b45d35, abi.encode(
-			_token,
-			_id,
-			_value,
-			issuer.isOwner
-		));
+		_callModules(
+			0x31b45d35, 
+			0x00,
+			abi.encode(_token, _id, _value, issuer.isOwner)
+		);
 		emit SentTokens(issuerMap[_token], _token, _to, _value);
 		return true;
 	}
@@ -209,7 +208,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		}
 		i.balances[_token] = i.balances[_token].add(_value);
 		/* bytes4 signature for custodian module receivedTokens() */
-		_callModules(0xa0e7f751, abi.encode(_token, _id, _value));
+		_callModules(0xa0e7f751, 0x00, abi.encode(_token, _id, _value));
 		return true;
 	}
 
@@ -267,6 +266,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		/* bytes4 signature for custodian module internalTransfer() */
 		_callModules(
 			0x7054b724,
+			0x00,
 			abi.encode(_token, _fromID, _toID, _value, _stillOwner)
 		);
 		emit TransferOwnership(_token, _fromID, _toID, _value);
@@ -303,7 +303,7 @@ contract OwnedCustodian is Modular, MultiSig {
 			i.isOwner = false;
 			IssuingEntity(_issuer).releaseOwnership(ownerID, _id);
 			/* bytes4 signature of custodian module ownershipReleased() */
-			_callModules(0x054d1c76, abi.encode(_issuer, _id));
+			_callModules(0x054d1c76, 0x00, abi.encode(_issuer, _id));
 		}
 	}
 

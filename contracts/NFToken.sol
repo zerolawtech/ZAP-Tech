@@ -156,17 +156,32 @@ contract NFToken is TokenBase  {
 	 */
 	function checkTransferCustodian(
 		bytes32[2] _id,
-		bool _stillOwner
+		bool _stillOwner,
+		uint48[] _range
 	)
 		external
 		view
 		returns (bool)
 	{
-		(
+		_checkTransferCustodian(_id, _stillOwner, _range);
+		return true;
+	}
+
+	function _checkTransferCustodian(
+		bytes32[2] _id,
+		bool _stillOwner,
+		uint48[] memory _range
+	)
+		internal
+		view
+		returns (
 			bytes32 _custID,
 			uint8[2] memory _rating,
-			uint16[2] memory _country
-		) = issuer.checkTransferCustodian(
+			uint16[2] memory _country,
+			uint48[]
+		)
+	{
+		(_custID, _rating, _country) = issuer.checkTransferCustodian(
 			msg.sender,
 			address(this),
 			_id,
@@ -181,7 +196,18 @@ contract NFToken is TokenBase  {
 			_country,
 			0
 		));
-		return true;
+		
+		_range = _findTransferrableRanges(
+			_custID,
+			_id,
+			[address(0), address(0)],
+			_rating,
+			_country,
+			0,
+			_range,
+			false
+		);
+		return (_custID, _rating, _country, _range);
 	}
 
 	/**
@@ -235,13 +261,16 @@ contract NFToken is TokenBase  {
 			0x00,
 			abi.encode(_addr, _authID, _id, _rating, _country, _value)
 		);
+		_range = balances[_addr[0]].ranges;
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
 			_addr,
 			_rating,
 			_country,
-			_value
+			_value,
+			_range,
+			true
 		);
 		return (_authID, _id, _addr, _rating, _country, _range);
 	}
@@ -263,39 +292,42 @@ contract NFToken is TokenBase  {
 		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
-		uint256 _value
+		uint256 _value,
+		uint48[] _startRange,
+		bool _revert
 	)
 		internal
 		returns (uint48[] _range)
 	{
-		Balance storage b = balances[_addr[0]];
 		uint256 _count;
-		_range = new uint48[](b.ranges.length);
-		for (uint256 i; i < b.ranges.length; i++) {
-			if(!_checkTime(b.ranges[i])) continue;
+		_range = new uint48[](_startRange.length);
+		for (uint256 i; i < _startRange.length; i++) {
+			if(!_checkTime(_startRange[i])) continue;
 			/** hook point for NFToken.checkTransferRange() */
+			Range storage r = rangeMap[_startRange[i]];
 			if (_callModules(
 				0x5a5a8ad8,
-				rangeMap[b.ranges[i]].tag,
+				r.tag,
 				abi.encode(
 					_authID,
 					_id,
 					_addr,
 					_rating,
 					_country,
-					uint48[2]([b.ranges[i],r.stop])
+					uint48[2]([_startRange[i],r.stop])
 				)
 			)) {
-				Range storage r = rangeMap[b.ranges[i]];
-				_range[_count] = b.ranges[i];
-				
-				if (r.stop - _range[_count] >= _value) {
-					return _range;
+				_range[_count] = _startRange[i];
+				if (_revert) {
+					if (r.stop - _range[_count] >= _value) {
+						return _range;
+					}
+					_value -= (r.stop - _range[_count]);
+					_count++;
 				}
-				_value -= (r.stop - _range[_count]);
-				_count++;
 			}
 		}
+		if (!_revert) return _range;
 		revert("Insufficient transferable tokens");
 	}
 
@@ -583,8 +615,7 @@ contract NFToken is TokenBase  {
 		require(msg.sender == rangeMap[_pointer].owner);
 		require(_pointer <= _start);
 		require(_checkTime(_pointer));
-		
-		
+
 		_transferRangeInternal([msg.sender, _to], _pointer, [_start, _stop]);
 		return true;
 	}
@@ -949,6 +980,7 @@ contract NFToken is TokenBase  {
 	function transferCustodian(
 		bytes32[2] _id,
 		uint256 _value,
+		uint48[] _range,
 		bool _stillOwner
 	)
 		external
@@ -957,22 +989,9 @@ contract NFToken is TokenBase  {
 		(
 			bytes32 _custID,
 			uint8[2] memory _rating,
-			uint16[2] memory _country
-		) = issuer.checkTransferCustodian(
-			msg.sender,
-			address(this),
-			_id,
-			_stillOwner
-		);
-		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, 0x00, abi.encode(
-			[address(0), address(0)],
-			_custID,
-			_id,
-			_rating,
-			_country,
-			0
-		));
+			uint16[2] memory _country,
+			uint48[] memory _newRange
+		) = _checkTransferCustodian(_id, _stillOwner, _range);
 		require(issuer.transferCustodian(
 			_custID,
 			_id,

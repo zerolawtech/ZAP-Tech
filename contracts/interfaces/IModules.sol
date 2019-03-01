@@ -10,10 +10,10 @@ interface IBaseModule {
 		pure
 		returns
 	(
+		bytes4[] permissions,
 		bytes4[] hooks,
 		bool[] hooksActive,
-		bool[] hooksAlways,
-		bytes4[] permissions
+		bool[] hooksAlways
 	);
 	function getOwner() external view returns (address);
 	function name() external view returns (string);
@@ -21,18 +21,8 @@ interface IBaseModule {
 
 /** SecurityToken module interface */
 interface ISTModule {
-	function getPermissions()
-		external
-		pure
-		returns
-	(
-		bytes4[] hooks,
-		bool[2][] hookParams,
-		bytes4[] permissions
-	);
-	function getOwner() external view returns (address);
+	
 	function token() external returns (address);
-	function name() external view returns (string);
 	
 	/* 0x70aaf928 */
 	function checkTransfer(
@@ -93,6 +83,8 @@ interface ISTModule {
 
 /** NFToken module interface */
 interface INFTModule {
+
+	function token() external returns (address);
 
 	/* 0x70aaf928 */
 	function checkTransfer(
@@ -155,17 +147,6 @@ interface INFTModule {
 
 /** IssuingEntity module interface */
 interface IIssuerModule {
-	function getPermissions()
-		external
-		pure
-		returns
-	(
-		bytes4[] hooks,
-		bool[2][] hookParams,
-		bytes4[] permissions
-	);
-	function getOwner() external view returns (address);
-	function name() external view returns (string);
 
 	/* 0x47fca5df */
 	function checkTransfer(
@@ -218,17 +199,6 @@ interface IIssuerModule {
 
 /** Custodian module interface */
 interface ICustodianModule {
-	function getPermissions()
-		external
-		pure
-		returns
-	(
-		bytes4[] hooks,
-		bool[2][] hookParams,
-		bytes4[] permissions
-	);
-	function getOwner() external view returns (address);
-	function name() external view returns (string);
 
 	/**
 		@notice Custodian sent tokens

@@ -45,10 +45,10 @@ contract Modular {
 		/* hooks and permissions are only set the first time a module attaches */
 		if (!m.set) {
 			(
+				bytes4[] memory _permissions,
 				bytes4[] memory _hooks,
 				bool[] memory _hooksActive,
 				bool[] memory _hooksAlways,
-				bytes4[] memory _permissions
 			) = b.getPermissions();
 			for (uint256 i; i < _hooks.length; i++) {
 				m.hooks[_hooks[i]].permitted = true;

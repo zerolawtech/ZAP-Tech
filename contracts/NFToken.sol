@@ -146,6 +146,43 @@ contract NFToken is TokenBase  {
 		return true;
 	}
 
+	/**
+		@notice Check if custodian internal transfer is permitted
+		@dev If a transfer is not allowed, the function will throw
+		@dev Do not call directly, use Custodian.checkTransferInternal
+		@param _id Array of sender/receiver investor IDs
+		@param _stillOwner bool is sender still a beneficial owner?
+		@return bool success
+	 */
+	function checkTransferCustodian(
+		bytes32[2] _id,
+		bool _stillOwner
+	)
+		external
+		view
+		returns (bool)
+	{
+		(
+			bytes32 _custID,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.checkTransferCustodian(
+			msg.sender,
+			address(this),
+			_id,
+			_stillOwner
+		);
+		/* bytes4 signature for token module checkTransfer() */
+		_callModules(0x70aaf928, 0x00, abi.encode(
+			[address(0), address(0)],
+			_custID,
+			_id,
+			_rating,
+			_country,
+			0
+		));
+		return true;
+	}
 
 	/**
 		@notice internal check of transfer permission before performing it
@@ -899,6 +936,58 @@ contract NFToken is TokenBase  {
 			}
 			i += _increment;
 		}
+	}
+
+	/**
+		@notice Check custodian internal transfer permission and set ownership
+		@dev Called by Custodian.transferInternal
+		@param _id Array of sender/receiver investor IDs
+		@param _value Amount being transferred
+		@param _stillOwner bool is sender still a beneficial owner?
+		@return bool success
+	 */
+	function transferCustodian(
+		bytes32[2] _id,
+		uint256 _value,
+		bool _stillOwner
+	)
+		external
+		returns (bool)
+	{
+		(
+			bytes32 _custID,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.checkTransferCustodian(
+			msg.sender,
+			address(this),
+			_id,
+			_stillOwner
+		);
+		/* bytes4 signature for token module checkTransfer() */
+		_callModules(0x70aaf928, 0x00, abi.encode(
+			[address(0), address(0)],
+			_custID,
+			_id,
+			_rating,
+			_country,
+			0
+		));
+		require(issuer.transferCustodian(
+			_custID,
+			_id,
+			_rating,
+			_country,
+			_value,
+			_stillOwner
+		));
+		/* bytes4 signature for token module transferTokensCustodian() */
+		_callModules(
+			0x6eaf832c,
+			0x00,
+			abi.encode(msg.sender, _id, _rating, _country, _value)
+		);
+		return true;
 	}
 
 }

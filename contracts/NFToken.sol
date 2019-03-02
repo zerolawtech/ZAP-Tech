@@ -24,6 +24,8 @@ contract NFToken is TokenBase  {
 		uint48 stop;
 		uint32 time;
 		bytes2 tag;
+	//	address custodian;
+	// expand on this! record custodial ownership here, not in the custodian
 	}
 
 	event TransferRange(
@@ -141,8 +143,6 @@ contract NFToken is TokenBase  {
 		view
 		returns (bool)
 	{
-		require(_value > 0, "Cannot send 0 tokens");
-		require(uint48(_value) == _value);
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
@@ -154,8 +154,6 @@ contract NFToken is TokenBase  {
 			_to,
 			_value == balances[_from].balance
 		);
-		
-		/* Sending 0 balance is blocked to reduce logic around investor limits */
 		_checkToSend(_authID, _id, _rating, _country, [_from, _to], _value);
 		return true;
 	}
@@ -201,20 +199,18 @@ contract NFToken is TokenBase  {
 			_id,
 			_stillOwner
 		);
-		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, 0x00, abi.encode(
-			[address(0), address(0)],
-			_custID,
-			_id,
-			_rating,
-			_country,
-			0
-		));
 		
+		address[2] memory _empty;
+		/* bytes4 signature for token module checkTransfer() */
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_empty, _custID, _id, _rating, _country, 0)
+		);
 		_range = _findTransferrableRanges(
 			_custID,
 			_id,
-			[address(0), address(0)],
+			_empty,
 			_rating,
 			_country,
 			0,
@@ -226,7 +222,7 @@ contract NFToken is TokenBase  {
 
 	/**
 		@notice internal check of transfer permission before performing it
-		
+		// TODO
 		@return ID of caller
 		@return ID array of investors
 		@return address array of investors 
@@ -247,6 +243,7 @@ contract NFToken is TokenBase  {
 			uint48[] _range
 		)
 	{
+		/* Sending 0 balance is blocked to reduce logic around investor limits */
 		require(_value > 0, "Cannot send 0 tokens");
 		require(uint48(_value) == _value);
 
@@ -265,7 +262,6 @@ contract NFToken is TokenBase  {
 			0x00,
 			abi.encode(_addr, _authID, _id, _rating, _country, _value)
 		);
-		_range = balances[_addr[0]].ranges;
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
@@ -273,13 +269,12 @@ contract NFToken is TokenBase  {
 			_rating,
 			_country,
 			_value,
-			_range,
+			balances[_addr[0]].ranges,
 			true
 		);
 		return (_addr, _range);
 	}
 
-	
 	/**
 		@notice Find ranges that are permitted to transfer
 		@param _authID ID of calling authority
@@ -298,7 +293,7 @@ contract NFToken is TokenBase  {
 		uint16[2] _country,
 		uint256 _value,
 		uint48[] _startRange,
-		bool _revert
+		bool _revert // this idea might not be necessary anymore
 	)
 		internal
 		returns (uint48[] _range)
@@ -309,18 +304,14 @@ contract NFToken is TokenBase  {
 			if(!_checkTime(_startRange[i])) continue;
 			/** hook point for NFToken.checkTransferRange() */
 			Range storage r = rangeMap[_startRange[i]];
-			if (_callModules(
-				0x5a5a8ad8,
-				r.tag,
-				abi.encode(
-					_authID,
-					_id,
-					_addr,
-					_rating,
-					_country,
-					uint48[2]([_startRange[i],r.stop])
-				)
-			)) {
+			if (_callModules(0x5a5a8ad8, r.tag, abi.encode(
+				_authID,
+				_id,
+				_addr,
+				_rating,
+				_country,
+				uint48[2]([_startRange[i],r.stop])
+			))) {
 				_range[_count] = _startRange[i];
 				if (_revert) {
 					if (r.stop - _range[_count] >= _value) {
@@ -358,13 +349,7 @@ contract NFToken is TokenBase  {
 		require(totalSupply + _value > totalSupply);
 		require(totalSupply + _value <= 2**48 - 2);
 		require(_time == 0 || _time > now);
-		require(_value > 0);
-		issuer.checkTransfer(
-			address(issuer),
-			address(issuer),
-			_owner,
-			false
-		);
+		issuer.checkTransfer(address(issuer), address(issuer), _owner, false);
 		uint48 _start = uint48(totalSupply + 1);
 		uint48 _stop = _start + _value;
 		if (_compareRanges(tokens[totalSupply], _owner, _time, _tag)) {
@@ -373,8 +358,7 @@ contract NFToken is TokenBase  {
 			rangeMap[_pointer].stop = _stop;
 		} else {
 			/* create new range */
-			_setRangePointers(_start, _stop, _start);
-			rangeMap[_start] = Range(_owner, _stop, _time, _tag);
+			_setRange(_start, _owner, _stop, _time, _tag);
 			balances[_owner].ranges.push(_start);
 		}
 		uint48 _old = balances[_owner].balance;
@@ -468,7 +452,6 @@ contract NFToken is TokenBase  {
 		emit RangeSet(_tag, _pointer, rangeMap[_pointer].stop, _time);
 		return true;
 	}
-
 
 	/**
 		@notice Modifies one or more many ranges
@@ -578,11 +561,10 @@ contract NFToken is TokenBase  {
 	)
 		internal
 	{
-		require(_value > 0, "Cannot send 0 tokens");
-		uint48 _v = uint48(_value);
-		require(_v == _value);
-		bool[2] memory _zero = [balances[_addr[0]].balance == _value, balances[_addr[1]].balance == 0];
-		
+		bool[2] memory _zero = [
+			balances[_addr[0]].balance == _value,
+			balances[_addr[1]].balance == 0
+		];
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
@@ -591,7 +573,7 @@ contract NFToken is TokenBase  {
 		) = issuer.transferTokens(_auth, _addr[0], _addr[1], _zero);
 
 		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
-			/*
+			/**
 				If the call was not made by the issuer or the sender and involves
 				a change in ownership, subtract from the allowed mapping.
 			*/
@@ -599,20 +581,20 @@ contract NFToken is TokenBase  {
 			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
 		}
 
+		uint48 _smallVal = uint48(_value);
 		uint48[] memory _range;
 		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
-		
-		
-		require(_v <= balances[_addr[0]].balance);
-		balances[_addr[0]].balance -= _v;
-		balances[_addr[1]].balance += _v;
-		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _v);
+
+		require(_smallVal <= balances[_addr[0]].balance);
+		balances[_addr[0]].balance -= _smallVal;
+		balances[_addr[1]].balance += _smallVal;
+		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal);
 	}
 
 	/**
 		@notice Internal transfer function
 		@dev common logic for transfer(), transferFrom() and transferRange()
-		
+		// TODO
 		@param _addr Array of sender/receiver addresses
 		@param _country Array of sender/receiver countries
 		@param _range Array of range pointers to transfer
@@ -680,7 +662,7 @@ contract NFToken is TokenBase  {
 
 		address[2] memory _addr = [msg.sender, _to];
 		uint48[2] memory _range = [_start, _stop];
-	
+
 		uint48 _value = _stop - _start;
 		bool[2] memory _zero = [
 			balances[msg.sender].balance == _value,
@@ -718,17 +700,14 @@ contract NFToken is TokenBase  {
 				rangeMap[_pointer].tag,
 				abi.encode(_authID, _id, _addr, _rating, _country, _range)
 			));
-		
+
 		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1]);
-		/** hook point for NFToken.transferTokenRange() */
+		/* hook point for NFToken.transferTokenRange() */
 		_callModules(
 				0x979c114f,
 				rangeMap[_pointer].tag,
 				abi.encode(_id, _addr, _rating, _country, _range)
 			);
-		// uint48[] memory _newRange = new uint48[](1);
-		// _newRange[0] = _range[0];
-		// _transfer(_addr, _id, _rating, _country, _newRange, _value);
 	}
 
 	/**
@@ -752,33 +731,32 @@ contract NFToken is TokenBase  {
 		uint48 _prev = tokens[_start-1];
 		bytes2 _tag = rangeMap[_pointer].tag;
 		emit TransferRange(_from, _to, _start, _stop, _stop-_start);
-		
+
 		if (_pointer == _start) {
-			// touches both
+			/* touches both */
 			if (_rangeStop == _stop) {
 				_replaceInBalanceRange(_from, _start, 0);
 				bool _left = _compareRanges(_prev, _to, 0, _tag);
 				bool _right = _compareRanges(_stop, _to, 0, _tag);
-				// no join
+				/* no join */
 				if (!_left && !_right) {
 					_replaceInBalanceRange(_to, 0, _start);
 					rangeMap[_pointer].owner = _to;
 					return;
 				}
 				_setRangePointers(_pointer, _stop, 0);
-				// join left
+				/* join left */
 				if (!_right) {
 					delete rangeMap[_pointer];
 					rangeMap[_prev].stop = _stop;
 					_setRangePointers(_prev, _stop, _prev);
 					return;
 				}
-				// join right
+				/* join right */
 				if (!_left) {
 					_replaceInBalanceRange(_to, _stop, _start);
-					rangeMap[_pointer] = Range(_to, rangeMap[_stop].stop, 0, _tag);
-					_setRangePointers(_pointer, rangeMap[_stop].stop, _pointer);
-				// join both
+					_setRange(_pointer, _to, rangeMap[_stop].stop, 0, _tag);
+				/* join both */
 				} else {
 					_replaceInBalanceRange(_to, _stop, 0);
 					delete rangeMap[_pointer];
@@ -790,33 +768,31 @@ contract NFToken is TokenBase  {
 				return;
 			}
 
-			// touches left
+			/* touches left */
 			delete rangeMap[_pointer];
 			_setRangePointers(_start, _rangeStop, 0);
 			_replaceInBalanceRange(_from, _start, _stop);
-			
-			// same owner left
+
+			/* same owner left */
 			if (_compareRanges(_prev, _to, 0, _tag)) {
 				_setRangePointers(_prev, _start, 0);
 				_start = _prev;
 			} else {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
-			rangeMap[_start] = Range(_to, _stop, 0, _tag);
-			_setRangePointers(_start, _stop, _start);
-			rangeMap[_stop] = Range(_from, _rangeStop, 0, _tag);
-			_setRangePointers(_stop, _rangeStop, _stop);
+			_setRange(_start, _to, _stop, 0, _tag);
+			_setRange(_stop, _from, _rangeStop, 0, _tag);
 			return;
 		}
 
-		// shared logic - touches right and touches nothing
+		/* shared logic - touches right and touches nothing */
 		_setRangePointers(_pointer, _rangeStop, 0);
 		rangeMap[_pointer].stop = _start;
 		_setRangePointers(_pointer, _start, _pointer);
 
-		// touches right
+		/* touches right */
 		if (_rangeStop == _stop) {
-			// same owner right
+			/* same owner right */
 			if (_compareRanges(_stop, _to, 0, _tag)) {
 				_replaceInBalanceRange(_to, _stop, _start);
 				_setRangePointers(_stop, rangeMap[_stop].stop, 0);
@@ -826,19 +802,15 @@ contract NFToken is TokenBase  {
 			} else {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
-			rangeMap[_start] = Range(_to, _stop, 0, _tag);
-			_setRangePointers(_start, _stop, _start);
+			_setRange(_start, _to, _stop, 0, _tag);
 			return;
 		}
 
-		//touches nothing
+		/* touches nothing */
 		_replaceInBalanceRange(_to, 0, _start);
-		rangeMap[_start] = Range(_to, _stop, 0, _tag);
-		_setRangePointers(_start, _stop, _start);
-		
+		_setRange(_start, _to, _stop, 0, _tag);
 		_replaceInBalanceRange(_from, 0, _stop);
-		rangeMap[_stop] = Range(_from, _rangeStop, 0, _tag);
-		_setRangePointers(_stop, _rangeStop, _stop);
+		_setRange(_stop, _from, _rangeStop, 0, _tag);
 	}
 
 	/**
@@ -892,11 +864,31 @@ contract NFToken is TokenBase  {
 		Range storage r = rangeMap[_pointer];
 		uint48 _stop = r.stop;
 		r.stop = _split;
-		rangeMap[_split] = Range(r.owner, _stop, r.time, r.tag);
 		_replaceInBalanceRange(r.owner, 0, _split);
 		_setRangePointers(_pointer, _stop, 0);
 		_setRangePointers(_pointer, _split, _pointer);
-		_setRangePointers(_split, _stop, _split);
+		_setRange(_split, r.owner, _stop, r.time, r.tag);
+	}
+
+	/**
+		@notice sets a Range struct and associated pointers
+		@dev keeping this as a seperate method reduces gas costs from SSTORE
+	 */
+	function _setRange(
+		uint48 _pointer,
+		address _owner,
+		uint48 _stop,
+		uint32 _time,
+		bytes2 _tag
+	)
+		internal
+	{
+		Range storage r = rangeMap[_pointer];
+		r.owner = _owner;
+		r.stop = _stop;
+		r.time = _time;
+		r.tag = _tag;
+		_setRangePointers(_pointer, _stop, _pointer);
 	}
 
 	/**

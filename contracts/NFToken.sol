@@ -141,8 +141,22 @@ contract NFToken is TokenBase  {
 		view
 		returns (bool)
 	{
+		require(_value > 0, "Cannot send 0 tokens");
+		require(uint48(_value) == _value);
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.checkTransfer(
+			_from,
+			_from,
+			_to,
+			_value == balances[_from].balance
+		);
+		
 		/* Sending 0 balance is blocked to reduce logic around investor limits */
-		_checkToSend(_from, [_from, _to], _value);
+		_checkToSend(_authID, _id, _rating, _country, [_from, _to], _value);
 		return true;
 	}
 
@@ -212,9 +226,7 @@ contract NFToken is TokenBase  {
 
 	/**
 		@notice internal check of transfer permission before performing it
-		@param _auth Address calling to initiate the transfer
-		@param _addr Address of sender, recipient
-		@param _value Amount being transferred
+		
 		@return ID of caller
 		@return ID array of investors
 		@return address array of investors 
@@ -222,29 +234,21 @@ contract NFToken is TokenBase  {
 		@return uint16 array of investor countries
 	 */
 	function _checkToSend(
-		address _auth,
+		bytes32 _authID,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
 		address[2] _addr,
 		uint256 _value
 	)
 		internal
 		returns (
-			bytes32 _authID,
-			bytes32[2] _id,
 			address[2],
-			uint8[2] _rating,
-			uint16[2] _country,
 			uint48[] _range
 		)
 	{
 		require(_value > 0, "Cannot send 0 tokens");
 		require(uint48(_value) == _value);
-		(_authID, _id, _rating, _country) = issuer.checkTransfer(
-			_auth,
-			_addr[0],
-			_addr[1],
-			_value == balances[_addr[0]].balance,
-			_value
-		);
 
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
@@ -272,7 +276,7 @@ contract NFToken is TokenBase  {
 			_range,
 			true
 		);
-		return (_authID, _id, _addr, _rating, _country, _range);
+		return (_addr, _range);
 	}
 
 	
@@ -359,8 +363,7 @@ contract NFToken is TokenBase  {
 			address(issuer),
 			address(issuer),
 			_owner,
-			false,
-			_value
+			false
 		);
 		uint48 _start = uint48(totalSupply + 1);
 		uint48 _stop = _start + _value;
@@ -537,15 +540,7 @@ contract NFToken is TokenBase  {
 		@return bool success
 	 */
 	function transfer(address _to, uint256 _value) external returns (bool) {
-		(
-			bytes32 _authID,
-			bytes32[2] memory _id,
-			address[2] memory _addr,
-			uint8[2] memory _rating,
-			uint16[2] memory _country,
-			uint48[] memory _range
-		) = _checkToSend(msg.sender, [msg.sender, _to], _value);
-		_transfer(_id, _addr, _rating, _country, _range, uint48(_value));
+		_transferInternal(msg.sender, [msg.sender, _to], _value);
 		return true;
 	}
 
@@ -572,25 +567,48 @@ contract NFToken is TokenBase  {
 		} else {
 			_auth = msg.sender;
 		}
+		_transferInternal(msg.sender, [_from, _to], _value);
+
+		// if (_id[0] != _id[1] && _authID != ownerID && _authID != _id[0]) {
+		// 	/*
+		// 		If the call was not made by the issuer or the sender and involves
+		// 		a change in ownership, subtract from the allowed mapping.
+		// 	*/
+		// 	require(allowed[_from][_auth] >= _value, "Insufficient allowance");
+		// 	allowed[_from][_auth] = allowed[_from][_auth].sub(_value);
+		// }
+		// _transfer(msg.sender, _addr, _range, uint48(_value));
+		return true;
+	}
+
+	function _transferInternal(
+		address _auth,
+		address[2] _addr,
+		uint256 _value
+	)
+		internal
+	{
+		require(_value > 0, "Cannot send 0 tokens");
+		require(uint48(_value) == _value);
+		Balance storage _from = balances[_addr[0]];
+		Balance storage _to = balances[_addr[1]];
+		
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
-			address[2] memory _addr,
 			uint8[2] memory _rating,
-			uint16[2] memory _country,
-			uint48[] memory _range
-		) = _checkToSend(_auth, [_from, _to], _value);
+			uint16[2] memory _country
+		) = issuer.transferTokens(
+			_auth,
+			_addr[0],
+			_addr[1],
+			[_from.balance == _value, _to.balance == 0]
+		);
 
-		if (_id[0] != _id[1] && _authID != ownerID && _authID != _id[0]) {
-			/*
-				If the call was not made by the issuer or the sender and involves
-				a change in ownership, subtract from the allowed mapping.
-			*/
-			require(allowed[_from][_auth] >= _value, "Insufficient allowance");
-			allowed[_from][_auth] = allowed[_from][_auth].sub(_value);
-		}
-		_transfer(_id, _addr, _rating, _country, _range, uint48(_value));
-		return true;
+		uint48[] memory _range;
+		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
+		require(_value <= balances[_addr[0]].balance);
+		_transfer(_addr, _id, _rating, _country, _range, uint48(_value));
 	}
 
 	/**
@@ -644,8 +662,7 @@ contract NFToken is TokenBase  {
 			_addr[0],
 			_addr[0],
 			_addr[1],
-			_value == balances[msg.sender].balance,
-			_value
+			_value == balances[msg.sender].balance
 		);
 
 		/* Issuer tokens are held at the IssuingEntity contract address */
@@ -672,42 +689,32 @@ contract NFToken is TokenBase  {
 		
 		uint48[] memory _newRange = new uint48[](1);
 		_newRange[0] = _range[0];
-		_transfer(_id, _addr, _rating, _country, _newRange, _value);
+		_transfer(_addr, _id, _rating, _country, _newRange, _value);
 	}
 
 	/**
 		@notice Internal transfer function
 		@dev common logic for transfer(), transferFrom() and transferRange()
-		@param _id Array of sender/receiver IDs
+		
 		@param _addr Array of sender/receiver addresses
-		@param _rating Array of sender/receiver ratings
 		@param _country Array of sender/receiver countries
 		@param _range Array of range pointers to transfer
 		@param _value Amount to transfer
 	 */
 	function _transfer(
-		bytes32[2] memory _id,
-		address[2] memory _addr,
-		uint8[2] memory _rating,
-		uint16[2] memory _country,
-		uint48[] memory _range,
+		address[2] _addr,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint48[] _range,
 		uint48 _value
 	)
 		internal
 	{
 		Balance storage _from = balances[_addr[0]];
 		Balance storage _to = balances[_addr[1]];
-		require(_value <= _from.balance);
 		_from.balance -= _value;
 		_to.balance += _value;
-		
-		require(issuer.transferTokens(
-			_id,
-			_rating,
-			_country,
-			_value,
-			[_from.balance == 0, _to.balance == _value]
-		));
 
 		for (uint256 i; i < _range.length; i++) {
 			if (_range[i] == 0) continue;
@@ -992,14 +999,14 @@ contract NFToken is TokenBase  {
 			uint16[2] memory _country,
 			uint48[] memory _newRange
 		) = _checkTransferCustodian(_id, _stillOwner, _range);
-		require(issuer.transferCustodian(
-			_custID,
-			_id,
-			_rating,
-			_country,
-			_value,
-			_stillOwner
-		));
+		// require(issuer.transferCustodian(
+		// 	_custID,
+		// 	_id,
+		// 	_rating,
+		// 	_country,
+		// 	_value,
+		// 	_stillOwner
+		// ));
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
 			0x6eaf832c,

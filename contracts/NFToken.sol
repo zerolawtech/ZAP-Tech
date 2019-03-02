@@ -909,7 +909,7 @@ contract NFToken is TokenBase  {
 		_replaceInBalanceRange(r.owner, 0, _split);
 		_setRangePointers(_pointer, _stop, 0);
 		_setRangePointers(_pointer, _split, _pointer);
-		_setRangePointers(_split, _stop, _pointer);
+		_setRangePointers(_split, _stop, _split);
 	}
 
 	/**

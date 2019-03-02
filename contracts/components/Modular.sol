@@ -48,7 +48,7 @@ contract Modular {
 				bytes4[] memory _permissions,
 				bytes4[] memory _hooks,
 				bool[] memory _hooksActive,
-				bool[] memory _hooksAlways,
+				bool[] memory _hooksAlways
 			) = b.getPermissions();
 			for (uint256 i; i < _hooks.length; i++) {
 				m.hooks[_hooks[i]].permitted = true;

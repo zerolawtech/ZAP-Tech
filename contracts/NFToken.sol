@@ -653,16 +653,17 @@ contract NFToken is TokenBase  {
 		internal
 	{
 		uint48 _value = _range[1] - _range[0];
+		bool[2] memory _zero = [balances[_addr[0]].balance == _value, balances[_addr[1]].balance == 0];
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.checkTransfer(
+		) = issuer.transferTokens(
 			_addr[0],
 			_addr[0],
 			_addr[1],
-			_value == balances[msg.sender].balance
+			_zero
 		);
 
 		/* Issuer tokens are held at the IssuingEntity contract address */

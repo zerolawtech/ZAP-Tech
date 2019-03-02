@@ -281,7 +281,7 @@ contract SecurityToken is TokenBase {
 			bytes32 _custID,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.checkTransferCustodian(
+		) = issuer.transferCustodian(
 			msg.sender,
 			address(this),
 			_id,
@@ -295,13 +295,6 @@ contract SecurityToken is TokenBase {
 			_country,
 			0
 		);
-		require(issuer.transferCustodian(
-			_custID,
-			_id,
-			_rating,
-			_country,
-			_stillOwner
-		));
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
 			0x6eaf832c,

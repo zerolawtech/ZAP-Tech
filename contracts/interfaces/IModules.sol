@@ -148,40 +148,16 @@ interface INFTModule {
 /** IssuingEntity module interface */
 interface IIssuerModule {
 
-	/* 0x47fca5df */
+	/* 0x9a5150fc */
 	function checkTransfer(
 		address _token,
 		bytes32 _authID,
 		bytes32[2] _id,
 		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value
+		uint16[2] _country
 	)
 		external
 		view
-		returns (bool);
-
-	/* 0x0cfb54c9 */
-	function transferTokens(
-		address _token,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value
-	)
-		external
-		returns (bool);
-	
-	/* 0x3b59c439 */
-	function transferTokensCustodian(
-		address _token,
-		address _custodian,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value
-	)
-		external
 		returns (bool);
 
 	/* 0xb446f3ca */

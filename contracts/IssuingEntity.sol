@@ -302,7 +302,7 @@ contract IssuingEntity is Modular, MultiSig {
 		bytes32[2] _id,
 		bool _stillOwner
 	)
-		external
+		public
 		returns (
 			bytes32 _custID,
 			uint8[2] _rating,
@@ -447,7 +447,7 @@ contract IssuingEntity is Modular, MultiSig {
 		}
 		/* bytes4 signature for issuer module checkTransfer() */
 		_callModules(
-			0x47fca5df,
+			0x9a5150fc,
 			0x00,
 			abi.encode(_token, _authID, _id, _rating, _country)
 		);
@@ -686,36 +686,36 @@ contract IssuingEntity is Modular, MultiSig {
 	/**
 		@notice Registrer change of beneficial ownership in custodian
 		@dev only callable through Custodian.transferInternal
-		@param _custID Custodian ID
+		@param _cust Custodian contract
 		@param _id Array of sender/receiver IDs
-		@param _rating Array of sender/receiver ratings
-		@param _country Array of sender/receiver countries
 		@param _stillOwner Is sender still a beneficial owner?
 		@return bool success
 	 */
+	
 	function transferCustodian(
-		bytes32 _custID,
+		address _cust,
+		address _token,
 		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
 		bool _stillOwner
 	)
 		external
-		returns (bool)
+		returns (
+			bytes32 _custID,
+			uint8[2] _rating,
+			uint16[2] _country
+		)
 	{
 		_onlyToken();
+		(
+			_custID,
+			_rating,
+			_country
+		) = checkTransferCustodian(_cust, _token, _id, _stillOwner);
+
 		_setBeneficialOwners(_custID, _id[0], _stillOwner);
 		_setBeneficialOwners(_custID, _id[1], true);
 
-		/* bytes4 signature for token module transferTokensCustodian() */
-		_callModules(0x3b59c439, 0x00, abi.encode(
-			msg.sender,
-			custodians[_custID].addr,
-			_id,
-			_rating,
-			_country
-		));
-		return true;
+		return (_custID, _rating, _country);
 	}
 
 	/**

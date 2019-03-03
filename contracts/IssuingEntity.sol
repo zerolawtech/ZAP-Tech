@@ -579,31 +579,31 @@ contract IssuingEntity is Modular, MultiSig {
 		if (_id[0] == _id[1]) return;
 
 		/* custodian re-entrancy guard */
-		require (!mutex);
-		Account storage a = accounts[_id[0]];
+		// require (!mutex);
+		// Account storage a = accounts[_id[0]];
 
 		/*
 			If receiver is a custodian and sender is an investor, notify
 			the custodian contract.
 		*/
-		if (custodians[_id[1]].addr != 0) {
-			MiniCustodian c = MiniCustodian(custodians[_id[1]].addr);
-			mutex = true;
-			//require(custodians[_id[1]].addr.call(0x12345678, msg.sender, _id[0], _data));
-			//require(c.receiveTransfer(msg.sender, _id[0], _value));
-			if (_rating[0] > 0 && !a.custodians[_id[1]]) {
-				a.count = a.count.add(1);
-				a.custodians[_id[1]] = true;
-				emit BeneficialOwnerSet(address(c), _id[0], true);
-			}
-			mutex = false;
-		} else if (custodians[_id[0]].addr == 0) {
-			emit TransferOwnership(msg.sender, _id[0], _id[1], 0); // todo
-		}
+		// if (custodians[_id[1]].addr != 0) {
+		// 	MiniCustodian c = MiniCustodian(custodians[_id[1]].addr);
+		// 	mutex = true;
+		// 	//require(custodians[_id[1]].addr.call(0x12345678, msg.sender, _id[0], _data));
+		// 	//require(c.receiveTransfer(msg.sender, _id[0], _value));
+		// 	if (_rating[0] > 0 && !a.custodians[_id[1]]) {
+		// 		a.count = a.count.add(1);
+		// 		a.custodians[_id[1]] = true;
+		// 		emit BeneficialOwnerSet(address(c), _id[0], true);
+		// 	}
+		// 	mutex = false;
+		// } else if (custodians[_id[0]].addr == 0) {
+		
 
 		if (_rating[0] != 0) {
 			_setRating(_id[0], _rating[0], _country[0]);
 			if (_zero[0]) {
+				Account storage a = accounts[_id[0]];
 				a.count = a.count.sub(1);
 				/* If investor account balance was 0, increase investor counts */
 				if (a.count == 0) {
@@ -622,6 +622,7 @@ contract IssuingEntity is Modular, MultiSig {
 				}
 			}
 		}
+		emit TransferOwnership(msg.sender, _id[0], _id[1], 0); // todo
 		return (_authID, _id, _rating, _country);
 	}
 

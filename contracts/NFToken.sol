@@ -158,67 +158,67 @@ contract NFToken is TokenBase  {
 		return true;
 	}
 
-	/**
-		@notice Check if custodian internal transfer is permitted
-		@dev If a transfer is not allowed, the function will throw
-		@dev Do not call directly, use Custodian.checkTransferInternal
-		@param _id Array of sender/receiver investor IDs
-		@param _stillOwner bool is sender still a beneficial owner?
-		@return bool success
-	 */
-	function checkTransferCustodian(
-		bytes32[2] _id,
-		bool _stillOwner,
-		uint48[] _range
-	)
-		external
-		view
-		returns (bool)
-	{
-		_checkTransferCustodian(_id, _stillOwner, _range);
-		return true;
-	}
+	// /**
+	// 	@notice Check if custodian internal transfer is permitted
+	// 	@dev If a transfer is not allowed, the function will throw
+	// 	@dev Do not call directly, use Custodian.checkTransferInternal
+	// 	@param _id Array of sender/receiver investor IDs
+	// 	@param _stillOwner bool is sender still a beneficial owner?
+	// 	@return bool success
+	//  */
+	// function checkTransferCustodian(
+	// 	bytes32[2] _id,
+	// 	bool _stillOwner,
+	// 	uint48[] _range
+	// )
+	// 	external
+	// 	view
+	// 	returns (bool)
+	// {
+	// 	_checkTransferCustodian(_id, _stillOwner, _range);
+	// 	return true;
+	// }
 
-	function _checkTransferCustodian(
-		bytes32[2] _id,
-		bool _stillOwner,
-		uint48[] memory _range
-	)
-		internal
-		view
-		returns (
-			bytes32 _custID,
-			uint8[2] memory _rating,
-			uint16[2] memory _country,
-			uint48[]
-		)
-	{
-		(_custID, _rating, _country) = issuer.checkTransferCustodian(
-			msg.sender,
-			address(this),
-			_id,
-			_stillOwner
-		);
+	// function _checkTransferCustodian(
+	// 	bytes32[2] _id,
+	// 	bool _stillOwner,
+	// 	uint48[] memory _range
+	// )
+	// 	internal
+	// 	view
+	// 	returns (
+	// 		bytes32 _custID,
+	// 		uint8[2] memory _rating,
+	// 		uint16[2] memory _country,
+	// 		uint48[]
+	// 	)
+	// {
+	// 	(_custID, _rating, _country) = issuer.checkTransferCustodian(
+	// 		msg.sender,
+	// 		address(this),
+	// 		_id,
+	// 		_stillOwner
+	// 	);
 		
-		address[2] memory _empty;
-		/* bytes4 signature for token module checkTransfer() */
-		_callModules(
-			0x70aaf928,
-			0x00,
-			abi.encode(_empty, _custID, _id, _rating, _country, 0)
-		);
-		_range = _findTransferrableRanges(
-			_custID,
-			_id,
-			_empty,
-			_rating,
-			_country,
-			0,
-			_range,
-			false
-		);
-		return (_custID, _rating, _country, _range);
-	}
+	// 	address[2] memory _empty;
+	// 	/* bytes4 signature for token module checkTransfer() */
+	// 	_callModules(
+	// 		0x70aaf928,
+	// 		0x00,
+	// 		abi.encode(_empty, _custID, _id, _rating, _country, 0)
+	// 	);
+	// 	_range = _findTransferrableRanges(
+	// 		_custID,
+	// 		_id,
+	// 		_empty,
+	// 		_rating,
+	// 		_country,
+	// 		0,
+	// 		_range,
+	// 		false
+	// 	);
+	// 	return (_custID, _rating, _country, _range);
+	// }
 
 	/**
 		@notice internal check of transfer permission before performing it
@@ -956,44 +956,44 @@ contract NFToken is TokenBase  {
 		}
 	}
 
-	/**
-		@notice Check custodian internal transfer permission and set ownership
-		@dev Called by Custodian.transferInternal
-		@param _id Array of sender/receiver investor IDs
-		@param _value Amount being transferred
-		@param _stillOwner bool is sender still a beneficial owner?
-		@return bool success
-	 */
-	function transferCustodian(
-		bytes32[2] _id,
-		uint256 _value,
-		uint48[] _range,
-		bool _stillOwner
-	)
-		external
-		returns (bool)
-	{
-		(
-			bytes32 _custID,
-			uint8[2] memory _rating,
-			uint16[2] memory _country,
-			uint48[] memory _newRange
-		) = _checkTransferCustodian(_id, _stillOwner, _range);
-		// require(issuer.transferCustodian(
-		// 	_custID,
-		// 	_id,
-		// 	_rating,
-		// 	_country,
-		// 	_value,
-		// 	_stillOwner
-		// ));
-		/* bytes4 signature for token module transferTokensCustodian() */
-		_callModules(
-			0x6eaf832c,
-			0x00,
-			abi.encode(msg.sender, _id, _rating, _country, _value)
-		);
-		return true;
-	}
+	// /**
+	// 	@notice Check custodian internal transfer permission and set ownership
+	// 	@dev Called by Custodian.transferInternal
+	// 	@param _id Array of sender/receiver investor IDs
+	// 	@param _value Amount being transferred
+	// 	@param _stillOwner bool is sender still a beneficial owner?
+	// 	@return bool success
+	//  */
+	// function transferCustodian(
+	// 	bytes32[2] _id,
+	// 	uint256 _value,
+	// 	uint48[] _range,
+	// 	bool _stillOwner
+	// )
+	// 	external
+	// 	returns (bool)
+	// {
+	// 	(
+	// 		bytes32 _custID,
+	// 		uint8[2] memory _rating,
+	// 		uint16[2] memory _country,
+	// 		uint48[] memory _newRange
+	// 	) = _checkTransferCustodian(_id, _stillOwner, _range);
+	// 	// require(issuer.transferCustodian(
+	// 	// 	_custID,
+	// 	// 	_id,
+	// 	// 	_rating,
+	// 	// 	_country,
+	// 	// 	_value,
+	// 	// 	_stillOwner
+	// 	// ));
+	// 	/* bytes4 signature for token module transferTokensCustodian() */
+	// 	_callModules(
+	// 		0x6eaf832c,
+	// 		0x00,
+	// 		abi.encode(msg.sender, _id, _rating, _country, _value)
+	// 	);
+	// 	return true;
+	// }
 
 }

@@ -47,6 +47,10 @@ contract SecurityToken is TokenBase {
 		return balances[_owner];
 	}
 
+	function custodianBalanceOf(address _cust, address _owner) external view returns (uint256) {
+		return custodianBalances[_owner][_cust];
+	}
+
 	/**
 		@notice View function to check if a transfer is permitted
 		@dev If a transfer is not allowed, the function will throw

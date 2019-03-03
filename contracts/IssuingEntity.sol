@@ -256,6 +256,9 @@ contract IssuingEntity is Modular, MultiSig {
 			[_addr, _to],
 			[accounts[idMap[_addr].id].regKey, accounts[_id[1]].regKey]
 		);
+		if (custodians[_id[0]].addr != 0) {
+			require(custodians[_id[1]].addr == 0, "Receiver is custodian");
+		}
 		Account storage a = accounts[_id[0]];
 		_checkTransfer(
 			msg.sender,
@@ -282,67 +285,6 @@ contract IssuingEntity is Modular, MultiSig {
 			a.signatures[_sig],
 			"Authority not permitted"
 		);
-	}
-
-	
-	/**
-		@notice Check if custodian internal transfer is possible
-		@dev Function not called directly - see Custodian.checkTransferInternal
-		@param _cust Address of custodian
-		@param _token Address of token being transferred
-		@param _id IDs of sender and receiver
-		@param _stillOwner Is sender still a beneficial owner after transfer?
-		@return bytes32 ID of custodian
-		@return uint8[] ratings of sender and receiver
-		@return uint16[] countries of sender and receiver
-	 */
-	function checkTransferCustodian(
-		address _cust,
-		address _token,
-		bytes32[2] _id,
-		bool _stillOwner
-	)
-		public
-		returns (
-			bytes32 _custID,
-			uint8[2] _rating,
-			uint16[2] _country
-		)
-	{
-		require(
-			custodians[idMap[_cust].id].addr == _cust,
-			"Custodian not registered"
-		);
-		require(custodians[_id[1]].addr == 0, "Receiver is custodian");
-		_getID(0, _id[0]);
-		_getID(0, _id[1]);
-		bool[2] memory _allowed;
-		(
-			_allowed,
-			_rating,
-			_country
-		) = _getInvestors(
-			_id,
-			[address(0), address(0)],
-			[accounts[_id[0]].regKey, accounts[_id[1]].regKey]
-		);
-		_setRating(_id[0], _rating[0], _country[0]);
-		_setRating(_id[1], _rating[1], _country[1]);
-		if (accounts[_id[0]].count > 0 && !_stillOwner) {
-			uint32 _count = accounts[_id[0]].count.sub(1);
-		} else {
-			_count = accounts[_id[0]].count;
-		}
-		_checkTransfer(
-			_token,
-			idMap[_cust].id,
-			_id,
-			_allowed,
-			_rating,
-			_country,
-			_count)
-		;
-		return (idMap[_cust].id, _rating, _country);
 	}
 
 	/**
@@ -681,41 +623,6 @@ contract IssuingEntity is Modular, MultiSig {
 			}
 		}
 		return (_authID, _id, _rating, _country);
-	}
-
-	/**
-		@notice Registrer change of beneficial ownership in custodian
-		@dev only callable through Custodian.transferInternal
-		@param _cust Custodian contract
-		@param _id Array of sender/receiver IDs
-		@param _stillOwner Is sender still a beneficial owner?
-		@return bool success
-	 */
-	
-	function transferCustodian(
-		address _cust,
-		address _token,
-		bytes32[2] _id,
-		bool _stillOwner
-	)
-		external
-		returns (
-			bytes32 _custID,
-			uint8[2] _rating,
-			uint16[2] _country
-		)
-	{
-		_onlyToken();
-		(
-			_custID,
-			_rating,
-			_country
-		) = checkTransferCustodian(_cust, _token, _id, _stillOwner);
-
-		_setBeneficialOwners(_custID, _id[0], _stillOwner);
-		_setBeneficialOwners(_custID, _id[1], true);
-
-		return (_custID, _rating, _country);
 	}
 
 	/**

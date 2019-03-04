@@ -267,7 +267,7 @@ contract IssuingEntity is Modular, MultiSig {
 			_allowed,
 			_rating,
 			_country,
-			_zero ? a.count.sub(1) : a.count
+			_zero ? a.count - 1 : a.count // allowed to underflow in case of issuer zero balance
 			);
 		return (_authID, _id, _rating, _country);
 	}	
@@ -562,7 +562,7 @@ contract IssuingEntity is Modular, MultiSig {
 		address _auth,
 		address _from,
 		address _to,
-		bool[2] _zero
+		bool[4] _zero
 	)
 		external
 		returns (
@@ -588,6 +588,15 @@ contract IssuingEntity is Modular, MultiSig {
 					_decrementCount(_rating[0], _country[0]);
 				}
 			}
+		} else if (_id[0] != ownerID && _id[1] != ownerID) {
+			if (_zero[2]) {
+				a = accounts[_id[1]];
+				a.count = a.count.sub(1);
+				/* If investor account balance was 0, increase investor counts */
+				if (a.count == 0) {
+					_decrementCount(_rating[1], _country[1]);
+				}
+			}
 		}
 		if (_rating[1] != 0) {
 			_setRating(_id[1], _rating[1], _country[1]);
@@ -597,6 +606,15 @@ contract IssuingEntity is Modular, MultiSig {
 				/* If investor account balance was 0, increase investor counts */
 				if (a.count == 1) {
 					_incrementCount(_rating[1], _country[1]);
+				}
+			}
+		} else if (_id[0] != ownerID && _id[1] != ownerID) {
+			if (_zero[3]) {
+				a = accounts[_id[0]];
+				a.count = a.count.add(1);
+				/* If investor account balance was 0, increase investor counts */
+				if (a.count == 1) {
+					_incrementCount(_rating[0], _country[0]);
 				}
 			}
 		}

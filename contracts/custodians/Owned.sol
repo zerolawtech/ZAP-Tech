@@ -75,7 +75,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		view
 		returns (bool)
 	{
-		return _token.checkTransfer(_from, _to, _value);
+		return _token.checkTransferCustodian(address(this), _from, _to, _value);
 	}
 
 	/**

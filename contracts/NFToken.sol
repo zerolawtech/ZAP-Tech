@@ -264,6 +264,13 @@ contract NFToken is TokenBase  {
 			0x00,
 			abi.encode(_addr, _authID, _id, _rating, _country, _value)
 		);
+		address _cust;
+		if (_rating[0] == 0 && _id[0] != ownerID) {
+			_cust = _addr[0];
+			_range = balances[_addr[1]].ranges;
+		} else {
+			_range = balances[_addr[0]].ranges;
+		} 
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
@@ -271,7 +278,8 @@ contract NFToken is TokenBase  {
 			_rating,
 			_country,
 			_value,
-			balances[_addr[0]].ranges
+			_cust,
+			_range
 		);
 		return (_addr, _range);
 	}
@@ -293,6 +301,7 @@ contract NFToken is TokenBase  {
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint256 _value,
+		address _cust,
 		uint48[] _startRange
 	)
 		internal
@@ -304,6 +313,7 @@ contract NFToken is TokenBase  {
 			if(!_checkTime(_startRange[i])) continue;
 			/** hook point for NFToken.checkTransferRange() */
 			Range storage r = rangeMap[_startRange[i]];
+			if (r.custodian !=_cust) continue;
 			if (_callModules(0x5a5a8ad8, r.tag, abi.encode(
 				_authID,
 				_id,
@@ -349,13 +359,13 @@ contract NFToken is TokenBase  {
 		issuer.checkTransfer(address(issuer), address(issuer), _owner, false);
 		uint48 _start = uint48(totalSupply + 1);
 		uint48 _stop = _start + _value;
-		if (_compareRanges(tokens[totalSupply], _owner, _time, _tag)) {
+		if (_compareRanges(tokens[totalSupply], _owner, _time, _tag, 0x00)) {
 			/* merge with previous range */
 			uint48 _pointer = tokens[totalSupply];
 			rangeMap[_pointer].stop = _stop;
 		} else {
 			/* create new range */
-			_setRange(_start, _owner, _stop, _time, _tag);
+			_setRange(_start, _owner, _stop, _time, _tag, 0x00);
 			balances[_owner].ranges.push(_start);
 		}
 		uint48 _old = balances[_owner].balance;
@@ -412,17 +422,19 @@ contract NFToken is TokenBase  {
 	function modifyRange(
 		uint48 _pointer,
 		uint32 _time,
-		bytes2 _tag
+		bytes2 _tag,
+		address _custodian
 	)
 		public
 		returns (bool)
 	{
+		// todo - how much crossover is there between modifyRange, modifyRanges, and transferSingleRange?
 		_checkBounds(_pointer);
 		require(tokens[_pointer] == _pointer);
 		Range storage r = rangeMap[_pointer];
 		require(r.owner != 0x00);
 		require(_time == 0 || _time > now);
-		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag)) {
+		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag, _custodian)) {
 			/* merge with previous range */
 			uint48 _prev = tokens[_pointer-1];
 			_setRangePointers(_prev, _pointer, 0);
@@ -434,7 +446,7 @@ contract NFToken is TokenBase  {
 			r = rangeMap[_prev];
 			_pointer = _prev;
 		}
-		if (_compareRanges(r.stop, r.owner, _time, _tag)) {
+		if (_compareRanges(r.stop, r.owner, _time, _tag, _custodian)) {
 			/* merge with next range */
 			uint48 _next = rangeMap[r.stop].stop;
 			_setRangePointers(r.stop, _next, 0);
@@ -446,6 +458,7 @@ contract NFToken is TokenBase  {
 		}
 		rangeMap[_pointer].time = _time;
 		rangeMap[_pointer].tag = _tag;
+		rangeMap[_pointer].custodian = _custodian;
 		emit RangeSet(_tag, _pointer, rangeMap[_pointer].stop, _time);
 		return true;
 	}
@@ -580,6 +593,8 @@ contract NFToken is TokenBase  {
 		uint48[] memory _range;
 		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
 
+		// todo - if into or out of custodian, use modify range instead of transfer
+
 		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
 			/**
 				If the call was not made by the issuer or the sender and involves
@@ -592,7 +607,45 @@ contract NFToken is TokenBase  {
 		require(_smallVal <= balances[_addr[0]].balance);
 		balances[_addr[0]].balance -= _smallVal;
 		balances[_addr[1]].balance += _smallVal;
-		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal);
+		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, 0x00); //todo
+	}
+
+	function transferCustodian(
+		address _from,
+		address _to,
+		uint256 _value
+	)
+		external
+		returns (bool)
+	{
+		
+		bool[4] memory _zero = [
+			custBalances[_from][msg.sender] == _value,
+			custBalances[_to][msg.sender] == 0,
+			false,
+			false
+		];
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.transferTokens(msg.sender, _from, _to, _zero);
+
+		uint48 _smallVal = uint48(_value);
+		uint48[] memory _range;
+		address[2] memory _addr;
+		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, [_from, _to], _value);
+		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
+		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
+		/* bytes4 signature for token module transferTokensCustodian() */
+		_callModules(
+			0x6eaf832c, // TODO!
+			0x00,
+			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
+		);
+		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, msg.sender);
+		return true;
 	}
 
 	/**
@@ -610,7 +663,8 @@ contract NFToken is TokenBase  {
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint48[] _range,
-		uint48 _value
+		uint48 _value,
+		address _custodian
 	)
 		internal
 	{
@@ -626,7 +680,7 @@ contract NFToken is TokenBase  {
 			else {
 				_value -= _amount;
 			}
-			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop);
+			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop, _custodian);
 			/** hook point for NFToken.transferTokenRange() */
 			_callModules(
 				0x979c114f,
@@ -707,7 +761,7 @@ contract NFToken is TokenBase  {
 				abi.encode(_authID, _id, _addr, _rating, _country, _range)
 			));
 
-		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1]);
+		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], 0x00); // todo
 		/* hook point for NFToken.transferTokenRange() */
 		_callModules(
 				0x979c114f,
@@ -729,7 +783,8 @@ contract NFToken is TokenBase  {
 		address _from,
 		address _to,
 		uint48 _start,
-		uint48 _stop
+		uint48 _stop,
+		address _custodian
 	)
 		internal
 	{
@@ -742,8 +797,8 @@ contract NFToken is TokenBase  {
 			/* touches both */
 			if (_rangeStop == _stop) {
 				_replaceInBalanceRange(_from, _start, 0);
-				bool _left = _compareRanges(_prev, _to, 0, _tag);
-				bool _right = _compareRanges(_stop, _to, 0, _tag);
+				bool _left = _compareRanges(_prev, _to, 0, _tag, _custodian);
+				bool _right = _compareRanges(_stop, _to, 0, _tag, _custodian);
 				/* no join */
 				if (!_left && !_right) {
 					_replaceInBalanceRange(_to, 0, _start);
@@ -761,7 +816,7 @@ contract NFToken is TokenBase  {
 				/* join right */
 				if (!_left) {
 					_replaceInBalanceRange(_to, _stop, _start);
-					_setRange(_pointer, _to, rangeMap[_stop].stop, 0, _tag);
+					_setRange(_pointer, _to, rangeMap[_stop].stop, 0, _tag, _custodian);
 				/* join both */
 				} else {
 					_replaceInBalanceRange(_to, _stop, 0);
@@ -780,14 +835,14 @@ contract NFToken is TokenBase  {
 			_replaceInBalanceRange(_from, _start, _stop);
 
 			/* same owner left */
-			if (_compareRanges(_prev, _to, 0, _tag)) {
+			if (_compareRanges(_prev, _to, 0, _tag, _custodian)) {
 				_setRangePointers(_prev, _start, 0);
 				_start = _prev;
 			} else {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
-			_setRange(_start, _to, _stop, 0, _tag);
-			_setRange(_stop, _from, _rangeStop, 0, _tag);
+			_setRange(_start, _to, _stop, 0, _tag, _custodian);
+			_setRange(_stop, _from, _rangeStop, 0, _tag, _custodian);
 			return;
 		}
 
@@ -799,7 +854,7 @@ contract NFToken is TokenBase  {
 		/* touches right */
 		if (_rangeStop == _stop) {
 			/* same owner right */
-			if (_compareRanges(_stop, _to, 0, _tag)) {
+			if (_compareRanges(_stop, _to, 0, _tag, _custodian)) {
 				_replaceInBalanceRange(_to, _stop, _start);
 				_setRangePointers(_stop, rangeMap[_stop].stop, 0);
 				uint48 _next = rangeMap[_stop].stop;
@@ -808,15 +863,15 @@ contract NFToken is TokenBase  {
 			} else {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
-			_setRange(_start, _to, _stop, 0, _tag);
+			_setRange(_start, _to, _stop, 0, _tag, _custodian);
 			return;
 		}
 
 		/* touches nothing */
 		_replaceInBalanceRange(_to, 0, _start);
-		_setRange(_start, _to, _stop, 0, _tag);
+		_setRange(_start, _to, _stop, 0, _tag, _custodian);
 		_replaceInBalanceRange(_from, 0, _stop);
-		_setRange(_stop, _from, _rangeStop, 0, _tag);
+		_setRange(_stop, _from, _rangeStop, 0, _tag, _custodian);
 	}
 
 	/**
@@ -845,7 +900,8 @@ contract NFToken is TokenBase  {
 		uint48 _pointer,
 		address _owner,
 		uint32 _time,
-		bytes2 _tag
+		bytes2 _tag,
+		address _custodian
 	)
 		internal
 		returns (bool)
@@ -854,7 +910,12 @@ contract NFToken is TokenBase  {
 		if (r.time > 0 && r.time < now) {
 			r.time = 0;
 		}
-		return (r.owner == _owner && r.time == _time && r.tag == _tag);
+		return (
+			r.owner == _owner &&
+			r.time == _time &&
+			r.tag == _tag &&
+			r.custodian == _custodian
+		);
 	}
 
 	/**
@@ -873,7 +934,7 @@ contract NFToken is TokenBase  {
 		_replaceInBalanceRange(r.owner, 0, _split);
 		_setRangePointers(_pointer, _stop, 0);
 		_setRangePointers(_pointer, _split, _pointer);
-		_setRange(_split, r.owner, _stop, r.time, r.tag);
+		_setRange(_split, r.owner, _stop, r.time, r.tag, r.custodian);
 	}
 
 	/**
@@ -885,15 +946,17 @@ contract NFToken is TokenBase  {
 		address _owner,
 		uint48 _stop,
 		uint32 _time,
-		bytes2 _tag
+		bytes2 _tag,
+		address _custodian
 	)
 		internal
 	{
 		Range storage r = rangeMap[_pointer];
-		r.owner = _owner;
-		r.stop = _stop;
-		r.time = _time;
-		r.tag = _tag;
+		if (r.owner != _owner) r.owner = _owner;
+		if (r.stop != _stop) r.stop = _stop;
+		if (r.time != _time) r.time = _time;
+		if (r.tag != _tag) r.tag = _tag;
+		if (r.custodian != _custodian) r.custodian = _custodian;
 		_setRangePointers(_pointer, _stop, _pointer);
 	}
 

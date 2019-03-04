@@ -422,8 +422,7 @@ contract NFToken is TokenBase  {
 	function modifyRange(
 		uint48 _pointer,
 		uint32 _time,
-		bytes2 _tag,
-		address _custodian
+		bytes2 _tag
 	)
 		public
 		returns (bool)
@@ -434,7 +433,7 @@ contract NFToken is TokenBase  {
 		Range storage r = rangeMap[_pointer];
 		require(r.owner != 0x00);
 		require(_time == 0 || _time > now);
-		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag, _custodian)) {
+		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag, r.custodian)) {
 			/* merge with previous range */
 			uint48 _prev = tokens[_pointer-1];
 			_setRangePointers(_prev, _pointer, 0);
@@ -446,7 +445,7 @@ contract NFToken is TokenBase  {
 			r = rangeMap[_prev];
 			_pointer = _prev;
 		}
-		if (_compareRanges(r.stop, r.owner, _time, _tag, _custodian)) {
+		if (_compareRanges(r.stop, r.owner, _time, _tag, r.custodian)) {
 			/* merge with next range */
 			uint48 _next = rangeMap[r.stop].stop;
 			_setRangePointers(r.stop, _next, 0);
@@ -458,7 +457,6 @@ contract NFToken is TokenBase  {
 		}
 		rangeMap[_pointer].time = _time;
 		rangeMap[_pointer].tag = _tag;
-		rangeMap[_pointer].custodian = _custodian;
 		emit RangeSet(_tag, _pointer, rangeMap[_pointer].stop, _time);
 		return true;
 	}
@@ -619,9 +617,10 @@ contract NFToken is TokenBase  {
 		returns (bool)
 	{
 		
+		address[2] memory _addr = [_from, _to];
 		bool[4] memory _zero = [
-			custBalances[_from][msg.sender] == _value,
-			custBalances[_to][msg.sender] == 0,
+			custBalances[_addr[0]][msg.sender] == _value,
+			custBalances[_addr[1]][msg.sender] == 0,
 			false,
 			false
 		];
@@ -634,15 +633,14 @@ contract NFToken is TokenBase  {
 
 		uint48 _smallVal = uint48(_value);
 		uint48[] memory _range;
-		address[2] memory _addr;
-		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, [_from, _to], _value);
+		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
 		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
 			0x6eaf832c, // TODO!
 			0x00,
-			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
+			abi.encode(msg.sender, _addr, _id, _rating, _country, _smallVal)
 		);
 		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, msg.sender);
 		return true;

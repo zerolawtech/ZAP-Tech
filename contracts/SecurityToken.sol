@@ -1,7 +1,7 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "./TokenBase.sol";
-import "./interfaces/IBaseCustodian.sol";
+
 
 /**
 	@title Security Token
@@ -12,8 +12,6 @@ import "./interfaces/IBaseCustodian.sol";
 contract SecurityToken is TokenBase {
 
 	mapping (address => uint256) balances;
-	/* token holder, custodian contract */
-	mapping (address => mapping (address => uint256)) custBalances;
 
 	/**
 		@notice Security token constructor
@@ -47,23 +45,6 @@ contract SecurityToken is TokenBase {
 	 */
 	function balanceOf(address _owner) public view returns (uint256) {
 		return balances[_owner];
-	}
-
-	/**
-		@notice Fetch the current balance at an address within a given custodian
-		@param _owner Address of balance to query
-		@param _cust Custodian contract address
-		@return integer
-	 */
-	function custodianBalanceOf(
-		address _owner,
-		address _cust
-	)
-		external
-		view
-		returns (uint256)
-	{
-		return custBalances[_owner][_cust];
 	}
 
 	/**
@@ -189,9 +170,10 @@ contract SecurityToken is TokenBase {
 			_addr[1] = address(issuer);
 		}
 		if (_cust != 0x00) {
-			/*
+			/**
 				if transfer originates from custodian, check custodial balance
-				of receiver. Otherwise check custodial balance of sender */
+				of receiver. Otherwise check custodial balance of sender
+			*/
 			address _owner = (_addr[0] == _cust ? _addr[1] : _addr[0]);
 			require(
 				custBalances[_owner][_cust] >= _value,

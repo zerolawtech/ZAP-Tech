@@ -3,6 +3,8 @@ pragma solidity >=0.4.24 <0.5.0;
 import "./open-zeppelin/SafeMath.sol";
 import "./IssuingEntity.sol";
 import "./components/Modular.sol";
+import "./interfaces/IBaseCustodian.sol";
+
 
 /**
 	@title Security Token
@@ -23,6 +25,9 @@ contract TokenBase is Modular {
 	string public symbol;
 	uint256 public totalSupply;
 	uint256 public authorizedSupply;
+
+	/* token holder, custodian contract */
+	mapping (address => mapping (address => uint256)) custBalances;
 
 	mapping (address => mapping (address => uint256)) allowed;
 
@@ -80,6 +85,23 @@ contract TokenBase is Modular {
 	}
 
 	function balanceOf(address) public view returns (uint256);
+
+	/**
+		@notice Fetch the current balance at an address within a given custodian
+		@param _owner Address of balance to query
+		@param _cust Custodian contract address
+		@return integer
+	 */
+	function custodianBalanceOf(
+		address _owner,
+		address _cust
+	)
+		external
+		view
+		returns (uint256)
+	{
+		return custBalances[_owner][_cust];
+	}
 
 	/**
 		@notice Fetch the allowance

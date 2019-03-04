@@ -14,9 +14,6 @@ contract NFToken is TokenBase  {
 	mapping (uint48 => Range) rangeMap;
 	mapping (address => Balance) balances;
 
-	/* token holder, custodian contract */
-	mapping (address => mapping (address => uint256)) custBalances;
-
 	struct Balance {
 		uint48 balance;
 		uint48[] ranges;
@@ -247,7 +244,7 @@ contract NFToken is TokenBase  {
 	{
 		/* Sending 0 balance is blocked to reduce logic around investor limits */
 		require(_value > 0, "Cannot send 0 tokens");
-		require(uint48(_value) == _value);
+		require(uint48(_value) == _value, "Value too large");
 
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
@@ -266,6 +263,7 @@ contract NFToken is TokenBase  {
 		);
 		address _cust;
 		if (_rating[0] == 0 && _id[0] != ownerID) {
+			/* if sender is custodian, look at custodied ranges */
 			_cust = _addr[0];
 			_range = balances[_addr[1]].ranges;
 		} else {
@@ -600,18 +598,23 @@ contract NFToken is TokenBase  {
 			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
 		}
 
-		// todo - if into or out of custodian, use modify range instead of transfer
-		if (_rating[0] == 0 && _id[0] != ownerID) {
-			/* sender is custodian, reduce custodian balance */
-			// iterate through _range, call modifyBalance
-			// maybe make an internal modifyBalance?
-
-		}
-
+		address _cust;
 		require(_smallVal <= balances[_addr[0]].balance);
 		balances[_addr[0]].balance -= _smallVal;
 		balances[_addr[1]].balance += _smallVal;
-		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, 0x00); //todo
+		
+		if (_rating[0] == 0 && _id[0] != ownerID) {
+			/* sender is custodian, reduce custodian balance */
+			_addr[0] = _addr[1];
+			custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].sub(_value);
+		} else if (_rating[1] == 0 && _id[1] != ownerID) {
+			/* receiver is custodian, increase and notify */
+			_cust = _addr[1];
+			_addr[1] = _addr[0];
+			custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].add(_value);
+			require(IBaseCustodian(_cust).receiveTransfer(_addr[0], _value));
+		}
+		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, _cust);
 	}
 
 	// untested but this should handle internal custodian transfers just fine
@@ -1029,45 +1032,4 @@ contract NFToken is TokenBase  {
 			i += _increment;
 		}
 	}
-
-	// /**
-	// 	@notice Check custodian internal transfer permission and set ownership
-	// 	@dev Called by Custodian.transferInternal
-	// 	@param _id Array of sender/receiver investor IDs
-	// 	@param _value Amount being transferred
-	// 	@param _stillOwner bool is sender still a beneficial owner?
-	// 	@return bool success
-	//  */
-	// function transferCustodian(
-	// 	bytes32[2] _id,
-	// 	uint256 _value,
-	// 	uint48[] _range,
-	// 	bool _stillOwner
-	// )
-	// 	external
-	// 	returns (bool)
-	// {
-	// 	(
-	// 		bytes32 _custID,
-	// 		uint8[2] memory _rating,
-	// 		uint16[2] memory _country,
-	// 		uint48[] memory _newRange
-	// 	) = _checkTransferCustodian(_id, _stillOwner, _range);
-	// 	// require(issuer.transferCustodian(
-	// 	// 	_custID,
-	// 	// 	_id,
-	// 	// 	_rating,
-	// 	// 	_country,
-	// 	// 	_value,
-	// 	// 	_stillOwner
-	// 	// ));
-	// 	/* bytes4 signature for token module transferTokensCustodian() */
-	// 	_callModules(
-	// 		0x6eaf832c,
-	// 		0x00,
-	// 		abi.encode(msg.sender, _id, _rating, _country, _value)
-	// 	);
-	// 	return true;
-	// }
-
 }

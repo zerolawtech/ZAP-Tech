@@ -14,6 +14,9 @@ contract NFToken is TokenBase  {
 	mapping (uint48 => Range) rangeMap;
 	mapping (address => Balance) balances;
 
+	/* token holder, custodian contract */
+	mapping (address => mapping (address => uint256)) custBalances;
+
 	struct Balance {
 		uint48 balance;
 		uint48[] ranges;
@@ -24,8 +27,7 @@ contract NFToken is TokenBase  {
 		uint48 stop;
 		uint32 time;
 		bytes2 tag;
-	//	address custodian;
-	// expand on this! record custodial ownership here, not in the custodian
+		address custodian;
 	}
 
 	event TransferRange(
@@ -269,8 +271,7 @@ contract NFToken is TokenBase  {
 			_rating,
 			_country,
 			_value,
-			balances[_addr[0]].ranges,
-			true
+			balances[_addr[0]].ranges
 		);
 		return (_addr, _range);
 	}
@@ -292,8 +293,7 @@ contract NFToken is TokenBase  {
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint256 _value,
-		uint48[] _startRange,
-		bool _revert // this idea might not be necessary anymore
+		uint48[] _startRange
 	)
 		internal
 		returns (uint48[] _range)
@@ -313,16 +313,13 @@ contract NFToken is TokenBase  {
 				uint48[2]([_startRange[i],r.stop])
 			))) {
 				_range[_count] = _startRange[i];
-				if (_revert) {
-					if (r.stop - _range[_count] >= _value) {
-						return _range;
-					}
-					_value -= (r.stop - _range[_count]);
-					_count++;
+				if (r.stop - _range[_count] >= _value) {
+					return _range;
 				}
+				_value -= (r.stop - _range[_count]);
+				_count++;
 			}
 		}
-		if (!_revert) return _range;
 		revert("Insufficient transferable tokens");
 	}
 
@@ -561,16 +558,27 @@ contract NFToken is TokenBase  {
 	)
 		internal
 	{
-		bool[2] memory _zero = [
-			balances[_addr[0]].balance == _value,
-			balances[_addr[1]].balance == 0
+		bool[4] memory _zero = [
+		 	balances[_addr[0]].balance == _value,
+		 	balances[_addr[1]].balance == 0,
+			custBalances[_addr[1]][_addr[0]] == _value,
+			custBalances[_addr[0]][_addr[1]] == 0
 		];
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.transferTokens(_auth, _addr[0], _addr[1], _zero);
+		) = issuer.transferTokens(
+			_auth,
+			_addr[0],
+			_addr[1],
+			_zero
+		);
+
+		uint48 _smallVal = uint48(_value);
+		uint48[] memory _range;
+		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
 
 		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
 			/**
@@ -580,10 +588,6 @@ contract NFToken is TokenBase  {
 			require(allowed[_addr[0]][_auth] >= _value, "Insufficient allowance");
 			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
 		}
-
-		uint48 _smallVal = uint48(_value);
-		uint48[] memory _range;
-		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
 
 		require(_smallVal <= balances[_addr[0]].balance);
 		balances[_addr[0]].balance -= _smallVal;
@@ -664,9 +668,11 @@ contract NFToken is TokenBase  {
 		uint48[2] memory _range = [_start, _stop];
 
 		uint48 _value = _stop - _start;
-		bool[2] memory _zero = [
+		bool[4] memory _zero = [
 			balances[msg.sender].balance == _value,
-			balances[_addr[1]].balance == 0
+			balances[_addr[1]].balance == 0,
+			custBalances[_addr[1]][_addr[0]] == _value,
+			custBalances[_addr[0]][_addr[1]] == 0
 		];
 		(
 			bytes32 _authID,

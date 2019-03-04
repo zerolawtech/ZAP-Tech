@@ -1,6 +1,7 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "./TokenBase.sol";
+import "./interfaces/IBaseCustodian.sol";
 
 /**
 	@title Security Token
@@ -11,6 +12,7 @@ import "./TokenBase.sol";
 contract SecurityToken is TokenBase {
 
 	mapping (address => uint256) balances;
+	/* token holder, custodian contract */
 	mapping (address => mapping (address => uint256)) custodianBalances;
 
 	/**
@@ -47,7 +49,7 @@ contract SecurityToken is TokenBase {
 		return balances[_owner];
 	}
 
-	function custodianBalanceOf(address _cust, address _owner) external view returns (uint256) {
+	function custodianBalanceOf(address _owner, address _cust) external view returns (uint256) {
 		return custodianBalances[_owner][_cust];
 	}
 
@@ -87,7 +89,7 @@ contract SecurityToken is TokenBase {
 			_rating,
 			_country,
 			_value,
-			0x00
+			msg.sender
 		);
 		
 		return true;
@@ -228,13 +230,14 @@ contract SecurityToken is TokenBase {
 			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
 		}
 
-		if (_rating[0] > 0 && _id[0] != ownerID) {
-			custodianBalances[_addr[0]][_addr[1]] = custodianBalances[_addr[0]][_addr[1]].sub(_value);
+		if (_rating[0] == 0 && _id[0] != ownerID) {
+			custodianBalances[_addr[1]][_addr[0]] = custodianBalances[_addr[1]][_addr[0]].sub(_value);
 		} else {
 			balances[_addr[0]] = balances[_addr[0]].sub(_value);	
 		}
 		if (_rating[1] == 0 && _id[1] != ownerID) {
-			custodianBalances[_addr[1]][_addr[0]] = custodianBalances[_addr[1]][_addr[0]].add(_value);
+			custodianBalances[_addr[0]][_addr[1]] = custodianBalances[_addr[0]][_addr[1]].add(_value);
+			require(IBaseCustodian(_addr[1]).receiveTransfer(_addr[0], _value));
 		} else {
 			balances[_addr[1]] = balances[_addr[1]].add(_value);	
 		}

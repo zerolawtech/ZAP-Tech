@@ -3,7 +3,7 @@ pragma solidity >=0.4.24 <0.5.0;
 import "./open-zeppelin/SafeMath.sol";
 import "./KYCRegistrar.sol";
 import "./SecurityToken.sol";
-import "./interfaces/IMiniCustodian.sol";
+import "./interfaces/IBaseCustodian.sol";
 import "./components/Modular.sol";
 import "./components/MultiSig.sol";
 
@@ -578,28 +578,6 @@ contract IssuingEntity is Modular, MultiSig {
 		/* If no transfer of ownership, return true immediately */
 		if (_id[0] == _id[1]) return;
 
-		/* custodian re-entrancy guard */
-		// require (!mutex);
-		// Account storage a = accounts[_id[0]];
-
-		/*
-			If receiver is a custodian and sender is an investor, notify
-			the custodian contract.
-		*/
-		// if (custodians[_id[1]].addr != 0) {
-		// 	MiniCustodian c = MiniCustodian(custodians[_id[1]].addr);
-		// 	mutex = true;
-		// 	//require(custodians[_id[1]].addr.call(0x12345678, msg.sender, _id[0], _data));
-		// 	//require(c.receiveTransfer(msg.sender, _id[0], _value));
-		// 	if (_rating[0] > 0 && !a.custodians[_id[1]]) {
-		// 		a.count = a.count.add(1);
-		// 		a.custodians[_id[1]] = true;
-		// 		emit BeneficialOwnerSet(address(c), _id[0], true);
-		// 	}
-		// 	mutex = false;
-		// } else if (custodians[_id[0]].addr == 0) {
-		
-
 		if (_rating[0] != 0) {
 			_setRating(_id[0], _rating[0], _country[0]);
 			if (_zero[0]) {
@@ -806,7 +784,7 @@ contract IssuingEntity is Modular, MultiSig {
 	 */
 	function addCustodian(address _custodian) external returns (bool) {
 		if (!_checkMultiSig()) return false;
-		bytes32 _id = MiniCustodian(_custodian).ownerID();
+		bytes32 _id = IBaseCustodian(_custodian).ownerID();
 		idMap[_custodian].id = _id;
 		custodians[_id].addr = _custodian;
 		emit CustodianAdded(_custodian);
@@ -942,66 +920,6 @@ contract IssuingEntity is Modular, MultiSig {
 			SecurityToken(_target).detachModule(_module);
 		}
 		return true;
-	}
-
-	/**
-		@notice Remove an investor from a custodian's beneficial owners
-		@dev Only callable by a custodian or the issuer
-		@param _custID Custodian ID
-		@param _id investor ID
-		@return bool success
-	 */
-	function releaseOwnership(
-		bytes32 _custID,
-		bytes32 _id
-	)
-		external
-		returns (bool)
-	{
-		/* custodian re-entrancy guard */
-		require (!mutex);
-		if (custodians[_custID].addr != msg.sender) {
-			if (!_checkMultiSig()) return false;
-		}
-		_setBeneficialOwners(_custID, _id, false);
-		return true;
-	}
-
-	/**
-		@notice Add or remove an investor from a custodian's beneficial owners
-		@param _custID Custodian ID
-		@param _id investor ID
-		@param _add is investor a beneficial owner?
-	 */
-	function _setBeneficialOwners(
-		bytes32 _custID,
-		bytes32 _id,
-		bool _add
-	)
-		internal
-	{
-		if (_id == ownerID || custodians[_id].addr != 0) return;
-		Account storage a = accounts[_id];
-		if (a.custodians[_custID] == _add) return;
-		a.custodians[_custID] = _add;
-		emit BeneficialOwnerSet(msg.sender, _id, _add);
-		if (_add) {
-			a.count = a.count.add(1);
-			if (a.count == 1) {
-				_incrementCount(
-					a.rating,
-					registrars[a.regKey].addr.getCountry(_id)
-				);
-			}
-		} else {
-			a.count = a.count.sub(1);
-			if (a.count == 0) {
-				_decrementCount(
-					a.rating,
-					registrars[a.regKey].addr.getCountry(_id)
-				);
-			}
-		}
 	}
 
 }

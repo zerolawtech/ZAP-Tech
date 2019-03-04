@@ -591,8 +591,6 @@ contract NFToken is TokenBase  {
 		uint48[] memory _range;
 		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
 
-		// todo - if into or out of custodian, use modify range instead of transfer
-
 		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
 			/**
 				If the call was not made by the issuer or the sender and involves
@@ -602,12 +600,21 @@ contract NFToken is TokenBase  {
 			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
 		}
 
+		// todo - if into or out of custodian, use modify range instead of transfer
+		if (_rating[0] == 0 && _id[0] != ownerID) {
+			/* sender is custodian, reduce custodian balance */
+			// iterate through _range, call modifyBalance
+			// maybe make an internal modifyBalance?
+
+		}
+
 		require(_smallVal <= balances[_addr[0]].balance);
 		balances[_addr[0]].balance -= _smallVal;
 		balances[_addr[1]].balance += _smallVal;
 		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, 0x00); //todo
 	}
 
+	// untested but this should handle internal custodian transfers just fine
 	function transferCustodian(
 		address _from,
 		address _to,

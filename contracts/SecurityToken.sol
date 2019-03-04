@@ -339,6 +339,16 @@ contract SecurityToken is TokenBase {
 		emit Transfer(_addr[0], _addr[1], _value);
 	}
 
+	/**
+		@notice Custodian transfer function
+		@dev
+			called by Custodian.transferInternal to change ownership within
+			the custodian contract without moving any tokens
+		@param _from Sender address
+		@param _to Receipiant address
+		@param _value Amount to transfer
+		@return bool
+	 */
 	function transferCustodian(
 		address _from,
 		address _to,

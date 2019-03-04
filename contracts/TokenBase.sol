@@ -121,6 +121,74 @@ contract TokenBase is Modular {
 	}
 
 	/**
+		@notice Check if a transfer is permitted
+		@dev If a transfer is not allowed, the function will throw
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred
+		@return bool success
+	 */
+	function checkTransfer(
+		address _from,
+		address _to,
+		uint256 _value
+	)
+		external
+		view
+		returns (bool)
+	{
+
+		_checkTransferView(0x00, _from, _to, _value, _value == balanceOf(_from));
+		return true;
+	}
+
+	/**
+		@notice Check if a custodian internal transfer is permitted
+		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred
+		@return bool success
+	 */
+	function checkTransferCustodian(
+		address _cust,
+		address _from,
+		address _to,
+		uint256 _value
+	)
+		external
+		view
+		returns (bool)
+	{
+		_checkTransferView(
+			_cust,
+			_from,
+			_to,
+			_value,
+			_value == custBalances[_from][_cust]
+		);
+		return true;
+	}
+
+	/**
+		@notice shared logic for checkTransfer and checkTransferCustodian
+		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred,
+		@param _zero After transfer, does the sender have a 0 balance?
+	 */
+	function _checkTransferView(
+		address _cust,
+		address _from,
+		address _to,
+		uint256 _value,
+		bool _zero
+	) internal;
+
+	/**
 		@notice ERC-20 approve standard
 		@dev
 			Approval may be given to addresses that are not registered,

@@ -126,98 +126,39 @@ contract NFToken is TokenBase  {
 	}
 
 	/**
-		@notice View function to check if a transfer is permitted
+		@notice shared logic for checkTransfer and checkTransferCustodian
 		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
 		@param _from Address of sender
 		@param _to Address of recipient
-		@param _value Amount being transferred
-		@return bool success
+		@param _value Amount being transferred,
+		@param _zero After transfer, does the sender have a 0 balance?
 	 */
-	function checkTransfer(
+	function _checkTransferView(
+		address _cust,
 		address _from,
-		address _to, 
-		uint256 _value
+		address _to,
+		uint256 _value,
+		bool _zero
 	)
-		external
-		view
-		returns (bool)
+		internal
 	{
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.checkTransfer(
-			_from,
-			_from,
-			_to,
-			_value == balances[_from].balance
+		) = issuer.checkTransfer(_from, _from, _to, _zero);
+		_checkTransfer(
+			_authID,
+			_id,
+			_cust,
+			[_from, _to],
+			_rating,
+			_country,
+			_value
 		);
-		_checkToSend(_authID, _id, _rating, _country, [_from, _to], _value);
-		return true;
 	}
-
-	// /**
-	// 	@notice Check if custodian internal transfer is permitted
-	// 	@dev If a transfer is not allowed, the function will throw
-	// 	@dev Do not call directly, use Custodian.checkTransferInternal
-	// 	@param _id Array of sender/receiver investor IDs
-	// 	@param _stillOwner bool is sender still a beneficial owner?
-	// 	@return bool success
-	//  */
-	// function checkTransferCustodian(
-	// 	bytes32[2] _id,
-	// 	bool _stillOwner,
-	// 	uint48[] _range
-	// )
-	// 	external
-	// 	view
-	// 	returns (bool)
-	// {
-	// 	_checkTransferCustodian(_id, _stillOwner, _range);
-	// 	return true;
-	// }
-
-	// function _checkTransferCustodian(
-	// 	bytes32[2] _id,
-	// 	bool _stillOwner,
-	// 	uint48[] memory _range
-	// )
-	// 	internal
-	// 	view
-	// 	returns (
-	// 		bytes32 _custID,
-	// 		uint8[2] memory _rating,
-	// 		uint16[2] memory _country,
-	// 		uint48[]
-	// 	)
-	// {
-	// 	(_custID, _rating, _country) = issuer.checkTransferCustodian(
-	// 		msg.sender,
-	// 		address(this),
-	// 		_id,
-	// 		_stillOwner
-	// 	);
-		
-	// 	address[2] memory _empty;
-	// 	/* bytes4 signature for token module checkTransfer() */
-	// 	_callModules(
-	// 		0x70aaf928,
-	// 		0x00,
-	// 		abi.encode(_empty, _custID, _id, _rating, _country, 0)
-	// 	);
-	// 	_range = _findTransferrableRanges(
-	// 		_custID,
-	// 		_id,
-	// 		_empty,
-	// 		_rating,
-	// 		_country,
-	// 		0,
-	// 		_range,
-	// 		false
-	// 	);
-	// 	return (_custID, _rating, _country, _range);
-	// }
 
 	/**
 		@notice internal check of transfer permission before performing it
@@ -228,12 +169,13 @@ contract NFToken is TokenBase  {
 		@return uint8 array of investor ratings
 		@return uint16 array of investor countries
 	 */
-	function _checkToSend(
+	function _checkTransfer(
 		bytes32 _authID,
 		bytes32[2] _id,
+		address _cust,
+		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
-		address[2] _addr,
 		uint256 _value
 	)
 		internal
@@ -261,7 +203,6 @@ contract NFToken is TokenBase  {
 			0x00,
 			abi.encode(_addr, _authID, _id, _rating, _country, _value)
 		);
-		address _cust;
 		if (_rating[0] == 0 && _id[0] != ownerID) {
 			/* if sender is custodian, look at custodied ranges */
 			_cust = _addr[0];
@@ -523,7 +464,7 @@ contract NFToken is TokenBase  {
 
 	/**
 		@notice ERC-20 transfer standard
-		@dev calls to _checkToSend() to verify permission before transferring
+		@dev calls to _checkTransfer() to verify permission before transferring
 		@param _to Recipient
 		@param _value Amount being transferred
 		@return bool success
@@ -587,7 +528,7 @@ contract NFToken is TokenBase  {
 
 		uint48 _smallVal = uint48(_value);
 		uint48[] memory _range;
-		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
+		(_addr, _range) = _checkTransfer(_authID, _id, 0x00, _addr, _rating, _country, _value);
 
 		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
 			/**
@@ -619,15 +560,13 @@ contract NFToken is TokenBase  {
 
 	// untested but this should handle internal custodian transfers just fine
 	function transferCustodian(
-		address _from,
-		address _to,
+		address[2] _addr,
 		uint256 _value
 	)
-		external
+		public
 		returns (bool)
 	{
 		
-		address[2] memory _addr = [_from, _to];
 		bool[4] memory _zero = [
 			custBalances[_addr[0]][msg.sender] == _value,
 			custBalances[_addr[1]][msg.sender] == 0,
@@ -639,13 +578,15 @@ contract NFToken is TokenBase  {
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.transferTokens(msg.sender, _from, _to, _zero);
+		) = issuer.transferTokens(msg.sender, _addr[0], _addr[1], _zero);
 
-		uint48 _smallVal = uint48(_value);
+		
 		uint48[] memory _range;
-		(_addr, _range) = _checkToSend(_authID, _id, _rating, _country, _addr, _value);
+		(_addr, _range) = _checkTransfer(_authID, _id, 0x00, _addr, _rating, _country, _value);
+		
 		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
+		uint48 _smallVal = uint48(_value);
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
 			0x6eaf832c, // TODO!

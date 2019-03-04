@@ -48,58 +48,6 @@ contract SecurityToken is TokenBase {
 	}
 
 	/**
-		@notice Check if a transfer is permitted
-		@dev If a transfer is not allowed, the function will throw
-		@param _from Address of sender
-		@param _to Address of recipient
-		@param _value Amount being transferred
-		@return bool success
-	 */
-	function checkTransfer(
-		address _from,
-		address _to, 
-		uint256 _value
-	)
-		external
-		view
-		returns (bool)
-	{
-
-		_checkTransferView(0x00, _from, _to, _value, _value == balances[_from]);
-		return true;
-	}
-
-	
-	/**
-		@notice Check if a custodian internal transfer is permitted
-		@dev If a transfer is not allowed, the function will throw
-		@param _cust Address of custodian contract
-		@param _from Address of sender
-		@param _to Address of recipient
-		@param _value Amount being transferred
-		@return bool success
-	 */
-	function checkTransferCustodian(
-		address _cust,
-		address _from,
-		address _to, 
-		uint256 _value
-	)
-		external
-		view
-		returns (bool)
-	{
-		_checkTransferView(
-			_cust,
-			_from,
-			_to,
-			_value,
-			_value == custBalances[_from][_cust]
-		);
-		return true;
-	}
-
-	/**
 		@notice shared logic for checkTransfer and checkTransferCustodian
 		@dev If a transfer is not allowed, the function will throw
 		@param _cust Address of custodian contract
@@ -124,13 +72,13 @@ contract SecurityToken is TokenBase {
 			uint16[2] memory _country
 		) = issuer.checkTransfer(_from, _from, _to, _zero);
 		_checkTransfer(
-			[_from, _to],
 			_authID,
 			_id,
+			_cust,
+			[_from, _to],
 			_rating,
 			_country,
-			_value,
-			_cust
+			_value
 		);
 	}
 
@@ -149,13 +97,13 @@ contract SecurityToken is TokenBase {
 		@return array of investor addresses
 	 */
 	function _checkTransfer(
-		address[2] _addr,
 		bytes32 _authID,
 		bytes32[2] _id,
+		address _cust,
+		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
-		uint256 _value,
-		address _cust
+		uint256 _value
 	)
 		internal
 		view
@@ -275,14 +223,14 @@ contract SecurityToken is TokenBase {
 			]
 		);
 		_addr = _checkTransfer(
-			_addr,
 			_authID,
 			_id,
+			/** is sender a custodian? */
+			(_rating[0] == 0 && _id[0] != ownerID) ? _addr[0] : 0x00,
+			_addr,
 			_rating,
 			_country,
-			_value,
-			/** is sender a custodian? */
-			(_rating[0] == 0 && _id[0] != ownerID) ? _addr[0] : 0x00
+			_value
 		);
 
 		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
@@ -326,17 +274,15 @@ contract SecurityToken is TokenBase {
 		@dev
 			called by Custodian.transferInternal to change ownership within
 			the custodian contract without moving any tokens
-		@param _from Sender address
-		@param _to Receipiant address
+		@param _addr Sender/Receiver addresses
 		@param _value Amount to transfer
 		@return bool
 	 */
 	function transferCustodian(
-		address _from,
-		address _to,
+		address[2] _addr,
 		uint256 _value
 	)
-		external
+		public
 		returns (bool)
 	{
 		/*
@@ -344,8 +290,8 @@ contract SecurityToken is TokenBase {
 			zero[2:] can be set to false. set here to prevent stack depth error.
 		*/
 		bool[4] memory _zero = [
-			custBalances[_from][msg.sender] == _value,
-			custBalances[_to][msg.sender] == 0,
+			custBalances[_addr[0]][msg.sender] == _value,
+			custBalances[_addr[1]][msg.sender] == 0,
 			false,
 			false
 		];
@@ -354,16 +300,16 @@ contract SecurityToken is TokenBase {
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.transferTokens(msg.sender, _from, _to, _zero);
+		) = issuer.transferTokens(msg.sender, _addr[0], _addr[1], _zero);
 
-		address[2] memory _addr = _checkTransfer(
-			[_from, _to],
+		_addr = _checkTransfer(
 			_authID,
 			_id,
+			msg.sender,
+			_addr,
 			_rating,
 			_country,
-			_value,
-			msg.sender
+			_value
 		);
 		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);

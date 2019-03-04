@@ -158,7 +158,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		) {
 			return false;
 		}
-		_token.transferCustodian(_from, _to, _value);
+		_token.transferCustodian([_from, _to], _value);
 		/* bytes4 signature for custodian module internalTransfer() */
 		_callModules(
 			0x7054b724,

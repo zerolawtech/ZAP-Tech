@@ -30,7 +30,6 @@ contract IssuingEntity is Modular, MultiSig {
 		uint8 rating;
 		uint8 regKey;
 		bool restricted;
-		mapping (bytes32 => bool) custodians;
 	}
 
 	struct Token {
@@ -49,7 +48,6 @@ contract IssuingEntity is Modular, MultiSig {
 	}
 
 	bool locked;
-	bool mutex;
 	RegistrarContract[] registrars;
 	uint32[8] counts;
 	uint32[8] limits;
@@ -59,17 +57,6 @@ contract IssuingEntity is Modular, MultiSig {
 	mapping (address => Token) tokens;
 	mapping (string => bytes32) documentHashes;
 
-	event TransferOwnership(
-		address indexed token,
-		bytes32 indexed from,
-		bytes32 indexed to,
-		uint256 value
-	);
-	event BeneficialOwnerSet(
-		address indexed custodian,
-		bytes32 indexed id,
-		bool owned
-	);
 	event CountryModified(
 		uint16 indexed country,
 		bool allowed,
@@ -267,7 +254,8 @@ contract IssuingEntity is Modular, MultiSig {
 			_allowed,
 			_rating,
 			_country,
-			_zero ? a.count - 1 : a.count // allowed to underflow in case of issuer zero balance
+			/* must be allowed to underflow in case of issuer zero balance */
+			_zero ? a.count - 1 : a.count
 			);
 		return (_authID, _id, _rating, _country);
 	}	
@@ -499,7 +487,6 @@ contract IssuingEntity is Modular, MultiSig {
 		KYCRegistrar r = registrars[_key[0]].addr;
 		if (_key[0] == _key[1] && _key[0] != 0) {
 			if (_addr[0] != 0) {
-
 				(
 					_id,
 					_allowed,
@@ -553,9 +540,15 @@ contract IssuingEntity is Modular, MultiSig {
 	/**
 		@notice Transfer tokens through the issuing entity level
 		@dev only callable through SecurityToken
-		
-		@param _zero Array - Is sender balance now zero? Was receiver balance zero?
-		@return bool success
+		@param _auth Caller address
+		@param _from Sender address
+		@param _to Receiver address
+		@param _zero Array of zero balance booleans
+			Is sender balance now zero?
+			Was receiver balance zero?
+			Is sender custodial balance now zero?
+			Was receiver custodial balance zero?
+		@return authority ID, IDs/ratings/countries for sender/receiver
 	 */
 
 	function transferTokens(
@@ -578,26 +571,28 @@ contract IssuingEntity is Modular, MultiSig {
 		/* If no transfer of ownership, return true immediately */
 		if (_id[0] == _id[1]) return;
 
+		/* if sender is a normal investor */
 		if (_rating[0] != 0) {
 			_setRating(_id[0], _rating[0], _country[0]);
 			if (_zero[0]) {
 				Account storage a = accounts[_id[0]];
 				a.count = a.count.sub(1);
-				/* If investor account balance was 0, increase investor counts */
+				/* If investor account balance is now 0, lower investor counts */
 				if (a.count == 0) {
 					_decrementCount(_rating[0], _country[0]);
 				}
 			}
+		/* if receiver is not the issuer, and sender is a custodian */
 		} else if (_id[0] != ownerID && _id[1] != ownerID) {
 			if (_zero[2]) {
 				a = accounts[_id[1]];
 				a.count = a.count.sub(1);
-				/* If investor account balance was 0, increase investor counts */
 				if (a.count == 0) {
 					_decrementCount(_rating[1], _country[1]);
 				}
 			}
 		}
+		/* if receiver is a normal investor */
 		if (_rating[1] != 0) {
 			_setRating(_id[1], _rating[1], _country[1]);
 			if (_zero[1]) {
@@ -608,17 +603,16 @@ contract IssuingEntity is Modular, MultiSig {
 					_incrementCount(_rating[1], _country[1]);
 				}
 			}
+		/* if sender is not the issuer, and receiver is a custodian */
 		} else if (_id[0] != ownerID && _id[1] != ownerID) {
 			if (_zero[3]) {
 				a = accounts[_id[0]];
 				a.count = a.count.add(1);
-				/* If investor account balance was 0, increase investor counts */
 				if (a.count == 1) {
 					_incrementCount(_rating[0], _country[0]);
 				}
 			}
 		}
-		emit TransferOwnership(msg.sender, _id[0], _id[1], 0); // todo
 		return (_authID, _id, _rating, _country);
 	}
 
@@ -645,8 +639,6 @@ contract IssuingEntity is Modular, MultiSig {
 		_onlyToken();
 		if (_owner == address(this)) {
 			_id = ownerID;
-			_rating = 0;
-			_country = 0;
 		} else {
 			bool _allowed;
 			uint8 _key = accounts[idMap[_owner].id].regKey;

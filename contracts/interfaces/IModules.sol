@@ -48,9 +48,10 @@ interface ISTModule {
 		external
 		returns (bool);
 
-	/* 0x6eaf832c */
+	/* 0x8745b31c */
 	function transferTokensCustodian(
 		address _custodian,
+		address[2] _addr,
 		bytes32[2] _id,
 		uint8[2] _rating,
 		uint16[2] _country,

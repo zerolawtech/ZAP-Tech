@@ -49,12 +49,25 @@ contract SecurityToken is TokenBase {
 		return balances[_owner];
 	}
 
-	function custodianBalanceOf(address _owner, address _cust) external view returns (uint256) {
+	/**
+		@notice Fetch the current balance at an address within a given custodian
+		@param _owner Address of balance to query
+		@param _cust Custodian contract address
+		@return integer
+	 */
+	function custodianBalanceOf(
+		address _owner,
+		address _cust
+	)
+		external
+		view
+		returns (uint256)
+	{
 		return custBalances[_owner][_cust];
 	}
 
 	/**
-		@notice View function to check if a transfer is permitted
+		@notice Check if a transfer is permitted
 		@dev If a transfer is not allowed, the function will throw
 		@param _from Address of sender
 		@param _to Address of recipient
@@ -71,10 +84,20 @@ contract SecurityToken is TokenBase {
 		returns (bool)
 	{
 
-		_checkView(0x00, _from, _to, _value, _value == balances[_from]);
+		_checkTransferView(0x00, _from, _to, _value, _value == balances[_from]);
 		return true;
 	}
 
+	
+	/**
+		@notice Check if a custodian internal transfer is permitted
+		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred
+		@return bool success
+	 */
 	function checkTransferCustodian(
 		address _cust,
 		address _from,
@@ -85,11 +108,26 @@ contract SecurityToken is TokenBase {
 		view
 		returns (bool)
 	{
-		_checkView(_cust, _from, _to, _value, _value == custBalances[_from][_cust]);
+		_checkTransferView(
+			_cust,
+			_from,
+			_to,
+			_value,
+			_value == custBalances[_from][_cust]
+		);
 		return true;
 	}
 
-	function _checkView(
+	/**
+		@notice shared logic for checkTransfer and checkTransferCustodian
+		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred,
+		@param _zero After transfer, does the sender have a 0 balance?
+	 */
+	function _checkTransferView(
 		address _cust,
 		address _from,
 		address _to,
@@ -103,12 +141,7 @@ contract SecurityToken is TokenBase {
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.checkTransfer(
-			_from,
-			_from,
-			_to,
-			_zero
-		);
+		) = issuer.checkTransfer(_from, _from, _to, _zero);
 		_checkTransfer(
 			[_from, _to],
 			_authID,
@@ -122,13 +155,16 @@ contract SecurityToken is TokenBase {
 
 	/**
 		@notice internal check of transfer permission
-		@dev common logic for checkTransfer() and _checkToSend()
+		@dev
+			seperate from _checkTransferView so it can be called by transfer
+			related functions without the call to issuer.checkTransfer
 		@param _addr address array of investors 
 		@param _authID ID of caller
 		@param _id ID array of investor IDs
 		@param _rating array of investor ratings
 		@param _country array of investor countries
 		@param _value Amount being transferred
+		@param _cust Custodian address (0x00 if none)
 		@return array of investor addresses
 	 */
 	function _checkTransfer(
@@ -153,8 +189,12 @@ contract SecurityToken is TokenBase {
 			_addr[1] = address(issuer);
 		}
 		if (_cust != 0x00) {
+			/*
+				if transfer originates from custodian, check custodial balance
+				of receiver. Otherwise check custodial balance of sender */
+			address _owner = (_addr[0] == _cust ? _addr[1] : _addr[0]);
 			require(
-				custBalances[_addr[0] == _cust ? _addr[1] : _addr[0]][_cust] >= _value,
+				custBalances[_owner][_cust] >= _value,
 				"Insufficient Custodial Balance"
 			);
 		} else {
@@ -162,14 +202,11 @@ contract SecurityToken is TokenBase {
 		}
 
 		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, 0x00, abi.encode(
-			_addr,
-			_authID,
-			_id,
-			_rating,
-			_country,
-			_value
-		));
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
 		return _addr;
 	}
 
@@ -224,6 +261,8 @@ contract SecurityToken is TokenBase {
 	/**
 		@notice Internal transfer function
 		@dev common logic for transfer() and transferFrom()
+		@param _auth Address that called the method
+		@param _addr Array of receiver/sender address
 		@param _value Amount to transfer
 	 */
 	function _transfer(
@@ -242,7 +281,10 @@ contract SecurityToken is TokenBase {
 			_auth,
 			_addr[0],
 			_addr[1],
-			/* must send regular and custodial zero balance */
+			/*
+				Must send regular and custodial zero balances, as we do not
+				yet know which type of transfer this.
+			*/
 			[
 				balances[_addr[0]] == _value,
 				balances[_addr[1]] == 0,
@@ -257,7 +299,7 @@ contract SecurityToken is TokenBase {
 			_rating,
 			_country,
 			_value,
-			/* is from address a custodian? */
+			/** is sender a custodian? */
 			(_rating[0] == 0 && _id[0] != ownerID) ? _addr[0] : 0x00
 		);
 
@@ -270,6 +312,10 @@ contract SecurityToken is TokenBase {
 			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
 		}
 
+		/*
+			balances are modified regardless of if the transfer involves a
+			custodian, to keep sum of balance mapping == totalSupply
+		 */
 		balances[_addr[0]] = balances[_addr[0]].sub(_value);
 		balances[_addr[1]] = balances[_addr[1]].add(_value);
 
@@ -277,13 +323,13 @@ contract SecurityToken is TokenBase {
 			/* sender is custodian, reduce custodian balance */
 			custBalances[_addr[1]][_addr[0]] = custBalances[_addr[1]][_addr[0]].sub(_value);
 		}
-		
+
 		if (_rating[1] == 0 && _id[1] != ownerID) {
 			/* receiver is custodian, increase custodian balance and notify */
 			custBalances[_addr[0]][_addr[1]] = custBalances[_addr[0]][_addr[1]].add(_value);
 			require(IBaseCustodian(_addr[1]).receiveTransfer(_addr[0], _value));
 		}
-		
+
 		/* bytes4 signature for token module transferTokens() */
 		_callModules(
 			0x35a341da,
@@ -301,6 +347,10 @@ contract SecurityToken is TokenBase {
 		external
 		returns (bool)
 	{
+		/*
+			transfer is presented to issuer.transferTokens as a normal one so
+			zero[2:] can be set to false. set here to prevent stack depth error.
+		*/
 		bool[4] memory _zero = [
 			custBalances[_from][msg.sender] == _value,
 			custBalances[_to][msg.sender] == 0,
@@ -312,13 +362,17 @@ contract SecurityToken is TokenBase {
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.transferTokens(
-			msg.sender,
-			_from,
-			_to,
-			_zero
+		) = issuer.transferTokens(msg.sender, _from, _to, _zero);
+
+		address[2] memory _addr = _checkTransfer(
+			[_from, _to],
+			_authID,
+			_id,
+			_rating,
+			_country,
+			_value,
+			msg.sender
 		);
-		address[2] memory _addr = _checkTransfer([_from, _to], _authID, _id, _rating, _country, _value, msg.sender);
 		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
 		/* bytes4 signature for token module transferTokensCustodian() */

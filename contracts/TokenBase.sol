@@ -3,6 +3,8 @@ pragma solidity >=0.4.24 <0.5.0;
 import "./open-zeppelin/SafeMath.sol";
 import "./IssuingEntity.sol";
 import "./components/Modular.sol";
+import "./interfaces/IBaseCustodian.sol";
+
 
 /**
 	@title Security Token
@@ -23,6 +25,9 @@ contract TokenBase is Modular {
 	string public symbol;
 	uint256 public totalSupply;
 	uint256 public authorizedSupply;
+
+	/* token holder, custodian contract */
+	mapping (address => mapping (address => uint256)) custBalances;
 
 	mapping (address => mapping (address => uint256)) allowed;
 
@@ -82,6 +87,23 @@ contract TokenBase is Modular {
 	function balanceOf(address) public view returns (uint256);
 
 	/**
+		@notice Fetch the current balance at an address within a given custodian
+		@param _owner Address of balance to query
+		@param _cust Custodian contract address
+		@return integer
+	 */
+	function custodianBalanceOf(
+		address _owner,
+		address _cust
+	)
+		external
+		view
+		returns (uint256)
+	{
+		return custBalances[_owner][_cust];
+	}
+
+	/**
 		@notice Fetch the allowance
 		@param _owner Owner of the tokens
 		@param _spender Spender of the tokens
@@ -97,6 +119,74 @@ contract TokenBase is Modular {
 	{
 		return allowed[_owner][_spender];
 	}
+
+	/**
+		@notice Check if a transfer is permitted
+		@dev If a transfer is not allowed, the function will throw
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred
+		@return bool success
+	 */
+	function checkTransfer(
+		address _from,
+		address _to,
+		uint256 _value
+	)
+		external
+		view
+		returns (bool)
+	{
+
+		_checkTransferView(0x00, _from, _to, _value, _value == balanceOf(_from));
+		return true;
+	}
+
+	/**
+		@notice Check if a custodian internal transfer is permitted
+		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred
+		@return bool success
+	 */
+	function checkTransferCustodian(
+		address _cust,
+		address _from,
+		address _to,
+		uint256 _value
+	)
+		external
+		view
+		returns (bool)
+	{
+		_checkTransferView(
+			_cust,
+			_from,
+			_to,
+			_value,
+			_value == custBalances[_from][_cust]
+		);
+		return true;
+	}
+
+	/**
+		@notice shared logic for checkTransfer and checkTransferCustodian
+		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
+		@param _from Address of sender
+		@param _to Address of recipient
+		@param _value Amount being transferred,
+		@param _zero After transfer, does the sender have a 0 balance?
+	 */
+	function _checkTransferView(
+		address _cust,
+		address _from,
+		address _to,
+		uint256 _value,
+		bool _zero
+	) internal;
 
 	/**
 		@notice ERC-20 approve standard

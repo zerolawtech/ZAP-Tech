@@ -2,6 +2,7 @@ pragma solidity >=0.4.24 <0.5.0;
 
 import "./TokenBase.sol";
 
+
 /**
 	@title Security Token
 	@dev
@@ -47,122 +48,59 @@ contract SecurityToken is TokenBase {
 	}
 
 	/**
-		@notice View function to check if a transfer is permitted
+		@notice shared logic for checkTransfer and checkTransferCustodian
 		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
 		@param _from Address of sender
 		@param _to Address of recipient
-		@param _value Amount being transferred
-		@return bool success
+		@param _value Amount being transferred,
+		@param _zero After transfer, does the sender have a 0 balance?
 	 */
-	function checkTransfer(
+	function _checkTransferView(
+		address _cust,
 		address _from,
-		address _to, 
-		uint256 _value
-	)
-		external
-		view
-		returns (bool)
-	{
-		_checkToSend(_from, [_from, _to], _value);
-		return true;
-	}
-
-	/**
-		@notice Check if custodian internal transfer is permitted
-		@dev If a transfer is not allowed, the function will throw
-		@dev Do not call directly, use Custodian.checkTransferInternal
-		@param _id Array of sender/receiver investor IDs
-		@param _stillOwner bool is sender still a beneficial owner?
-		@return bool success
-	 */
-	function checkTransferCustodian(
-		bytes32[2] _id,
-		bool _stillOwner
-	)
-		external
-		view
-		returns (bool)
-	{
-		(
-			bytes32 _custID,
-			uint8[2] memory _rating,
-			uint16[2] memory _country
-		) = issuer.checkTransferCustodian(
-			msg.sender,
-			address(this),
-			_id,
-			_stillOwner
-		);
-		_checkTransfer(
-			[address(0), address(0)],
-			_custID,
-			_id,
-			_rating,
-			_country,
-			0
-		);
-		return true;
-	}
-
-	/**
-		@notice internal check of transfer permission before performing it
-		@param _auth Address calling to initiate the transfer
-		@param _addr Address of sender / recipient
-		@param _value Amount being transferred
-		@return ID of caller
-		@return ID array of investors
-		@return address array of investors 
-		@return uint8 array of investor ratings
-		@return uint16 array of investor countries
-	 */
-	function _checkToSend(
-		address _auth,
-		address[2] _addr,
-		uint256 _value
+		address _to,
+		uint256 _value,
+		bool _zero
 	)
 		internal
-		returns (
-			bytes32 _authID,
-			bytes32[2] _id,
-			address[2],
-			uint8[2] _rating,
-			uint16[2] _country
-		)
 	{
-		require(_value > 0, "Cannot send 0 tokens");
-		(_authID, _id, _rating, _country) = issuer.checkTransfer(
-			_auth,
-			_addr[0],
-			_addr[1],
-			_value == balances[_addr[0]],
-			_value
-		);
-		_addr = _checkTransfer(
-			_addr,
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.checkTransfer(_from, _from, _to, _zero);
+		_checkTransfer(
 			_authID,
 			_id,
+			_cust,
+			[_from, _to],
 			_rating,
 			_country,
 			_value
 		);
-		return(_authID, _id, _addr, _rating, _country);
 	}
 
 	/**
 		@notice internal check of transfer permission
-		@dev common logic for checkTransfer() and _checkToSend()
+		@dev
+			seperate from _checkTransferView so it can be called by transfer
+			related functions without the call to issuer.checkTransfer
 		@param _addr address array of investors 
 		@param _authID ID of caller
 		@param _id ID array of investor IDs
 		@param _rating array of investor ratings
 		@param _country array of investor countries
 		@param _value Amount being transferred
+		@param _cust Custodian address (0x00 if none)
 		@return array of investor addresses
 	 */
 	function _checkTransfer(
-		address[2] _addr,
 		bytes32 _authID,
 		bytes32[2] _id,
+		address _cust,
+		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint256 _value
@@ -171,6 +109,7 @@ contract SecurityToken is TokenBase {
 		view
 		returns (address[2])
 	{
+		require(_value > 0, "Cannot send 0 tokens");
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
 			_addr[0] = address(issuer);
@@ -178,16 +117,26 @@ contract SecurityToken is TokenBase {
 		if (_id[1] == ownerID) {
 			_addr[1] = address(issuer);
 		}
-		require(balances[_addr[0]] >= _value, "Insufficient Balance");
+		if (_cust != 0x00) {
+			/**
+				if transfer originates from custodian, check custodial balance
+				of receiver. Otherwise check custodial balance of sender
+			*/
+			address _owner = (_addr[0] == _cust ? _addr[1] : _addr[0]);
+			require(
+				custBalances[_owner][_cust] >= _value,
+				"Insufficient Custodial Balance"
+			);
+		} else {
+			require(balances[_addr[0]] >= _value, "Insufficient Balance");
+		}
+
 		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, 0x00, abi.encode(
-			_addr,
-			_authID,
-			_id,
-			_rating,
-			_country,
-			_value
-		));
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
 		return _addr;
 	}
 
@@ -199,14 +148,7 @@ contract SecurityToken is TokenBase {
 		@return bool success
 	 */
 	function transfer(address _to, uint256 _value) external returns (bool) {
-		(
-			bytes32 _authID,
-			bytes32[2] memory _id,
-			address[2] memory _addr,
-			uint8[2] memory _rating,
-			uint16[2] memory _country
-		) = _checkToSend(msg.sender, [msg.sender, _to], _value);
-		_transfer(_addr, _id, _rating, _country, _value);
+		_transfer(msg.sender, [msg.sender, _to], _value);
 		return true;
 	}
 
@@ -242,53 +184,82 @@ contract SecurityToken is TokenBase {
 		} else {
 			_auth = msg.sender;
 		}
-		(
-			bytes32 _authID,
-			bytes32[2] memory _id,
-			address[2] memory _addr,
-			uint8[2] memory _rating,
-			uint16[2] memory _country
-		) = _checkToSend(_auth, [_from, _to], _value);
-
-		if (_id[0] != _id[1] && _authID != ownerID && _authID != _id[0]) {
-			/*
-				If the call was not made by the issuer or the sender and involves
-				a change in ownership, subtract from the allowed mapping.
-			*/
-			require(allowed[_from][_auth] >= _value, "Insufficient allowance");
-			allowed[_from][_auth] = allowed[_from][_auth].sub(_value);
-		}
-		_transfer(_addr, _id, _rating, _country, _value);
+		_transfer(_auth, [_from, _to], _value);
 		return true;
 	}
 
 	/**
 		@notice Internal transfer function
 		@dev common logic for transfer() and transferFrom()
-		@param _addr Array of sender/receiver addresses
-		@param _id Array of sender/receiver IDs
-		@param _rating Array of sender/receiver ratings
-		@param _country Array of sender/receiver countries
+		@param _auth Address that called the method
+		@param _addr Array of receiver/sender address
 		@param _value Amount to transfer
 	 */
 	function _transfer(
+		address _auth,
 		address[2] _addr,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,		
 		uint256 _value
 	)
 		internal
 	{
-		balances[_addr[0]] = balances[_addr[0]].sub(_value);
-		balances[_addr[1]] = balances[_addr[1]].add(_value);
-		require(issuer.transferTokens(
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.transferTokens(
+			_auth,
+			_addr[0],
+			_addr[1],
+			/*
+				Must send regular and custodial zero balances, as we do not
+				yet know which type of transfer this.
+			*/
+			[
+				balances[_addr[0]] == _value,
+				balances[_addr[1]] == 0,
+				custBalances[_addr[1]][_addr[0]] == _value,
+				custBalances[_addr[0]][_addr[1]] == 0
+			]
+		);
+		_addr = _checkTransfer(
+			_authID,
 			_id,
+			/** is sender a custodian? */
+			(_rating[0] == 0 && _id[0] != ownerID) ? _addr[0] : 0x00,
+			_addr,
 			_rating,
 			_country,
-			_value,
-			[balances[_addr[0]] == 0, balances[_addr[1]] == _value]
-		));
+			_value
+		);
+
+		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
+			/*
+				If the call was not made by the issuer or the sender and involves
+				a change in ownership, subtract from the allowed mapping.
+			*/
+			require(allowed[_addr[0]][_auth] >= _value, "Insufficient allowance");
+			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
+		}
+
+		/*
+			balances are modified regardless of if the transfer involves a
+			custodian, to keep sum of balance mapping == totalSupply
+		 */
+		balances[_addr[0]] = balances[_addr[0]].sub(_value);
+		balances[_addr[1]] = balances[_addr[1]].add(_value);
+
+		if (_rating[0] == 0 && _id[0] != ownerID) {
+			/* sender is custodian, reduce custodian balance */
+			custBalances[_addr[1]][_addr[0]] = custBalances[_addr[1]][_addr[0]].sub(_value);
+		}
+
+		if (_rating[1] == 0 && _id[1] != ownerID) {
+			/* receiver is custodian, increase custodian balance and notify */
+			custBalances[_addr[0]][_addr[1]] = custBalances[_addr[0]][_addr[1]].add(_value);
+			require(IBaseCustodian(_addr[1]).receiveTransfer(_addr[0], _value));
+		}
+
 		/* bytes4 signature for token module transferTokens() */
 		_callModules(
 			0x35a341da,
@@ -299,54 +270,55 @@ contract SecurityToken is TokenBase {
 	}
 
 	/**
-		@notice Check custodian internal transfer permission and set ownership
-		@dev Called by Custodian.transferInternal
-		@param _id Array of sender/receiver investor IDs
-		@param _value Amount being transferred
-		@param _stillOwner bool is sender still a beneficial owner?
-		@return bool success
+		@notice Custodian transfer function
+		@dev
+			called by Custodian.transferInternal to change ownership within
+			the custodian contract without moving any tokens
+		@param _addr Sender/Receiver addresses
+		@param _value Amount to transfer
+		@return bool
 	 */
 	function transferCustodian(
-		bytes32[2] _id,
-		uint256 _value,
-		bool _stillOwner
+		address[2] _addr,
+		uint256 _value
 	)
-		external
+		public
 		returns (bool)
 	{
+		/*
+			transfer is presented to issuer.transferTokens as a normal one so
+			zero[2:] can be set to false. set here to prevent stack depth error.
+		*/
+		bool[4] memory _zero = [
+			custBalances[_addr[0]][msg.sender] == _value,
+			custBalances[_addr[1]][msg.sender] == 0,
+			false,
+			false
+		];
 		(
-			bytes32 _custID,
+			bytes32 _authID,
+			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.checkTransferCustodian(
+		) = issuer.transferTokens(msg.sender, _addr[0], _addr[1], _zero);
+
+		_addr = _checkTransfer(
+			_authID,
+			_id,
 			msg.sender,
-			address(this),
-			_id,
-			_stillOwner
-		);
-		_checkTransfer(
-			[address(0), address(0)],
-			_custID,
-			_id,
+			_addr,
 			_rating,
 			_country,
-			0
+			_value
 		);
-		require(issuer.transferCustodian(
-			_custID,
-			_id,
-			_rating,
-			_country,
-			_value,
-			_stillOwner
-		));
+		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
+		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
-			0x6eaf832c,
+			0x6eaf832c, // TODO!
 			0x00,
-			abi.encode(msg.sender, _id, _rating, _country, _value)
+			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
 		);
-		return true;
 	}
 
 	/**
@@ -364,8 +336,7 @@ contract SecurityToken is TokenBase {
 			address(issuer),
 			address(issuer),
 			_owner,
-			false,
-			_value
+			false
 		);
 		uint256 _old = balances[_owner];
 		balances[_owner] = _old.add(_value);

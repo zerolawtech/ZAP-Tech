@@ -2,7 +2,7 @@
     "network_defaults":{
         "name": "development",
         "persist": false,
-        "gas_limit": false,
+        "gas_limit": 6700000,
         "gas_price": false
     },
     "networks": {
@@ -27,7 +27,7 @@
     },
     "logging": {
         "test": {
-            "tx": 0,
+            "tx": [0,2],
             "exc": [1, 2]
 
         },

@@ -265,9 +265,9 @@ contract NFToken is TokenBase  {
 		_range = new uint48[](_startRange.length);
 		for (uint256 i; i < _startRange.length; i++) {
 			if(!_checkTime(_startRange[i])) continue;
-			/** hook point for NFToken.checkTransferRange() */
 			Range storage r = rangeMap[_startRange[i]];
 			if (r.custodian !=_cust) continue;
+			/** hook point for NFToken.checkTransferRange() */
 			if (_callModules(0x5a5a8ad8, r.tag, abi.encode(
 				_authID,
 				_id,
@@ -617,14 +617,13 @@ contract NFToken is TokenBase  {
 		// todo - does this need to safemath?
 		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
-		uint48 _smallVal = uint48(_value);
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
-			0x6eaf832c, // TODO!
+			0x8b5f1240,
 			0x00,
-			abi.encode(msg.sender, _addr, _id, _rating, _country, _smallVal)
+			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
 		);
-		_transferMultipleRanges(_id, _addr, msg.sender, _rating, _country, _smallVal, _range);
+		_transferMultipleRanges(_id, _addr, msg.sender, _rating, _country, uint48(_value), _range);
 		return true;
 	}
 
@@ -666,9 +665,9 @@ contract NFToken is TokenBase  {
 			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop, _custodian);
 			/** hook point for NFToken.transferTokenRange() */
 			_callModules(
-				0x979c114f,
+				0xead529f5,
 				rangeMap[_range[i]].tag,
-				abi.encode(_id, _addr, _rating, _country, uint48[2]([_start, _stop]))
+				abi.encode(_addr, _id, _rating, _country, uint48[2]([_start, _stop]))
 			);
 			if (_value == 0) {
 				return;
@@ -738,17 +737,17 @@ contract NFToken is TokenBase  {
 
 		/* hook point for NFTModule.checkTransferRange */
 		require(_callModules(
-				0x5a5a8ad8,
+				0x2d79c6d7,
 				rangeMap[_pointer].tag,
-				abi.encode(_authID, _id, _addr, _rating, _country, _range)
+				abi.encode(_addr, _authID, _id, _rating, _country, _range)
 			));
 
 		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], 0x00); // todo
 		/* hook point for NFToken.transferTokenRange() */
 		_callModules(
-				0x979c114f,
+				0xead529f5,
 				rangeMap[_pointer].tag,
-				abi.encode(_id, _addr, _rating, _country, _range)
+				abi.encode(_addr, _id,  _rating, _country, _range)
 			);
 	}
 

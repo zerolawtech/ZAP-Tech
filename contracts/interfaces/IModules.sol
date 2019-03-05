@@ -48,7 +48,7 @@ interface ISTModule {
 		external
 		returns (bool);
 
-	/* 0x8745b31c */
+	/* 0x8b5f1240 */
 	function transferTokensCustodian(
 		address _custodian,
 		address[2] _addr,
@@ -100,11 +100,11 @@ interface INFTModule {
 		view
 		returns (bool);
 
-	/* 5a5a8ad8 */
+	/* 0x2d79c6d7 */
 	function checkTransferRange(
+		address[2] _addr,
 		bytes32 _authID,
 		bytes32[2] _id,
-		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint48[2] _range
@@ -113,13 +113,25 @@ interface INFTModule {
 		view
 		returns (bool);
 
-	/* 0x979c114f */
+	/* 0xead529f5 */
 	function transferTokenRange(
-		bytes32[2] _id,
 		address[2] _addr,
+		bytes32[2] _id,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint48[2] _range
+	)
+		external
+		returns (bool);
+
+	/* 0x8b5f1240 */
+	function transferTokensCustodian(
+		address _custodian,
+		address[2] _addr,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint256 _value
 	)
 		external
 		returns (bool);

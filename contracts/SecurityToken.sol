@@ -315,7 +315,7 @@ contract SecurityToken is TokenBase {
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
-			0x6eaf832c, // TODO!
+			0x8b5f1240,
 			0x00,
 			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
 		);

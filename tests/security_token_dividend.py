@@ -20,17 +20,18 @@ def setup():
     unknown_address = accounts[9]
     investorID = b"aaaainvestor"
 
+    kyc = accounts[0].deploy(KYCRegistrar, [owner1], 1)
     issuer = owner1.deploy(IssuingEntity, [owner1], 1)
     token = owner1.deploy(SecurityToken, issuer, "Test Token", "TST", 1000000)
     issuer.addToken(token, {'from': owner1})
     issuer.setRegistrar(kyc, True, {'from': owner1})
-    
+
     # Approves investors from country codes 1-3 in IssuingEntity
     issuer.setCountries([1,2,3],[1,1,1],[0,0,0], {'from': owner1})
 
 # TODO: review for completeness, these are mainly just the original tests
 
-# TODO: These are part of the original tests before Brownie was updated to use 
+# TODO: These are part of the original tests before Brownie was updated to use
 #       a setup function and reset the EVM between tests.
 
 # def dividend_setup():

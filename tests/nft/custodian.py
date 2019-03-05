@@ -40,9 +40,7 @@ def cust_internal():
     token.transfer(a[1], 10000)
     token.transfer(cust, 5000, {'from':a[1]})
     check.equal(token.custodianBalanceOf(a[1], cust), 5000)
-    print(token.getRange(1))
     cust.transferInternal(token, a[1], a[2], 5000)
-    
     check.equal(token.custodianBalanceOf(a[1], cust), 0)
     check.equal(token.custodianBalanceOf(a[2], cust), 5000)
     check.equal(issuer.getInvestorCounts()[0][0:3], (2,1,1))

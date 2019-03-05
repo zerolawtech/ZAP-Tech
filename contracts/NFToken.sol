@@ -66,6 +66,8 @@ contract NFToken is TokenBase  {
 		return;
 	}
 
+	/* modifier to ensure a range index is within bounds */
+	// todo - since burning reduces total supply, we need to store an upper bound value somewhere
 	function _checkBounds(uint256 _idx) internal view {
 		require(_idx != 0, "Index cannot be 0");
 		require(_idx <= totalSupply, "Index exceeds totalSupply");
@@ -163,12 +165,15 @@ contract NFToken is TokenBase  {
 
 	/**
 		@notice internal check of transfer permission before performing it
-		// TODO
-		@return ID of caller
-		@return ID array of investors
+		@param _authID ID of calling authority
+		@param _id Array of investor IDs
+		@param _cust Custodian address
+		@param _addr Investor address array
+		@param _rating Investor rating array
+		@param _country Investor country array
+		@param _value Value of transfer
 		@return address array of investors 
-		@return uint8 array of investor ratings
-		@return uint16 array of investor countries
+		@return dynamic array of range pointers that to transfer
 	 */
 	function _checkTransfer(
 		bytes32 _authID,
@@ -218,46 +223,44 @@ contract NFToken is TokenBase  {
 				"Insufficient Custodial Balance"
 			);
 		}
-
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
+			_cust,
 			_addr,
 			_rating,
 			_country,
 			_value,
-			_cust,
 			_range
 		);
 		return (_addr, _range);
 	}
-
-	event Debug(address custodian, uint256 value);
 
 	/**
 		@notice Find ranges that are permitted to transfer
 		@param _authID ID of calling authority
 		@param _id Array of investor IDs
 		@param _addr Investor address array
+		@param _cust Custodian address
 		@param _rating Investor rating array
 		@param _country Investor country array
 		@param _value Value of transfer
+		@param _startRange Initial range to search
 		@return dynamic array of range pointers that to transfer
 	 */
 	function _findTransferrableRanges(
 		bytes32 _authID,
 		bytes32[2] _id,
+		address _cust,
 		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint256 _value,
-		address _cust,
 		uint48[] _startRange
 	)
 		internal
 		returns (uint48[] _range)
 	{
-		emit Debug(_cust, _value);
 		uint256 _count;
 		_range = new uint48[](_startRange.length);
 		for (uint256 i; i < _startRange.length; i++) {
@@ -450,6 +453,7 @@ contract NFToken is TokenBase  {
 				_splitRange(_start);
 			} else {
 				/* merge with previous */
+				// todo - consider how custodians affect merging
 				_start = _pointer;
 			}
 		}
@@ -513,6 +517,13 @@ contract NFToken is TokenBase  {
 		return true;
 	}
 
+	/**
+		@notice Internal transfer function
+		@dev common logic for transfer() and transferFrom()
+		@param _auth Address that called the method
+		@param _addr Array of receiver/sender address
+		@param _value Amount to transfer
+	 */
 	function _transfer(
 		address _auth,
 		address[2] _addr,
@@ -567,10 +578,18 @@ contract NFToken is TokenBase  {
 			custBalances[_addr[0]][_cust] = custBalances[_addr[0]][_cust].add(_value);
 			require(IBaseCustodian(_cust).receiveTransfer(_addr[0], _value));
 		}
-		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, _cust);
+		_transferMultipleRanges(_id, _addr, _cust, _rating, _country, _smallVal, _range);
 	}
 
-	// todo natspec
+	/**
+		@notice Custodian transfer function
+		@dev
+			called by Custodian.transferInternal to change ownership within
+			the custodian contract without moving any tokens
+		@param _addr Sender/Receiver addresses
+		@param _value Amount to transfer
+		@return bool
+	 */
 	function transferCustodian(
 		address[2] _addr,
 		uint256 _value
@@ -604,27 +623,29 @@ contract NFToken is TokenBase  {
 			0x00,
 			abi.encode(msg.sender, _addr, _id, _rating, _country, _smallVal)
 		);
-		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, msg.sender);
+		_transferMultipleRanges(_id, _addr, msg.sender, _rating, _country, _smallVal, _range);
 		return true;
 	}
 
 	/**
 		@notice Internal transfer function
 		@dev common logic for transfer(), transferFrom() and transferRange()
-		// TODO
+		@param _id Array of sender/receiver ID
 		@param _addr Array of sender/receiver addresses
+		@param _custodian Custodian of new ranges
+		@param _rating Array of sender/receiver investor rating
 		@param _country Array of sender/receiver countries
-		@param _range Array of range pointers to transfer
 		@param _value Amount to transfer
+		@param _range Array of range pointers to transfer
 	 */
 	function _transferMultipleRanges(
-		address[2] _addr,
 		bytes32[2] _id,
+		address[2] _addr,
+		address _custodian,
 		uint8[2] _rating,
 		uint16[2] _country,
-		uint48[] _range,
 		uint48 _value,
-		address _custodian
+		uint48[] _range
 	)
 		internal
 	{
@@ -737,6 +758,7 @@ contract NFToken is TokenBase  {
 		@param _to Recipient address
 		@param _start Start index of range
 		@param _stop Stop index of range
+		@param _custodian Custodian of range
 	 */
 	function _transferSingleRange(
 		uint48 _pointer,
@@ -860,6 +882,7 @@ contract NFToken is TokenBase  {
 		@param _owner New range owner
 		@param _time New range time
 		@param _tag New range tag
+		@param _custodian New range custodian
 		@return equality boolean
 	 */
 	function _compareRanges(
@@ -906,6 +929,12 @@ contract NFToken is TokenBase  {
 	/**
 		@notice sets a Range struct and associated pointers
 		@dev keeping this as a seperate method reduces gas costs from SSTORE
+		@param _pointer Range pointer to set
+		@param _owner Address of range owner
+		@param _stop Range stop index
+		@param _time Range time value
+		@param _tag Range tag value
+		@param _custodian Range custodian value
 	 */
 	function _setRange(
 		uint48 _pointer,
@@ -977,10 +1006,9 @@ contract NFToken is TokenBase  {
 		@dev
 			Given a token index, this will iterate through the range
 			and return the mapping pointer that the index is present within.
-		@param _idx Token index
+		@param i Token index
 	 */
-	function _getPointer(uint256 _idx) internal view returns (uint48) {
-		uint256 i = _idx;
+	function _getPointer(uint256 i) internal view returns (uint48) {
 		uint256 _increment = 1;
 		while (true) {
 			if (tokens[i] != 0x00) return tokens[i];

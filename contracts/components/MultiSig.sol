@@ -57,26 +57,6 @@ contract MultiSig {
 	event ThresholdSet (bytes32 indexed id, uint32 threshold);
 	event NewAuthorityPermissions (bytes32 indexed id, bytes4[] signatures);
 	event RemovedAuthorityPermissions (bytes32 indexed id, bytes4[] signatures);
-	
-	/** @dev Checks that the calling address is associated with the owner */
-	modifier onlyOwner() {
-		require(idMap[msg.sender].id == ownerID);
-		require(!idMap[msg.sender].restricted);
-		_;
-	}
-
-	/**
-		@dev
-	 		Checks that the calling address belongs to the owner, or is
-			associated with the authority it is trying to enact a change upon.
-	 */
-	modifier onlySelfAuthority(bytes32 _id) {
-		require (_id != 0);
-		if (idMap[msg.sender].id != ownerID) {
-			require(idMap[msg.sender].id == _id);
-		}
-		_;
-	}
 
 	/**
 		@notice KYC registrar constructor
@@ -92,6 +72,25 @@ contract MultiSig {
 		a.multiSigThreshold = _threshold;
 		emit NewAuthority(ownerID, a.approvedUntil, _threshold);
 	}
+
+	/** @dev Checks that the calling address is associated with the owner */
+	function _onlyOwner() internal view {
+		require(idMap[msg.sender].id == ownerID);
+		require(!idMap[msg.sender].restricted);
+	}
+
+	/**
+		@dev
+	 		Checks that the calling address belongs to the owner, or is
+			associated with the authority it is trying to enact a change upon.
+	 */
+	function _onlySelfAuthority(bytes32 _id) internal view {
+		require (_id != 0);
+		if (idMap[msg.sender].id != ownerID) {
+			require(idMap[msg.sender].id == _id);
+		}
+	}
+
 
 	/**
 		@notice Internal function to add new addresses
@@ -259,9 +258,9 @@ contract MultiSig {
 		uint32 _threshold
 	)
 		external
-		onlyOwner
 		returns (bool)
 	{
+		_onlyOwner();
 		if (!_checkMultiSig()) return false;
 		require (_addr.length > 0);
 		bytes32 _id = keccak256(abi.encodePacked(_addr));
@@ -292,9 +291,9 @@ contract MultiSig {
 		uint32 _approvedUntil
 	 )
 	 	external
-		 onlyOwner
-		 returns (bool)
+		returns (bool)
 	{
+		_onlyOwner();
 		if (!_checkMultiSig()) return false;
 		require(authorityData[_id].addressCount > 0);
 		authorityData[_id].approvedUntil = _approvedUntil;
@@ -315,9 +314,9 @@ contract MultiSig {
 		bool _allowed
 	)
 		external
-		onlyOwner
 		returns (bool)
 	{
+		_onlyOwner();
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_id];
 		require(a.addressCount > 0);
@@ -343,9 +342,9 @@ contract MultiSig {
 		uint32 _threshold
 	)
 		external
-		onlySelfAuthority(_id)
 		returns (bool)
 	{
+		_onlySelfAuthority(_id);
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[idMap[msg.sender].id];
 		require(a.addressCount >= _threshold);
@@ -365,9 +364,9 @@ contract MultiSig {
 		address[] _addr
 	)
 		external
-		onlySelfAuthority(_id)
 		returns (bool)
 	{
+		_onlySelfAuthority(_id);
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_id];
 		require(a.addressCount > 0);
@@ -387,9 +386,9 @@ contract MultiSig {
 		address[] _addr
 	)
 		external
-		onlySelfAuthority(_id)
 		returns (bool)
 	{
+		_onlySelfAuthority(_id);
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_id];
 		for (uint256 i = 0; i < _addr.length; i++) {

@@ -1,27 +1,19 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./open-zeppelin/SafeMath.sol";
-import "./IssuingEntity.sol";
-import "./components/NFTModular.sol";
+import "./TokenBase.sol";
 
-/** Non-Fungible ERC20 Contract */
-contract NFToken is NFTModular {
+/**
+	@title Non-Fungible SecurityToken 
+	@dev
+		Expands upon the ERC20 token standard
+		https://theethereum.wiki/w/index.php/ERC20_Token_Standard
+ */
+contract NFToken is TokenBase  {
 
-	using SafeMath for uint256;
-
-	bytes32 public ownerID;
-	IssuingEntity public issuer;
-
-	string public name;
-	string public symbol;
-	uint256 public constant decimals = 0;
-	uint256 public totalSupply;
-	uint256 public authorizedSupply;
-
+	uint48 upperBound;
 	uint48[281474976710656] tokens;
 	mapping (uint48 => Range) rangeMap;
 	mapping (address => Balance) balances;
-	mapping(address => mapping (address => uint256)) allowed;
 
 	struct Balance {
 		uint48 balance;
@@ -33,14 +25,9 @@ contract NFToken is NFTModular {
 		uint48 stop;
 		uint32 time;
 		bytes2 tag;
+		address custodian;
 	}
 
-	event Approval(
-		address indexed owner,
-		address indexed spender,
-		uint256 tokens
-	);
-	event Transfer(address indexed from, address indexed to, uint256 amount);
 	event TransferRange(
 		address indexed from,
 		address indexed to,
@@ -54,18 +41,6 @@ contract NFToken is NFTModular {
 		uint256 stop,
 		uint32 time
 	);
-	event TotalSupplyChanged(
-		address indexed owner,
-		uint256 oldBalance,
-		uint256 newBalance
-	);
-	event AuthorizedSupplyChanged(uint256 oldAuthorized, uint256 newAuthorized);
-
-	modifier checkBounds(uint256 _idx) {
-		require(_idx != 0, "Index cannot be 0");
-		require(_idx <= totalSupply, "Index exceeds totalSupply");
-		_;
-	}
 
 	/**
 		@notice Security token constructor
@@ -82,29 +57,20 @@ contract NFToken is NFTModular {
 		uint256 _authorizedSupply
 	)
 		public
+		TokenBase(
+			_issuer,
+			_name,
+			_symbol,
+			_authorizedSupply
+		)
 	{
-		issuer = IssuingEntity(_issuer);
-		ownerID = issuer.ownerID();
-		name = _name;
-		symbol = _symbol;
-		authorizedSupply = _authorizedSupply;
+		return;
 	}
 
-	/**
-		@notice Fetch circulating supply
-		@dev Circulating supply = total supply - amount retained by issuer
-		@return integer
-	 */
-	function circulatingSupply() external view returns (uint256) {
-		return totalSupply.sub(balances[address(issuer)].balance);
-	}
-
-	/**
-		@notice Fetch the amount retained by issuer
-		@return integer
-	 */
-	function treasurySupply() external view returns (uint256) {
-		return balances[address(issuer)].balance;
+	/* modifier to ensure a range index is within bounds */
+	function _checkBounds(uint256 _idx) internal view {
+		if (_idx != 0 && _idx <= upperBound) return;
+		revert("Invalid index");
 	}
 
 	/**
@@ -112,7 +78,7 @@ contract NFToken is NFTModular {
 		@param _owner Address of balance to query
 		@return integer
 	 */
-	function balanceOf(address _owner) external view returns (uint48) {
+	function balanceOf(address _owner) public view returns (uint256) {
 		return balances[_owner].balance;
 	}
 
@@ -126,18 +92,19 @@ contract NFToken is NFTModular {
 	)
 		external
 		view
-		checkBounds(_idx)
 		returns (
 			address _owner,
 			uint48 _start,
 			uint48 _stop,
 			uint32 _time,
-			bytes2 _tag
+			bytes2 _tag,
+			address _custodian
 		)
 	{
+		_checkBounds(_idx);
 		_start = _getPointer(_idx);
 		Range storage r = rangeMap[_start];
-		return (r.owner, _start, r.stop, r.time, r.tag);
+		return (r.owner, _start, r.stop, r.time, r.tag, r.custodian);
 	}
 
 	/**
@@ -162,81 +129,70 @@ contract NFToken is NFTModular {
 	}
 
 	/**
-		@notice ERC-20 allowance standard
-		@param _owner Owner of the tokens
-		@param _spender Spender of the tokens
-		@return integer
-	 */
-	function allowance(
-		address _owner,
-		address _spender
-	 )
-		external
-		view
-		returns (uint256)
-	{
-		return allowed[_owner][_spender];
-	}
-
-	/**
-		@notice View function to check if a transfer is permitted
+		@notice shared logic for checkTransfer and checkTransferCustodian
 		@dev If a transfer is not allowed, the function will throw
+		@param _cust Address of custodian contract
 		@param _from Address of sender
 		@param _to Address of recipient
-		@param _value Amount being transferred
-		@return bool success
+		@param _value Amount being transferred,
+		@param _zero After transfer, does the sender have a 0 balance?
 	 */
-	function checkTransfer(
+	function _checkTransferView(
+		address _cust,
 		address _from,
-		address _to, 
-		uint256 _value
+		address _to,
+		uint256 _value,
+		bool _zero
 	)
-		external
-		view
-		returns (bool)
+		internal
 	{
-		/* Sending 0 balance is blocked to reduce logic around investor limits */
-		_checkToSend(_from, [_from, _to], _value);
-		return true;
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.checkTransfer(_from, _from, _to, _zero);
+		_checkTransfer(
+			_authID,
+			_id,
+			_cust,
+			[_from, _to],
+			_rating,
+			_country,
+			_value
+		);
 	}
-
 
 	/**
 		@notice internal check of transfer permission before performing it
-		@param _auth Address calling to initiate the transfer
-		@param _addr Address of sender, recipient
-		@param _value Amount being transferred
-		@return ID of caller
-		@return ID array of investors
+		@param _authID ID of calling authority
+		@param _id Array of investor IDs
+		@param _cust Custodian address
+		@param _addr Investor address array
+		@param _rating Investor rating array
+		@param _country Investor country array
+		@param _value Value of transfer
 		@return address array of investors 
-		@return uint8 array of investor ratings
-		@return uint16 array of investor countries
+		@return dynamic array of range pointers that to transfer
 	 */
-	function _checkToSend(
-		address _auth,
+	function _checkTransfer(
+		bytes32 _authID,
+		bytes32[2] _id,
+		address _cust,
 		address[2] _addr,
+		uint8[2] _rating,
+		uint16[2] _country,
 		uint256 _value
 	)
 		internal
 		returns (
-			bytes32 _authID,
-			bytes32[2] _id,
 			address[2],
-			uint8[2] _rating,
-			uint16[2] _country,
 			uint48[] _range
 		)
 	{
+		/* Sending 0 balance is blocked to reduce logic around investor limits */
 		require(_value > 0, "Cannot send 0 tokens");
-		require(uint48(_value) == _value);
-		(_authID, _id, _rating, _country) = issuer.checkTransfer(
-			address(this),
-			_auth,
-			_addr[0],
-			_addr[1],
-			_value == balances[_addr[0]].balance,
-			_value
-		);
+		require(uint48(_value) == _value, "Value too large");
 
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
@@ -246,52 +202,81 @@ contract NFToken is NFTModular {
 			_addr[1] = address(issuer);
 		}
 		require(_addr[0] != _addr[1], "Cannot send to self");
-		require(balances[_addr[0]].balance >= _value, "Insufficient Balance");
 		/* bytes4 signature for token module checkTransfer() */
-		_callModules(0x70aaf928, 0x00, abi.encode(
-			_addr,
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
+		if (_rating[0] == 0 && _id[0] != ownerID) {
+			/* if sender is custodian, look at custodied ranges */
+			_cust = _addr[0];
+			_range = balances[_addr[1]].ranges;
+		} else {
+			_range = balances[_addr[0]].ranges;
+		}
+		if (_cust == 0x00 || (_rating[0] == 0 && _id[0] != ownerID)) {
+			require(balances[_addr[0]].balance >= _value, "Insufficient Balance");
+		} else {
+			require(
+				custBalances[_addr[0]][_cust] >= _value,
+				"Insufficient Custodial Balance"
+			);
+		}
+		_range = _findTransferrableRanges(
 			_authID,
 			_id,
+			_cust,
+			_addr,
 			_rating,
 			_country,
-			_value
-		));
-		_range = _findTransferrableRanges(_addr, _authID, _id, _rating, _country, _value);
-		return(_authID, _id, _addr, _rating, _country, _range);
+			_value,
+			_range
+		);
+		return (_addr, _range);
 	}
 
-	
+	/**
+		@notice Find ranges that are permitted to transfer
+		@param _authID ID of calling authority
+		@param _id Array of investor IDs
+		@param _addr Investor address array
+		@param _cust Custodian address
+		@param _rating Investor rating array
+		@param _country Investor country array
+		@param _value Value of transfer
+		@param _startRange Initial range to search
+		@return dynamic array of range pointers that to transfer
+	 */
 	function _findTransferrableRanges(
-		address[2] _addr,
 		bytes32 _authID,
 		bytes32[2] _id,
+		address _cust,
+		address[2] _addr,
 		uint8[2] _rating,
 		uint16[2] _country,
-		uint256 _value
+		uint256 _value,
+		uint48[] _startRange
 	)
 		internal
-		returns (uint48[])
+		returns (uint48[] _range)
 	{
-		Balance storage b = balances[_addr[0]];
 		uint256 _count;
-		uint48[] memory _range = new uint48[](b.ranges.length);
-		for (uint256 i; i < b.ranges.length; i++) {
-			if(!_checkTime(b.ranges[i])) continue;
-			if (_callModules(
-				0x12345678,
-				rangeMap[b.ranges[i]].tag,
-				abi.encode(
-					_addr,
-					_authID,
-					_id,
-					_rating,
-					_country,
-					uint48[2]([b.ranges[i],r.stop])
-				)
-			)) {
-				Range storage r = rangeMap[b.ranges[i]];
-				_range[_count] = b.ranges[i];
-				
+		_range = new uint48[](_startRange.length);
+		for (uint256 i; i < _startRange.length; i++) {
+			if(!_checkTime(_startRange[i])) continue;
+			Range storage r = rangeMap[_startRange[i]];
+			if (r.custodian !=_cust) continue;
+			/** hook point for NFToken.checkTransferRange() */
+			if (_callModules(0x5a5a8ad8, r.tag, abi.encode(
+				_authID,
+				_id,
+				_addr,
+				_rating,
+				_country,
+				uint48[2]([_startRange[i],r.stop])
+			))) {
+				_range[_count] = _startRange[i];
 				if (r.stop - _range[_count] >= _value) {
 					return _range;
 				}
@@ -300,28 +285,6 @@ contract NFToken is NFTModular {
 			}
 		}
 		revert("Insufficient transferable tokens");
-	}
-
-
-	/**
-		@notice Modify authorized Supply
-		@dev Callable by issuer or via module
-		@param _value New authorized supply value
-		@return bool
-	 */
-	function modifyAuthorizedSupply(uint256 _value) external returns (bool) {
-		/* msg.sig = 0xc39f42ed */
-		if (!_checkPermitted()) return false;
-		require(_value >= totalSupply);
-		/* bytes4 signature for token module modifyAuthorizedSupply() */
-		_callModules(
-			0xb1a1a455,
-			0x00,
-			abi.encode(address(this), totalSupply, _value)
-		);
-		emit AuthorizedSupplyChanged(totalSupply, _value);
-		authorizedSupply = _value;
-		return true;
 	}
 
 	/**
@@ -344,33 +307,26 @@ contract NFToken is NFTModular {
 		/* msg.sig = 0x15077ec8 */
 		if (!_checkPermitted()) return false;
 		require(_value > 0);
-		require(totalSupply + _value > totalSupply);
-		require(totalSupply + _value <= 2**48 - 2);
+		require(upperBound + _value > upperBound);
+		require(upperBound + _value <= 2**48 - 2);
 		require(_time == 0 || _time > now);
-		require(_value > 0);
-		issuer.checkTransfer(
-			address(this),
-			address(issuer),
-			address(issuer),
-			_owner,
-			false,
-			_value
-		);
-		uint48 _start = uint48(totalSupply + 1);
+		issuer.checkTransfer(address(issuer), address(issuer), _owner, false);
+		uint48 _start = uint48(upperBound + 1);
 		uint48 _stop = _start + _value;
-		if (_compareRanges(tokens[totalSupply], _owner, _time, _tag)) {
+		if (_compareRanges(tokens[upperBound], _owner, _time, _tag, 0x00)) {
 			/* merge with previous range */
-			uint48 _pointer = tokens[totalSupply];
+			uint48 _pointer = tokens[upperBound];
 			rangeMap[_pointer].stop = _stop;
 		} else {
 			/* create new range */
-			_addRangePointers(_start, _stop);
-			rangeMap[_start] = Range(_owner, _stop, _time, _tag);
+			_setRange(_start, _owner, _stop, _time, _tag, 0x00);
 			balances[_owner].ranges.push(_start);
 		}
+		uint48 _old = balances[_owner].balance;
 		balances[_owner].balance += _value;
 		totalSupply += _value;
-		_modifyTotalSupply(_owner, _value);
+		upperBound += _value;
+		_modifyTotalSupply(_owner, _old);
 		emit RangeSet(_tag, _start, _stop, _time);
 		emit Transfer(0x00, msg.sender, _value);
 		emit TransferRange(0x00, msg.sender, _start, _stop, _value);
@@ -379,6 +335,7 @@ contract NFToken is NFTModular {
 
 	/**
 		@notice Burns tokens
+		@dev Canoot burn multiple ranges in a single call
 		@param _start Start index of range to burn
 		@param _stop Stop index of range to burn
 		@return Bool success
@@ -387,55 +344,25 @@ contract NFToken is NFTModular {
 		/* msg.sig = 0x9a0d378b */
 		if (!_checkPermitted()) return false;
 		require(_stop > _start);
-		uint48 _pointer = _getPointer(_stop);
-		require(rangeMap[_pointer].stop >= _stop);
-		require(rangeMap[_pointer].owner != 0x00);
-		if (_pointer != _stop) {
+		uint48 _pointer = _getPointer(_stop-1);
+		require(_pointer <= _start);
+		address _owner = rangeMap[_pointer].owner;
+		require(_owner != 0x00);
+		if (rangeMap[_pointer].stop > _stop) {
 			_splitRange(_stop);
 		}
-		_pointer = _getPointer(_start);
-		if (_pointer != _start) {
+		if (_pointer < _start) {
 			_splitRange(_start);
 		}
-		Range storage r = rangeMap[_pointer];
-		_replaceInBalanceRange(r.owner, _pointer, 0);
-		uint48 _value = r.stop - _pointer;
+		_replaceInBalanceRange(_owner, _start, 0);
+		uint48 _value = _stop - _start;
 		totalSupply -= _value;
-		balances[r.owner].balance -= _value;
-		_modifyTotalSupply(r.owner, _value);
-		emit Transfer(r.owner, 0x00, _value);
-		emit TransferRange(r.owner, 0x00, _pointer, r.stop, _value);
-		r.owner = 0x00;
-		return true;
-	}
-
-
-	/**
-		@notice Internal shared logic for minting and burning
-		@param _owner Owner of the tokens
-		@param _old Previous balance
-		@return bool success
-	 */
-	function _modifyTotalSupply(
-		address _owner,
-		uint256 _old
-	)
-		internal
-		returns (bool)
-	{
-		uint256 _new = balances[_owner].balance;
-		(
-			bytes32 _id,
-			uint8 _rating,
-			uint16 _country
-		) = issuer.modifyTokenTotalSupply(_owner, _old, _new);
-		/* bytes4 signature for token module totalSupplyChanged() */
-		_callModules(
-			0x741b5078,
-			0x00,
-			abi.encode(_owner, _id, _rating, _country, _old, _new)
-		);
-		emit TotalSupplyChanged(_owner, _old, _new);
+		uint48 _old = balances[_owner].balance;
+		balances[_owner].balance -= _value;
+		_modifyTotalSupply(_owner, _old);
+		emit Transfer(_owner, 0x00, _value);
+		emit TransferRange(_owner, 0x00, _start, _stop, _value);
+		rangeMap[_start].owner = 0x00;
 		return true;
 	}
 
@@ -453,31 +380,32 @@ contract NFToken is NFTModular {
 		bytes2 _tag
 	)
 		public
-		checkBounds(_pointer)
 		returns (bool)
 	{
+		// todo - how much crossover is there between modifyRange, modifyRanges, and transferSingleRange?
+		_checkBounds(_pointer);
 		require(tokens[_pointer] == _pointer);
 		Range storage r = rangeMap[_pointer];
 		require(r.owner != 0x00);
 		require(_time == 0 || _time > now);
-		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag)) {
+		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag, r.custodian)) {
 			/* merge with previous range */
 			uint48 _prev = tokens[_pointer-1];
-			_removeRangePointers(_prev, _pointer);
-			_removeRangePointers(_pointer, r.stop);
-			_addRangePointers(_prev, r.stop);
+			_setRangePointers(_prev, _pointer, 0);
+			_setRangePointers(_pointer, r.stop, 0);
+			_setRangePointers(_prev, r.stop, _prev);
 			_replaceInBalanceRange(r.owner, _pointer, 0);
 			rangeMap[_prev].stop = r.stop;
 			delete rangeMap[_pointer];
 			r = rangeMap[_prev];
 			_pointer = _prev;
 		}
-		if (_compareRanges(r.stop, r.owner, _time, _tag)) {
+		if (_compareRanges(r.stop, r.owner, _time, _tag, r.custodian)) {
 			/* merge with next range */
 			uint48 _next = rangeMap[r.stop].stop;
-			_removeRangePointers(r.stop, _next);
-			_removeRangePointers(_pointer, r.stop);
-			_addRangePointers(_pointer, _next);
+			_setRangePointers(r.stop, _next, 0);
+			_setRangePointers(_pointer, r.stop, 0);
+			_setRangePointers(_pointer, _next, _pointer);
 			_replaceInBalanceRange(r.owner, r.stop, 0);
 			delete rangeMap[r.stop];
 			r.stop = _next;
@@ -487,7 +415,6 @@ contract NFToken is NFTModular {
 		emit RangeSet(_tag, _pointer, rangeMap[_pointer].stop, _time);
 		return true;
 	}
-
 
 	/**
 		@notice Modifies one or more many ranges
@@ -505,10 +432,10 @@ contract NFToken is NFTModular {
 		bytes2 _tag
 	)
 		public
-		checkBounds(_start)
-		checkBounds(_stop-1)
 		returns (bool)
 	{
+		_checkBounds(_start);
+		_checkBounds(_stop-1);
 		require(_time == 0 || _time > now);
 		uint48 _pointer = _getPointer(_stop);
 		if (_pointer != _stop) {
@@ -527,6 +454,7 @@ contract NFToken is NFTModular {
 				_splitRange(_start);
 			} else {
 				/* merge with previous */
+				// todo - consider how custodians affect merging
 				_start = _pointer;
 			}
 		}
@@ -535,9 +463,9 @@ contract NFToken is NFTModular {
 			if (r.stop < _stop && rangeMap[r.stop].owner == r.owner) {
 				/* merge with next range */
 				uint48 _next = rangeMap[r.stop].stop;
-				_removeRangePointers(r.stop, _next);
-				_removeRangePointers(_start, r.stop);
-				_addRangePointers(_start, _next);
+				_setRangePointers(r.stop, _next, 0);
+				_setRangePointers(_start, r.stop, 0);
+				_setRangePointers(_start, _next, _start);
 				_replaceInBalanceRange(r.owner, r.stop, 0);
 				delete rangeMap[r.stop];
 				r.stop = _next;
@@ -552,39 +480,14 @@ contract NFToken is NFTModular {
 	}
 
 	/**
-		@notice ERC-20 approve standard
-		@dev
-			Approval may be given to addresses that are not registered,
-			but the address will not be able to call transferFrom()
-		@param _spender Address being approved to transfer tokens
-		@param _value Amount approved for transfer
-		@return bool success
-	 */
-	function approve(address _spender, uint256 _value) external returns (bool) {
-		require(_spender != address(this));
-		require(_value == 0 || allowed[msg.sender][_spender] == 0);
-		allowed[msg.sender][_spender] = _value;
-		emit Approval(msg.sender, _spender, _value);
-		return true;
-	}
-
-	/**
 		@notice ERC-20 transfer standard
-		@dev calls to _checkToSend() to verify permission before transferring
+		@dev calls to _checkTransfer() to verify permission before transferring
 		@param _to Recipient
 		@param _value Amount being transferred
 		@return bool success
 	 */
 	function transfer(address _to, uint256 _value) external returns (bool) {
-		(
-			bytes32 _authID,
-			bytes32[2] memory _id,
-			address[2] memory _addr,
-			uint8[2] memory _rating,
-			uint16[2] memory _country,
-			uint48[] memory _range
-		) = _checkToSend(msg.sender, [msg.sender, _to], _value);
-		_transfer(_authID, _id, _addr, _rating, _country, _range, uint48(_value));
+		_transfer(msg.sender, [msg.sender, _to], _value);
 		return true;
 	}
 
@@ -611,143 +514,142 @@ contract NFToken is NFTModular {
 		} else {
 			_auth = msg.sender;
 		}
-		(
-			bytes32 _authID,
-			bytes32[2] memory _id,
-			address[2] memory _addr,
-			uint8[2] memory _rating,
-			uint16[2] memory _country,
-			uint48[] memory _range
-		) = _checkToSend(_auth, [_from, _to], _value);
-
-		if (_id[0] != _id[1] && _authID != ownerID && _authID != _id[0]) {
-			/*
-				If the call was not made by the issuer or the sender and involves
-				a change in ownership, subtract from the allowed mapping.
-			*/
-			require(allowed[_from][_auth] >= _value, "Insufficient allowance");
-			allowed[_from][_auth] = allowed[_from][_auth].sub(_value);
-		}
-		_transfer(_authID, _id, _addr, _rating, _country, _range, uint48(_value));
+		_transfer(msg.sender, [_from, _to], _value);
 		return true;
 	}
 
-	// /**
-	// 	@notice transfer tokens with a specific index range
-	// 	@param _to Receipient address
-	// 	@return bool success
-	//  */
-	// function transferRange(
-	// 	address _to,
-	// 	uint48[2] _range
-	// )
-	// 	external
-	// 	checkBounds(_range[0])
-	// 	checkBounds(_range[1]-1)
-	// 	returns (bool)
-	// {
-	// 	require(_range[0] < _range[1]);
-	// 	uint48 _pointer = _getPointer(_range[1]-1);
-	// 	require(msg.sender == rangeMap[_pointer].owner);
-	// 	require(_pointer <= _range[0]);
-	// 	require(_checkTime(_pointer));
-	// 	address[2] memory _addr = [msg.sender, _to];
-		
-	// 	/* issuer check transfer */
-	// 	(
-	// 		bytes32 _authID,
-	// 		bytes32[2] memory _id,
-	// 		uint8[2] memory _rating,
-	// 		uint16[2] memory _country
-	// 	) = issuer.checkTransfer(
-	// 		address(this),
-	// 		msg.sender,
-	// 		msg.sender,
-	// 		_addr[1],
-	// 		_range[1] - _range[0] == balances[msg.sender].balance,
-	// 		_range[1] - _range[0]
-	// 	);
-
-	// 	/* bytes4 signature for token module checkTransfer() */
-	// 	_callModules(0x70aaf928, 0x00, abi.encode(
-	// 		_addr,
-	// 		_authID,
-	// 		_id,
-	// 		_rating,
-	// 		_country,
-	// 		_range[1] - _range[0]
-	// 	));
-
-	// 	/* range check transfer */
-	// 	require(_callModules(
-	// 			0x12345678,
-	// 			rangeMap[_pointer].tag,
-	// 			abi.encode(
-	// 				_addr,
-	// 				_authID,
-	// 				_id,
-	// 				_rating,
-	// 				_country,
-	// 				_range
-	// 			)
-	// 		));
-		
-	// 	uint48[] memory _newRange = new uint48[](1);
-	// 	_newRange[0] = _range[0];
-	// 	_transfer(_authID, _id, _addr, _rating, _country, _newRange, _range[1] - _range[0]);
-	// 	return true;
-	// }
-
-
-
 	/**
-		@notice shared logic for transfer and transferFrom
-		
+		@notice Internal transfer function
+		@dev common logic for transfer() and transferFrom()
+		@param _auth Address that called the method
+		@param _addr Array of receiver/sender address
+		@param _value Amount to transfer
 	 */
 	function _transfer(
-		bytes32,
-		bytes32[2] memory _id,
-		address[2] memory _addr,
-		uint8[2] memory _rating,
-		uint16[2] memory _country,
-		uint48[] memory _range,
-		uint48 _value
-	) internal {
-		Balance storage _from = balances[_addr[0]];
-		Balance storage _to = balances[_addr[1]];
-		require(_value <= _from.balance);
-		_from.balance -= _value;
-		_to.balance += _value;
-		
-		require(issuer.transferTokens(
-			_id,
-			_rating,
-			_country,
-			_value,
-			[_from.balance == 0, _to.balance == _value]
-		));
+		address _auth,
+		address[2] _addr,
+		uint256 _value
+	)
+		internal
+	{
+		bool[4] memory _zero = [
+		 	balances[_addr[0]].balance == _value,
+		 	balances[_addr[1]].balance == 0,
+			custBalances[_addr[1]][_addr[0]] == _value,
+			custBalances[_addr[0]][_addr[1]] == 0
+		];
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.transferTokens(
+			_auth,
+			_addr[0],
+			_addr[1],
+			_zero
+		);
 
-		_transferFromRange(_range, _addr, _id, _rating, _country, _value);
-		emit Transfer(_addr[0], _addr[1], _value);
+		uint48 _smallVal = uint48(_value);
+		uint48[] memory _range;
+		(_addr, _range) = _checkTransfer(_authID, _id, 0x00, _addr, _rating, _country, _value);
+
+		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
+			/**
+				If the call was not made by the issuer or the sender and involves
+				a change in ownership, subtract from the allowed mapping.
+			*/
+			require(allowed[_addr[0]][_auth] >= _value, "Insufficient allowance");
+			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
+		}
+
+		address _cust;
+		require(_smallVal <= balances[_addr[0]].balance);
+		balances[_addr[0]].balance -= _smallVal;
+		balances[_addr[1]].balance += _smallVal;
+		
+		if (_rating[0] == 0 && _id[0] != ownerID) {
+			/* sender is custodian, reduce custodian balance */
+			custBalances[_addr[1]][_addr[0]] = custBalances[_addr[1]][_addr[0]].sub(_value);
+			_addr[0] = _addr[1];
+		} else if (_rating[1] == 0 && _id[1] != ownerID) {
+			/* receiver is custodian, increase and notify */
+			_cust = _addr[1];
+			_addr[1] = _addr[0];
+			custBalances[_addr[0]][_cust] = custBalances[_addr[0]][_cust].add(_value);
+			require(IBaseCustodian(_cust).receiveTransfer(_addr[0], _value));
+		}
+		_transferMultipleRanges(_id, _addr, _cust, _rating, _country, _smallVal, _range);
 	}
 
 	/**
-		@notice Transfer tokens from a balance range array
-		@param _range Balance range array
+		@notice Custodian transfer function
+		@dev
+			called by Custodian.transferInternal to change ownership within
+			the custodian contract without moving any tokens
+		@param _addr Sender/Receiver addresses
 		@param _value Amount to transfer
-		@return Remaining value
+		@return bool
 	 */
-	function _transferFromRange(
-		uint48[] _range,
+	function transferCustodian(
 		address[2] _addr,
+		uint256 _value
+	)
+		public
+		returns (bool)
+	{
+		bool[4] memory _zero = [
+			custBalances[_addr[0]][msg.sender] == _value,
+			custBalances[_addr[1]][msg.sender] == 0,
+			false,
+			false
+		];
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.transferTokens(msg.sender, _addr[0], _addr[1], _zero);
+
+		uint48[] memory _range;
+		(_addr, _range) = _checkTransfer(_authID, _id, msg.sender, _addr, _rating, _country, _value);
+
+		// todo - does this need to safemath?
+		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
+		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
+		/* bytes4 signature for token module transferTokensCustodian() */
+		_callModules(
+			0x8b5f1240,
+			0x00,
+			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
+		);
+		_transferMultipleRanges(_id, _addr, msg.sender, _rating, _country, uint48(_value), _range);
+		return true;
+	}
+
+	/**
+		@notice Internal transfer function
+		@dev common logic for transfer(), transferFrom() and transferRange()
+		@param _id Array of sender/receiver ID
+		@param _addr Array of sender/receiver addresses
+		@param _custodian Custodian of new ranges
+		@param _rating Array of sender/receiver investor rating
+		@param _country Array of sender/receiver countries
+		@param _value Amount to transfer
+		@param _range Array of range pointers to transfer
+	 */
+	function _transferMultipleRanges(
 		bytes32[2] _id,
+		address[2] _addr,
+		address _custodian,
 		uint8[2] _rating,
 		uint16[2] _country,
-		uint48 _value
+		uint48 _value,
+		uint48[] _range
 	)
 		internal
-		returns (uint48)
 	{
+		emit Transfer(_addr[0], _addr[1], _value);
 		for (uint256 i; i < _range.length; i++) {
 			if (_range[i] == 0) continue;
 			uint48 _start = _range[i];
@@ -760,15 +662,93 @@ contract NFToken is NFTModular {
 			else {
 				_value -= _amount;
 			}
-			_transferRange(_start, _addr[0], _addr[1], _start, _stop);
+			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop, _custodian);
+			/** hook point for NFToken.transferTokenRange() */
 			_callModules(
-				0x12345678,
+				0xead529f5,
 				rangeMap[_range[i]].tag,
 				abi.encode(_addr, _id, _rating, _country, uint48[2]([_start, _stop]))
 			);
-			if (_value == 0) return;
+			if (_value == 0) {
+				return;
+			}
 		}
 		revert();
+	}
+
+	/**
+		@notice transfer tokens with a specific index range
+		@param _to Receipient address
+		@param _start Transfer start index
+		@param _stop Transfer stop index
+		@return bool success
+	 */
+	function transferRange(
+		address _to,
+		uint48 _start,
+		uint48 _stop
+	)
+		external
+		returns (bool)
+	{
+		_checkBounds(_start);
+		_checkBounds(_stop-1);
+		require(_start < _stop);
+		uint48 _pointer = _getPointer(_stop-1);
+		require(msg.sender == rangeMap[_pointer].owner);
+		require(_pointer <= _start);
+		require(_checkTime(_pointer));
+
+		address[2] memory _addr = [msg.sender, _to];
+		uint48[2] memory _range = [_start, _stop];
+
+		uint48 _value = _stop - _start;
+		bool[4] memory _zero = [
+			balances[msg.sender].balance == _value,
+			balances[_addr[1]].balance == 0,
+			custBalances[_addr[1]][_addr[0]] == _value,
+			custBalances[_addr[0]][_addr[1]] == 0
+		];
+		(
+			bytes32 _authID,
+			bytes32[2] memory _id,
+			uint8[2] memory _rating,
+			uint16[2] memory _country
+		) = issuer.transferTokens(_addr[0], _addr[0], _addr[1], _zero);
+
+		/* Issuer tokens are held at the IssuingEntity contract address */
+		if (_id[0] == ownerID) {
+			_addr[0] = address(issuer);
+		}
+		if (_id[1] == ownerID) {
+			_addr[1] = address(issuer);
+		}
+
+		require(balances[_addr[0]].balance >= _value);
+		balances[_addr[0]].balance -= _value;
+		balances[_addr[1]].balance += _value;
+
+		/* hook point for NFTModule.checkTransfer() */
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
+
+		/* hook point for NFTModule.checkTransferRange */
+		require(_callModules(
+				0x2d79c6d7,
+				rangeMap[_pointer].tag,
+				abi.encode(_addr, _authID, _id, _rating, _country, _range)
+			));
+
+		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], 0x00); // todo
+		/* hook point for NFToken.transferTokenRange() */
+		_callModules(
+				0xead529f5,
+				rangeMap[_pointer].tag,
+				abi.encode(_addr, _id,  _rating, _country, _range)
+			);
 	}
 
 	/**
@@ -778,13 +758,15 @@ contract NFToken is NFTModular {
 		@param _to Recipient address
 		@param _start Start index of range
 		@param _stop Stop index of range
+		@param _custodian Custodian of range
 	 */
-	function _transferRange(
+	function _transferSingleRange(
 		uint48 _pointer,
 		address _from,
 		address _to,
 		uint48 _start,
-		uint48 _stop
+		uint48 _stop,
+		address _custodian
 	)
 		internal
 	{
@@ -792,93 +774,92 @@ contract NFToken is NFTModular {
 		uint48 _prev = tokens[_start-1];
 		bytes2 _tag = rangeMap[_pointer].tag;
 		emit TransferRange(_from, _to, _start, _stop, _stop-_start);
-		
+
 		if (_pointer == _start) {
-			// touches both
+			/* touches both */
 			if (_rangeStop == _stop) {
+				// todo - we can avoid replaceInBalanceRange when from == to
 				_replaceInBalanceRange(_from, _start, 0);
-				bool _left = _compareRanges(_prev, _to, 0, _tag);
-				bool _right = _compareRanges(_stop, _to, 0, _tag);
-				// no join
+				bool _left = _compareRanges(_prev, _to, 0, _tag, _custodian);
+				bool _right = _compareRanges(_stop, _to, 0, _tag, _custodian);
+				/* no join */
 				if (!_left && !_right) {
 					_replaceInBalanceRange(_to, 0, _start);
-					rangeMap[_pointer].owner = _to;
+					if (_from != _to) {
+						rangeMap[_pointer].owner = _to;
+					}
+					if (rangeMap[_pointer].custodian != _custodian) {
+						rangeMap[_pointer].custodian = _custodian;
+					}
 					return;
 				}
-				_removeRangePointers(_pointer, _stop);
-				// join left
+				_setRangePointers(_pointer, _stop, 0);
+				/* join left */
 				if (!_right) {
 					delete rangeMap[_pointer];
 					rangeMap[_prev].stop = _stop;
-					_addRangePointers(_prev, _stop);
+					_setRangePointers(_prev, _stop, _prev);
 					return;
 				}
-				// join right
+				/* join right */
 				if (!_left) {
 					_replaceInBalanceRange(_to, _stop, _start);
-					rangeMap[_pointer] = Range(_to, rangeMap[_stop].stop, 0, _tag);
-					_addRangePointers(_pointer, rangeMap[_stop].stop);
-				// join both
+					_setRange(_pointer, _to, rangeMap[_stop].stop, 0, _tag, _custodian);
+				/* join both */
 				} else {
 					_replaceInBalanceRange(_to, _stop, 0);
 					delete rangeMap[_pointer];
 					rangeMap[_prev].stop = rangeMap[_stop].stop;
-					_removeRangePointers(_prev, _start);
-					_removeRangePointers(_stop, rangeMap[_stop].stop);
+					_setRangePointers(_prev, _start, 0);
+					_setRangePointers(_stop, rangeMap[_stop].stop, 0);
 				}
 				delete rangeMap[_stop];
 				return;
 			}
 
-			// touches left
+			/* touches left */
 			delete rangeMap[_pointer];
-			_removeRangePointers(_start, _rangeStop);
+			_setRangePointers(_start, _rangeStop, 0);
 			_replaceInBalanceRange(_from, _start, _stop);
-			
-			// same owner left
-			if (_compareRanges(_prev, _to, 0, _tag)) {
-				_removeRangePointers(_prev, _start);
+
+			/* same owner left */
+			if (_compareRanges(_prev, _to, 0, _tag, _custodian)) {
+				_setRangePointers(_prev, _start, 0);
 				_start = _prev;
 			} else {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
-			rangeMap[_start] = Range(_to, _stop, 0, _tag);
-			_addRangePointers(_start, _stop);
-			rangeMap[_stop] = Range(_from, _rangeStop, 0, _tag);
-			_addRangePointers(_stop, _rangeStop);
+			_setRange(_start, _to, _stop, 0, _tag, _custodian);
+			_setRange(_stop, _from, _rangeStop, 0, _tag, _custodian);
 			return;
 		}
 
-		// shared logic - touches right and touches nothing
-		_removeRangePointers(_pointer, _rangeStop);
+		/* shared logic - touches right and touches nothing */
+		_setRangePointers(_pointer, _rangeStop, 0);
 		rangeMap[_pointer].stop = _start;
-		_addRangePointers(_pointer, _start);
+		_setRangePointers(_pointer, _start, _pointer);
 
-		// touches right
+		/* touches right */
 		if (_rangeStop == _stop) {
-			// same owner right
-			if (_compareRanges(_stop, _to, 0, _tag)) {
+			/* same owner right */
+			if (_compareRanges(_stop, _to, 0, _tag, _custodian)) {
 				_replaceInBalanceRange(_to, _stop, _start);
-				_removeRangePointers(_stop, rangeMap[_stop].stop);
+				_setRangePointers(_stop, rangeMap[_stop].stop, 0);
 				uint48 _next = rangeMap[_stop].stop;
 				delete rangeMap[_stop];
 				_stop = _next;
 			} else {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
-			rangeMap[_start] = Range(_to, _stop, 0, _tag);
-			_addRangePointers(_start, _stop);
+			_setRange(_start, _to, _stop, 0, _tag, _custodian);
 			return;
 		}
 
-		//touches nothing
+		/* touches nothing */
 		_replaceInBalanceRange(_to, 0, _start);
-		rangeMap[_start] = Range(_to, _stop, 0, _tag);
-		_addRangePointers(_start, _stop);
-		
+		_setRange(_start, _to, _stop, 0, _tag, _custodian);
 		_replaceInBalanceRange(_from, 0, _stop);
-		rangeMap[_stop] = Range(_from, _rangeStop, 0, _tag);
-		_addRangePointers(_stop, _rangeStop);
+		_setRange(_stop, _from, _rangeStop, 0, _tag, _custodian);
 	}
 
 	/**
@@ -901,13 +882,15 @@ contract NFToken is NFTModular {
 		@param _owner New range owner
 		@param _time New range time
 		@param _tag New range tag
+		@param _custodian New range custodian
 		@return equality boolean
 	 */
 	function _compareRanges(
 		uint48 _pointer,
 		address _owner,
 		uint32 _time,
-		bytes2 _tag
+		bytes2 _tag,
+		address _custodian
 	)
 		internal
 		returns (bool)
@@ -916,7 +899,12 @@ contract NFToken is NFTModular {
 		if (r.time > 0 && r.time < now) {
 			r.time = 0;
 		}
-		return (r.owner == _owner && r.time == _time && r.tag == _tag);
+		return (
+			r.owner == _owner &&
+			r.time == _time &&
+			r.tag == _tag &&
+			r.custodian == _custodian
+		);
 	}
 
 	/**
@@ -932,11 +920,39 @@ contract NFToken is NFTModular {
 		Range storage r = rangeMap[_pointer];
 		uint48 _stop = r.stop;
 		r.stop = _split;
-		rangeMap[_split] = Range(r.owner, _stop, r.time, r.tag);
 		_replaceInBalanceRange(r.owner, 0, _split);
-		_removeRangePointers(_pointer, _stop);
-		_addRangePointers(_pointer, _split);
-		_addRangePointers(_split, _stop);
+		_setRangePointers(_pointer, _stop, 0);
+		_setRangePointers(_pointer, _split, _pointer);
+		_setRange(_split, r.owner, _stop, r.time, r.tag, r.custodian);
+	}
+
+	/**
+		@notice sets a Range struct and associated pointers
+		@dev keeping this as a seperate method reduces gas costs from SSTORE
+		@param _pointer Range pointer to set
+		@param _owner Address of range owner
+		@param _stop Range stop index
+		@param _time Range time value
+		@param _tag Range tag value
+		@param _custodian Range custodian value
+	 */
+	function _setRange(
+		uint48 _pointer,
+		address _owner,
+		uint48 _stop,
+		uint32 _time,
+		bytes2 _tag,
+		address _custodian
+	)
+		internal
+	{
+		Range storage r = rangeMap[_pointer];
+		if (r.owner != _owner) r.owner = _owner;
+		if (r.stop != _stop) r.stop = _stop;
+		if (r.time != _time) r.time = _time;
+		if (r.tag != _tag) r.tag = _tag;
+		if (r.custodian != _custodian) r.custodian = _custodian;
+		_setRangePointers(_pointer, _stop, _pointer);
 	}
 
 	/**
@@ -965,47 +981,23 @@ contract NFToken is NFTModular {
 	}
 
 	/**
-		@notice Add pointers to the token range
+		@notice Modify pointers in the token range
 		@param _start Start index of range
 		@param _stop Stop index of range
+		@param _value Pointer value
 	 */
-	function _addRangePointers(uint48 _start, uint48 _stop) internal {
-		tokens[_start] = _start;
+	function _setRangePointers(uint48 _start, uint48 _stop, uint48 _value) internal {
+		tokens[_start] = _value;
 		_stop -= 1;
 		if (_start == _stop) return;
-		tokens[_stop] = _start;
+		tokens[_stop] = _value;
 		uint256 _interval = 16;
 		while (true) {
 			uint256 i = (_stop / _interval * _interval);
 			if (i == 0) return;
 			_interval *= 16;
 			if (i % _interval == 0) continue;
-			if (i > _start) tokens[i] = _start;
-		}
-	}
-
-	/**
-		@notice Remove pointers from a range
-		@dev
-			Only called after all new range pointers have been added, to
-			minimize storage costs.
-		@param _start Start index of range
-		@param _stop Stop index of range
-	 */
-	function _removeRangePointers(uint48 _start, uint48 _stop) internal {
-		delete tokens[_start];
-		_stop -= 1;
-		if (_start == _stop) return;
-		delete tokens[_stop];
-		uint256 _interval = 16;
-		while (true) {
-			uint256 i = (_stop / _interval * _interval);
-			if (i == 0) return;
-			_interval *= 16;
-			if (i % _interval == 0) continue;
-			if (i > _start) {
-				delete tokens[i];
-			}
+			if (i > _start) tokens[i] = _value;
 		}
 	}
 
@@ -1014,10 +1006,9 @@ contract NFToken is NFTModular {
 		@dev
 			Given a token index, this will iterate through the range
 			and return the mapping pointer that the index is present within.
-		@param _idx Token index
+		@param i Token index
 	 */
-	function _getPointer(uint256 _idx) internal view returns (uint48) {
-		uint256 i = _idx;
+	function _getPointer(uint256 i) internal view returns (uint48) {
 		uint256 _increment = 1;
 		while (true) {
 			if (tokens[i] != 0x00) return tokens[i];
@@ -1027,16 +1018,4 @@ contract NFToken is NFTModular {
 			i += _increment;
 		}
 	}
-
-	/**
-		@notice Checks that a call comes from a permitted module or the issuer
-		@dev If the caller is the issuer, requires multisig approval
-		@return bool multisig approved
-	 */
-	function _checkPermitted() internal returns (bool) {
-		if (isPermittedModule(msg.sender, msg.sig)) return true;
-		require(issuer.isApprovedAuthority(msg.sender, msg.sig));
-		return issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data));
-	}
-
 }

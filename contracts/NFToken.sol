@@ -10,6 +10,7 @@ import "./TokenBase.sol";
  */
 contract NFToken is TokenBase  {
 
+	uint48 upperBound;
 	uint48[281474976710656] tokens;
 	mapping (uint48 => Range) rangeMap;
 	mapping (address => Balance) balances;
@@ -67,10 +68,9 @@ contract NFToken is TokenBase  {
 	}
 
 	/* modifier to ensure a range index is within bounds */
-	// todo - since burning reduces total supply, we need to store an upper bound value somewhere
 	function _checkBounds(uint256 _idx) internal view {
-		require(_idx != 0, "Index cannot be 0");
-		require(_idx <= totalSupply, "Index exceeds totalSupply");
+		if (_idx != 0 && _idx <= upperBound) return;
+		revert("Invalid index");
 	}
 
 	/**
@@ -307,15 +307,15 @@ contract NFToken is TokenBase  {
 		/* msg.sig = 0x15077ec8 */
 		if (!_checkPermitted()) return false;
 		require(_value > 0);
-		require(totalSupply + _value > totalSupply);
-		require(totalSupply + _value <= 2**48 - 2);
+		require(upperBound + _value > upperBound);
+		require(upperBound + _value <= 2**48 - 2);
 		require(_time == 0 || _time > now);
 		issuer.checkTransfer(address(issuer), address(issuer), _owner, false);
-		uint48 _start = uint48(totalSupply + 1);
+		uint48 _start = uint48(upperBound + 1);
 		uint48 _stop = _start + _value;
-		if (_compareRanges(tokens[totalSupply], _owner, _time, _tag, 0x00)) {
+		if (_compareRanges(tokens[upperBound], _owner, _time, _tag, 0x00)) {
 			/* merge with previous range */
-			uint48 _pointer = tokens[totalSupply];
+			uint48 _pointer = tokens[upperBound];
 			rangeMap[_pointer].stop = _stop;
 		} else {
 			/* create new range */
@@ -325,6 +325,7 @@ contract NFToken is TokenBase  {
 		uint48 _old = balances[_owner].balance;
 		balances[_owner].balance += _value;
 		totalSupply += _value;
+		upperBound += _value;
 		_modifyTotalSupply(_owner, _old);
 		emit RangeSet(_tag, _start, _stop, _time);
 		emit Transfer(0x00, msg.sender, _value);

@@ -95,13 +95,14 @@ contract NFToken is TokenBase  {
 			uint48 _start,
 			uint48 _stop,
 			uint32 _time,
-			bytes2 _tag
+			bytes2 _tag,
+			address _custodian
 		)
 	{
 		_checkBounds(_idx);
 		_start = _getPointer(_idx);
 		Range storage r = rangeMap[_start];
-		return (r.owner, _start, r.stop, r.time, r.tag);
+		return (r.owner, _start, r.stop, r.time, r.tag, r.custodian);
 	}
 
 	/**
@@ -196,7 +197,6 @@ contract NFToken is TokenBase  {
 			_addr[1] = address(issuer);
 		}
 		require(_addr[0] != _addr[1], "Cannot send to self");
-		require(balances[_addr[0]].balance >= _value, "Insufficient Balance");
 		/* bytes4 signature for token module checkTransfer() */
 		_callModules(
 			0x70aaf928,
@@ -209,7 +209,16 @@ contract NFToken is TokenBase  {
 			_range = balances[_addr[1]].ranges;
 		} else {
 			_range = balances[_addr[0]].ranges;
-		} 
+		}
+		if (_cust == 0x00 || (_rating[0] == 0 && _id[0] != ownerID)) {
+			require(balances[_addr[0]].balance >= _value, "Insufficient Balance");
+		} else {
+			require(
+				custBalances[_addr[0]][_cust] >= _value,
+				"Insufficient Custodial Balance"
+			);
+		}
+
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
@@ -222,6 +231,8 @@ contract NFToken is TokenBase  {
 		);
 		return (_addr, _range);
 	}
+
+	event Debug(address custodian, uint256 value);
 
 	/**
 		@notice Find ranges that are permitted to transfer
@@ -246,6 +257,7 @@ contract NFToken is TokenBase  {
 		internal
 		returns (uint48[] _range)
 	{
+		emit Debug(_cust, _value);
 		uint256 _count;
 		_range = new uint48[](_startRange.length);
 		for (uint256 i; i < _startRange.length; i++) {
@@ -546,19 +558,19 @@ contract NFToken is TokenBase  {
 		
 		if (_rating[0] == 0 && _id[0] != ownerID) {
 			/* sender is custodian, reduce custodian balance */
+			custBalances[_addr[1]][_addr[0]] = custBalances[_addr[1]][_addr[0]].sub(_value);
 			_addr[0] = _addr[1];
-			custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].sub(_value);
 		} else if (_rating[1] == 0 && _id[1] != ownerID) {
 			/* receiver is custodian, increase and notify */
 			_cust = _addr[1];
 			_addr[1] = _addr[0];
-			custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].add(_value);
+			custBalances[_addr[0]][_cust] = custBalances[_addr[0]][_cust].add(_value);
 			require(IBaseCustodian(_cust).receiveTransfer(_addr[0], _value));
 		}
 		_transferMultipleRanges(_addr, _id, _rating, _country, _range, _smallVal, _cust);
 	}
 
-	// untested but this should handle internal custodian transfers just fine
+	// todo natspec
 	function transferCustodian(
 		address[2] _addr,
 		uint256 _value
@@ -566,7 +578,6 @@ contract NFToken is TokenBase  {
 		public
 		returns (bool)
 	{
-		
 		bool[4] memory _zero = [
 			custBalances[_addr[0]][msg.sender] == _value,
 			custBalances[_addr[1]][msg.sender] == 0,
@@ -580,10 +591,10 @@ contract NFToken is TokenBase  {
 			uint16[2] memory _country
 		) = issuer.transferTokens(msg.sender, _addr[0], _addr[1], _zero);
 
-		
 		uint48[] memory _range;
-		(_addr, _range) = _checkTransfer(_authID, _id, 0x00, _addr, _rating, _country, _value);
-		
+		(_addr, _range) = _checkTransfer(_authID, _id, msg.sender, _addr, _rating, _country, _value);
+
+		// todo - does this need to safemath?
 		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
 		uint48 _smallVal = uint48(_value);
@@ -617,6 +628,7 @@ contract NFToken is TokenBase  {
 	)
 		internal
 	{
+		emit Transfer(_addr[0], _addr[1], _value);
 		for (uint256 i; i < _range.length; i++) {
 			if (_range[i] == 0) continue;
 			uint48 _start = _range[i];
@@ -637,7 +649,6 @@ contract NFToken is TokenBase  {
 				abi.encode(_id, _addr, _rating, _country, uint48[2]([_start, _stop]))
 			);
 			if (_value == 0) {
-				emit Transfer(_addr[0], _addr[1], _value);
 				return;
 			}
 		}
@@ -745,13 +756,19 @@ contract NFToken is TokenBase  {
 		if (_pointer == _start) {
 			/* touches both */
 			if (_rangeStop == _stop) {
+				// todo - we can avoid replaceInBalanceRange when from == to
 				_replaceInBalanceRange(_from, _start, 0);
 				bool _left = _compareRanges(_prev, _to, 0, _tag, _custodian);
 				bool _right = _compareRanges(_stop, _to, 0, _tag, _custodian);
 				/* no join */
 				if (!_left && !_right) {
 					_replaceInBalanceRange(_to, 0, _start);
-					rangeMap[_pointer].owner = _to;
+					if (_from != _to) {
+						rangeMap[_pointer].owner = _to;
+					}
+					if (rangeMap[_pointer].custodian != _custodian) {
+						rangeMap[_pointer].custodian = _custodian;
+					}
 					return;
 				}
 				_setRangePointers(_pointer, _stop, 0);

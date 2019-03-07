@@ -202,12 +202,7 @@ contract NFToken is TokenBase  {
 			_addr[1] = address(issuer);
 		}
 		require(_addr[0] != _addr[1], "Cannot send to self");
-		/* bytes4 signature for token module checkTransfer() */
-		_callModules(
-			0x70aaf928,
-			0x00,
-			abi.encode(_addr, _authID, _id, _rating, _country, _value)
-		);
+		
 		if (_rating[0] == 0 && _id[0] != ownerID) {
 			/* if sender is custodian, look at custodied ranges */
 			_cust = _addr[0];
@@ -223,6 +218,12 @@ contract NFToken is TokenBase  {
 				"Insufficient Custodial Balance"
 			);
 		}
+		/* bytes4 signature for token module checkTransfer() */
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
@@ -726,9 +727,10 @@ contract NFToken is TokenBase  {
 			_addr[1] = address(issuer);
 		}
 
-		require(balances[_addr[0]].balance >= _value);
-		balances[_addr[0]].balance -= _value;
-		balances[_addr[1]].balance += _value;
+		// todo - check for required balance
+		// investor > investor
+		// into or out of custodian
+		// issuer initiated tx's
 
 		/* hook point for NFTModule.checkTransfer() */
 		_callModules(
@@ -743,6 +745,12 @@ contract NFToken is TokenBase  {
 				rangeMap[_pointer].tag,
 				abi.encode(_addr, _authID, _id, _rating, _country, _range)
 			));
+
+		require(balances[_addr[0]].balance >= _value);
+		balances[_addr[0]].balance -= _value;
+		balances[_addr[1]].balance += _value;
+
+		// todo - adjust custodian balances if needed
 
 		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], 0x00); // todo
 		/* hook point for NFToken.transferTokenRange() */

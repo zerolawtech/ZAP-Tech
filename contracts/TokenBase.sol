@@ -1,6 +1,5 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./open-zeppelin/SafeMath.sol";
 import "./IssuingEntity.sol";
 import "./components/Modular.sol";
 import "./interfaces/IBaseCustodian.sol";
@@ -14,7 +13,7 @@ import "./interfaces/IBaseCustodian.sol";
  */
 contract TokenBase is Modular {
 
-	using SafeMath for uint256;
+	//using SafeMath for uint256;
 
 	bytes32 public ownerID;
 	IssuingEntity public issuer;
@@ -73,7 +72,7 @@ contract TokenBase is Modular {
 		@return integer
 	 */
 	function circulatingSupply() external view returns (uint256) {
-		return totalSupply.sub(balanceOf(address(issuer)));
+		return totalSupply - balanceOf(address(issuer));//.sub(balanceOf(address(issuer)));
 	}
 
 	/**

@@ -202,12 +202,7 @@ contract NFToken is TokenBase  {
 			_addr[1] = address(issuer);
 		}
 		require(_addr[0] != _addr[1], "Cannot send to self");
-		/* bytes4 signature for token module checkTransfer() */
-		_callModules(
-			0x70aaf928,
-			0x00,
-			abi.encode(_addr, _authID, _id, _rating, _country, _value)
-		);
+		
 		if (_rating[0] == 0 && _id[0] != ownerID) {
 			/* if sender is custodian, look at custodied ranges */
 			_cust = _addr[0];
@@ -223,6 +218,12 @@ contract NFToken is TokenBase  {
 				"Insufficient Custodial Balance"
 			);
 		}
+		/* bytes4 signature for token module checkTransfer() */
+		_callModules(
+			0x70aaf928,
+			0x00,
+			abi.encode(_addr, _authID, _id, _rating, _country, _value)
+		);
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
@@ -454,7 +455,6 @@ contract NFToken is TokenBase  {
 				_splitRange(_start);
 			} else {
 				/* merge with previous */
-				// todo - consider how custodians affect merging
 				_start = _pointer;
 			}
 		}
@@ -559,8 +559,11 @@ contract NFToken is TokenBase  {
 				If the call was not made by the issuer or the sender and involves
 				a change in ownership, subtract from the allowed mapping.
 			*/
-			require(allowed[_addr[0]][_auth] >= _value, "Insufficient allowance");
-			allowed[_addr[0]][_auth] = allowed[_addr[0]][_auth].sub(_value);
+			require(
+				allowed[_addr[0]][_auth] >= _value,
+				"Insufficient allowance"
+			);
+			allowed[_addr[0]][_auth] -= _value;
 		}
 
 		address _cust;
@@ -570,13 +573,13 @@ contract NFToken is TokenBase  {
 		
 		if (_rating[0] == 0 && _id[0] != ownerID) {
 			/* sender is custodian, reduce custodian balance */
-			custBalances[_addr[1]][_addr[0]] = custBalances[_addr[1]][_addr[0]].sub(_value);
+			custBalances[_addr[1]][_addr[0]] -= _value;
 			_addr[0] = _addr[1];
 		} else if (_rating[1] == 0 && _id[1] != ownerID) {
 			/* receiver is custodian, increase and notify */
 			_cust = _addr[1];
 			_addr[1] = _addr[0];
-			custBalances[_addr[0]][_cust] = custBalances[_addr[0]][_cust].add(_value);
+			custBalances[_addr[0]][_cust] += _value;
 			require(IBaseCustodian(_cust).receiveTransfer(_addr[0], _value));
 		}
 		_transferMultipleRanges(_id, _addr, _cust, _rating, _country, _smallVal, _range);
@@ -615,8 +618,8 @@ contract NFToken is TokenBase  {
 		(_addr, _range) = _checkTransfer(_authID, _id, msg.sender, _addr, _rating, _country, _value);
 
 		// todo - does this need to safemath?
-		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
-		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
+		custBalances[_addr[0]][msg.sender] -= _value;
+		custBalances[_addr[1]][msg.sender] += _value;
 		/* bytes4 signature for token module transferTokensCustodian() */
 		_callModules(
 			0x8b5f1240,
@@ -724,9 +727,10 @@ contract NFToken is TokenBase  {
 			_addr[1] = address(issuer);
 		}
 
-		require(balances[_addr[0]].balance >= _value);
-		balances[_addr[0]].balance -= _value;
-		balances[_addr[1]].balance += _value;
+		// todo - check for required balance
+		// investor > investor
+		// into or out of custodian
+		// issuer initiated tx's
 
 		/* hook point for NFTModule.checkTransfer() */
 		_callModules(
@@ -741,6 +745,12 @@ contract NFToken is TokenBase  {
 				rangeMap[_pointer].tag,
 				abi.encode(_addr, _authID, _id, _rating, _country, _range)
 			));
+
+		require(balances[_addr[0]].balance >= _value);
+		balances[_addr[0]].balance -= _value;
+		balances[_addr[1]].balance += _value;
+
+		// todo - adjust custodian balances if needed
 
 		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], 0x00); // todo
 		/* hook point for NFToken.transferTokenRange() */
@@ -778,7 +788,6 @@ contract NFToken is TokenBase  {
 		if (_pointer == _start) {
 			/* touches both */
 			if (_rangeStop == _stop) {
-				// todo - we can avoid replaceInBalanceRange when from == to
 				_replaceInBalanceRange(_from, _start, 0);
 				bool _left = _compareRanges(_prev, _to, 0, _tag, _custodian);
 				bool _right = _compareRanges(_stop, _to, 0, _tag, _custodian);

@@ -2,9 +2,9 @@ pragma solidity >=0.4.24<0.5.0;
 
 interface IKYCRegistrar {
 
-	function isPermitted(address _addr) public view returns (bool);
+	function isPermitted(address _addr) external view returns (bool);
 
-	function isPermittedID(bytes32 _id) public view returns (bool);
+	function isPermittedID(bytes32 _id) external view returns (bool);
 
 	function addAuthority(
 		address[] _addr,

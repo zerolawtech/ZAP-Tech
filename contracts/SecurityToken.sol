@@ -1,5 +1,7 @@
 pragma solidity >=0.4.24 <0.5.0;
 
+
+import "./open-zeppelin/SafeMath.sol";
 import "./TokenBase.sol";
 
 
@@ -10,6 +12,8 @@ import "./TokenBase.sol";
 		https://theethereum.wiki/w/index.php/ERC20_Token_Standard
  */
 contract SecurityToken is TokenBase {
+
+	using SafeMath for uint256;
 
 	mapping (address => uint256) balances;
 

@@ -1,0 +1,7 @@
+[flake8]
+# E231 = missing whitespace after ,
+# F405, F403 = using * imports
+# E501 = 80 char line limit
+# E302 = expectig 2 blank lines between def's
+ignore = F405, F403, E501, E231, E302
+

@@ -388,6 +388,7 @@ contract NFToken is TokenBase  {
 		Range storage r = rangeMap[_pointer];
 		require(r.owner != 0x00);
 		require(_time == 0 || _time > now);
+		if (!_checkPermitted()) return false;
 		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag, r.custodian)) {
 			/* merge with previous range */
 			uint48 _prev = tokens[_pointer-1];
@@ -417,7 +418,7 @@ contract NFToken is TokenBase  {
 	}
 
 	/**
-		@notice Modifies one or more many ranges
+		@notice Modifies one or more ranges
 		@dev Whenever possible, ranges will be merged
 		@param _start Start index
 		@param _stop Stop index
@@ -436,7 +437,9 @@ contract NFToken is TokenBase  {
 	{
 		_checkBounds(_start);
 		_checkBounds(_stop-1);
+		require(_start < _stop);
 		require(_time == 0 || _time > now);
+		if (!_checkPermitted()) return false;
 		uint48 _pointer = _getPointer(_stop);
 		if (_pointer != _stop) {
 			Range storage r = rangeMap[_pointer];

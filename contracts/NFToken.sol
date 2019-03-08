@@ -383,7 +383,6 @@ contract NFToken is TokenBase  {
 		public
 		returns (bool)
 	{
-		// todo - how much crossover is there between modifyRange, modifyRanges, and transferSingleRange?
 		_checkBounds(_pointer);
 		require(tokens[_pointer] == _pointer);
 		Range storage r = rangeMap[_pointer];
@@ -552,7 +551,15 @@ contract NFToken is TokenBase  {
 
 		uint48 _smallVal = uint48(_value);
 		uint48[] memory _range;
-		(_addr, _range) = _checkTransfer(_authID, _id, 0x00, _addr, _rating, _country, _value);
+		(_addr, _range) = _checkTransfer(
+			_authID,
+			_id,
+			0x00,
+			_addr,
+			_rating,
+			_country,
+			_value
+		);
 
 		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
 			/**
@@ -615,9 +622,16 @@ contract NFToken is TokenBase  {
 		) = issuer.transferTokens(msg.sender, _addr[0], _addr[1], _zero);
 
 		uint48[] memory _range;
-		(_addr, _range) = _checkTransfer(_authID, _id, msg.sender, _addr, _rating, _country, _value);
+		(_addr, _range) = _checkTransfer(
+			_authID,
+			_id,
+			msg.sender,
+			_addr,
+			_rating,
+			_country,
+			_value
+		);
 
-		// todo - does this need to safemath?
 		custBalances[_addr[0]][msg.sender] -= _value;
 		custBalances[_addr[1]][msg.sender] += _value;
 		/* bytes4 signature for token module transferTokensCustodian() */
@@ -626,7 +640,15 @@ contract NFToken is TokenBase  {
 			0x00,
 			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
 		);
-		_transferMultipleRanges(_id, _addr, msg.sender, _rating, _country, uint48(_value), _range);
+		_transferMultipleRanges(
+			_id,
+			_addr,
+			msg.sender,
+			_rating,
+			_country,
+			uint48(_value),
+			_range
+		);
 		return true;
 	}
 
@@ -681,6 +703,7 @@ contract NFToken is TokenBase  {
 
 	/**
 		@notice transfer tokens with a specific index range
+		@dev Can send tokens into a custodian, but not out of one
 		@param _to Receipient address
 		@param _start Transfer start index
 		@param _stop Transfer stop index
@@ -699,6 +722,7 @@ contract NFToken is TokenBase  {
 		require(_start < _stop);
 		uint48 _pointer = _getPointer(_stop-1);
 		require(msg.sender == rangeMap[_pointer].owner);
+		require(rangeMap[_pointer].custodian == 0x00);
 		require(_pointer <= _start);
 		require(_checkTime(_pointer));
 
@@ -722,15 +746,15 @@ contract NFToken is TokenBase  {
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
 			_addr[0] = address(issuer);
+		} else {
+			/* prevent send from custodian */
+			require(_rating[0] > 0);
 		}
 		if (_id[1] == ownerID) {
 			_addr[1] = address(issuer);
 		}
 
-		// todo - check for required balance
-		// investor > investor
-		// into or out of custodian
-		// issuer initiated tx's
+		require(_addr[0] != _addr[1], "Cannot send to self");
 
 		/* hook point for NFTModule.checkTransfer() */
 		_callModules(
@@ -741,24 +765,30 @@ contract NFToken is TokenBase  {
 
 		/* hook point for NFTModule.checkTransferRange */
 		require(_callModules(
-				0x2d79c6d7,
-				rangeMap[_pointer].tag,
-				abi.encode(_addr, _authID, _id, _rating, _country, _range)
-			));
+			0x2d79c6d7,
+			rangeMap[_pointer].tag,
+			abi.encode(_addr, _authID, _id, _rating, _country, _range)
+		));
 
-		require(balances[_addr[0]].balance >= _value);
 		balances[_addr[0]].balance -= _value;
-		balances[_addr[1]].balance += _value;
 
-		// todo - adjust custodian balances if needed
+		address _cust;
+		if (_rating[1] == 0 && _id[1] != ownerID) {
+			/* if sender is custodian, look at custodied ranges */
+			_cust = _addr[1];
+			_addr[1] = _addr[0];
+			custBalances[_addr[0]][_cust] += _value;
+		} else {
+			balances[_addr[1]].balance += _value;
+		}
 
-		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], 0x00); // todo
+		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], _cust);
 		/* hook point for NFToken.transferTokenRange() */
 		_callModules(
-				0xead529f5,
-				rangeMap[_pointer].tag,
-				abi.encode(_addr, _id,  _rating, _country, _range)
-			);
+			0xead529f5,
+			rangeMap[_pointer].tag,
+			abi.encode(_addr, _id,  _rating, _country, _range)
+		);
 	}
 
 	/**

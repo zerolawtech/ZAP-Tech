@@ -31,3 +31,4 @@ ENV PYTHONIOENCODING=utf-8
 # full re-build that adding --no-cache would cause.
 ADD http://worldclockapi.com/api/json/est/now /tmp/bustcache
 RUN brownie --dev
+RUN cd /usr/local/lib/brownie; git log | head

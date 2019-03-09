@@ -15,7 +15,7 @@ To setup a simple test environment using brownie:
     >>> run('simple')
 
 
-This runs `simple.py <https://github.com/SFT-Protocol/security-token/tree/master/deployments/simple.py>`__ which:
+This runs `deploy_simple.py <https://github.com/SFT-Protocol/security-token/tree/master/scripts/deploy_simple.py>`__ which:
 
 * Deploys ``KYCRegistrar`` from ``accounts[0]``
 * Deploys ``IssuingEntity`` from ``accounts[1]``

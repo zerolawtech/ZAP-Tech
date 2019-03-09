@@ -46,8 +46,8 @@ Permissioning and Functionality
 
 Modules introduce functionality in two ways:
 
-* **Hooks** are points within the parent contract's methods where the module will be called. They can be used to introduce extra permissioning requirements or record additional data.
 * **Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting investor limits, transferring tokens, or changing the total supply.
+* **Hooks** are points within the parent contract's methods where the module will be called. They can be used to introduce extra permissioning requirements or record additional data.
 
 In short: hooks involve calls from a parent contract into a module, permissions involve calls from a module into the parent contract.
 
@@ -55,20 +55,92 @@ Hooks and permissions are set the first time a module is attached by calling the
 
 .. method:: ModuleBase.getPermissions()
 
-    Returns two ``bytes4[]``:
+    Returns the following:
 
-    * ``hooks``: Array of method signatures within the module that the parent will call to.
-    * ``permissions``: Array of method signatures within the parent contract that the module is permitted to call.
+    * ``permissions``: ``bytes4`` array of method signatures within the parent contract that the module is permitted to call.
+    * ``hooks``: ``bytes4`` array of method signatures within the module that the parent contract may call into.
+    * ``hooksActive``: ``bool`` array corresponding to the hook signatures, sets if each hook is active initially.
+    * ``hooksAlways``: ``bool`` array to set if each hook should always be called.
 
 Before attaching a module, be sure to check the return value of this function and compare the requested hook points and permissions to those that would be required for the documented functionality of the module. For example, a module intended to block token transfers should not require permission to mint new tokens.
 
-Hooking into Methods
-====================
+Hooks and Tags
+==============
 
-The available hook points varies depending on the type of parent contract.
+* **Hooks** are points within the parent contract's methods where the module will be called. They can be used to introduce extra permissioning requirements or record additional data.
+* **Tags** are ``bytes2`` values attached to token ranges in ``NFToken``, that allow for more granular hook attachments.
+
+Hooks and tags are defined in the following struct:
+
+::
+
+    struct Hook {
+        uint256[256] tagBools;
+        bool permitted;
+        bool active;
+        bool always;
+    }
+
+* ``tagBools``: An bit field of length ``2^16``. Defines granular hook points based on specific tags.
+* ``permitted``: Can only be set the first time the module is attached. If ``true``, this is an available hook point for the module.
+* ``active``: Set during attachment, can be modified by the module. If ``true``, this hook is currently active and will be called during the execution of the parent module.
+* ``always``: Set during attachment, can be modified by the module. If ``true``, this hook is always called regardless of the tag value.
+
+Hooks involving tokens from an ``NFToken`` contract rely upon tags to determine if the hook point should be called.  A tag is a ``bytes2`` that is assigned to a specific range of tokens.  When a hook point involves a tagged token range, the following three conditions are evaluated to see if the hook method should be called:
+
+* Is ``Hook.always`` set to ``true``?
+* Is the first byte of the tag, followed by '00', set to true within ``Hook.tagBools``?
+* Is the entire tag set to true within ``Hook.tagBools``?
+
+For example, if the tag is ``0xff32``, the hook point will be called if either ``Hook.always``, ``Hook.tagBools[0xff00]``, or ``Hook.tagBools[0xff32]`` are ``true``.
+
+For hook points that do not involve tags, the module should set ``active`` and ``always`` to true when it wishes to be called.
+
+Settings Hooks and Tags
+-----------------------
+
+The following methods are used to modify hook and tag settings for a module. These methods may only be called from the module while it is active.
+
+.. method:: Modular.setHook(bytes4 _sig, bool _active, bool _always)
+
+    Enables or disables a hook point for an active module.
+
+    * ``_sig``: Signature of the hooked method.
+    * ``_active``: Boolean for if hooked method is active.
+    * ``_always``: Boolean for if hooked method should always be called when active.
+
+.. method:: Modular.setHookTags(bytes4 _sig, bool _value, bytes1 _tagBase, bytes1[] _tags)
+
+    Enables or disables specific tags for a hook point.
+
+    * ``_sig``: Signature of the hooked method.
+    * ``_value``: Boolean value to set each tag to.
+    * ``_tagBase``: The first byte of the tag to set.
+    * ``_tags``: Array of 2nd bytes for the tag.
+
+    For example: if ``_tagBase = 0xff`` and ``_tags = [0x11, 0x22]``, you will modify tags ``0xff00``, ``0xff11``, and ``0xff22``.
+
+.. method:: Modular.clearHookTags(bytes4 _sig, bytes1[] _tagBase)
+
+    Disables many tags for a given hook point.
+
+    * ``_sig``: Signature of the hooked method.
+    * ``_tagBase``: Array of first bytes for tags to disable.
+
+    For example: if ``_tagBase = [0xee, 0xff]`` it will clear tags ``0xee00``, ``0xee01`` ... ``0xeeff``, and ``0xff00``, ``0xff01`` ... ``0xffff``.
+
+
+
+
+Hookable Module Methods
+-----------------------
+
+The following methods may be included in modules and given as hook points via ``getPermissions``.
+
+Inputs and outputs of all hook points are also defined in `IModules.sol <https://github.com/SFT-Protocol/security-token/tree/master/contracts/components/Modular.sol>`__. This can be a useful starting point when writing your own modules.
 
 SecurityToken
--------------
+*************
 
 .. method:: STModule.checkTransfer(address[2] _addr, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
 
@@ -111,7 +183,7 @@ SecurityToken
 
     * Hook signature: ``0x741b5078``
 
-    Called after the total supply has been modified by ``SecurityToken.modifyTotalSupply``.
+    Called after the total supply has been modified by ``SecurityToken.mint`` or ``SecurityToken.burn``.
 
     * ``_addr``: Address where balance has changed.
     * ``_id``: ID that the address is associated to.
@@ -131,7 +203,7 @@ SecurityToken
     * ``_newSupply``: New authorized supply
 
 IssuingEntity
--------------
+*************
 
 .. method:: IssuerModule.checkTransfer(address _token, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
 
@@ -175,7 +247,7 @@ IssuingEntity
 
     * Hook signature: ``0xb446f3ca``
 
-    Called after a token's total supply has been modified by ``SecurityToken.modifyTotalSupply``.
+    Called after a token's total supply has been modified by ``SecurityToken.mint`` or ``SecurityToken.burn``.
 
     * ``_token``: Token address where balance has changed.
     * ``_id``: ID of the investor who's balance changed.
@@ -185,7 +257,7 @@ IssuingEntity
     * ``_new``: New investor balance (across all tokens).
 
 Custodian
----------
+*********
 
 .. method:: CustodianModule.sentTokens(address _token, bytes32 _id, uint256 _value, bool _stillOwner)
 
@@ -249,11 +321,19 @@ Any module applied to an IssuingEntity contract may also be permitted to call me
 
     Calling this method will also call any hooked in ``checkTransfer`` and ``transferTokens`` methods.
 
-.. method:: SecurityToken.modifyTotalSupply(address _owner, uint256 _value)
+.. method:: SecurityToken.mint(address _owner, uint256 _value)
 
-    * Permission signature: ``0x250dea06``
+    * Permission signature: ``0x40c10f19``
 
-    Sets the balance of ``_owner`` to ``_value`` and modifies ``totalSupply`` accordingly. This method is only callable by a module.
+    Mints new tokens to the given address.
+
+    Calling this method will also call any hooked in ``totalSupplyChanged`` methods.
+
+.. method:: SecurityToken.burn(address _owner, uint256 _value)
+
+    * Permission signature: ``0x9dc29fac``
+
+    Burns tokens at the given address.
 
     Calling this method will also call any hooked in ``totalSupplyChanged`` methods.
 

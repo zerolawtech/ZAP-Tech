@@ -1,8 +1,10 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./modules/ModuleBase.sol";
+import "../ModuleBase.sol";
 
-contract Options is STModuleBase {
+contract VestedOptions is STModuleBase {
+
+	string public constant name = "Options";
 
 	mapping (bytes32 => Option[]) optionData;
 	mapping (bytes32 => uint256) options;
@@ -32,8 +34,6 @@ contract Options is STModuleBase {
 
 	}
 
-	string public constant name = "Options";
-
 	constructor(address _token, address _issuer) public STModuleBase(_token, _issuer) { }
 
 	function issueOptions(
@@ -57,30 +57,37 @@ contract Options is STModuleBase {
 	}
 
 	function totalSupplyChanged(
-		address _addr,
-		bytes32 _id,
-		uint8 _rating,
-		uint16 _country,
+		address,
+		bytes32,
+		uint8,
+		uint16,
 		uint256 _old,
 		uint256 _new
 	)
 		external
+		view
 		returns (bool)
 	{
-
+		if (_old > _new) {
+			require(token.authorizedSupply() - token.totalSupply() >= totalOptions);
+		}
+		return true;
+		
 	}
 
 	function modifyAuthorizedSupply(
-		address _token,
+		address,
 		uint256 _oldSupply,
 		uint256 _newSupply
 	)
 		external
+		view
 		returns (bool)
 	{
-
+		if (_oldSupply > _newSupply) {
+			require(_newSupply - token.totalSupply() >= totalOptions);
+		}
+		return true;
 	}
-
-
 
 }

@@ -22,10 +22,12 @@ contract CountryLockModule is STModuleBase {
 		uint16 _country,
 		uint256 _epochTime
 	)
-		public
-		onlyAuthority
+		external
+		returns (bool)
 	{
+		if (!_onlyAuthority()) return false;
 		countryLock[_country] = _epochTime;
+		return true;
 	}
 
 	function getPermissions()

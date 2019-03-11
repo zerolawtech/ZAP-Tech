@@ -45,6 +45,7 @@ contract VestedOptions is STModuleBase {
 		external
 		returns (bool)
 	{
+		if (!_onlyAuthority()) return false;
 		require(_amount.length == _exercisePrice.length);
 		require(_amount.length == _vestDate.length);
 		uint256 _total;
@@ -54,6 +55,74 @@ contract VestedOptions is STModuleBase {
 		}
 		options[_id] += _total;
 		totalOptions += _total;
+		return true;
+	}
+
+	function accellerateVestingDate(
+		bytes32 _id,
+		uint256[] _idx,
+		uint32 _vestDate
+	)
+		external
+		returns (bool)
+	{
+		if (!_onlyAuthority()) return false;
+		for (uint256 i; i < _idx.length; i++) {
+			require(optionData[_id][_idx[i]].vestDate >= _vestDate);
+			optionData[_id][_idx[i]].vestDate = _vestDate;
+		}
+		return true;
+	}
+
+	function exerciseOptions(
+		bytes32 _id,
+		uint256[] _idx
+	)
+		external
+		returns (bool)
+	{
+		require(issuer.getID(msg.sender) == _id);
+		uint256 _amount;
+		uint256 _exercisePrice;
+		for (uint256 i; i < _idx.length; i++) {
+			Option storage o = optionData[_id][_idx[i]];
+			require(o.vestDate <= now, "Options have not vested");
+			require(o.creationDate + expiryDate > now, "Options have expired");
+			_amount += o.amount;
+			_exercisePrice += o.exercisePrice;
+			delete optionData[_id][_idx[i]];
+		}
+		totalOptions -= _amount;
+		options[_id] -= _amount;
+		// need to use payable and verify amount sent, or transferFrom an ERC20
+		require(token.mint(msg.sender, _amount));
+	}
+
+	function cancelExpiredOptions(
+		bytes32 _id,
+		uint256[] _idx
+	)
+		external
+		returns (bool)
+	{
+		/*
+			have a hard expiry date (common to all options) after which the issuer
+			can cancel them (or as a legal matter are automatically deemed cancel)
+		*/
+	}
+
+	function terminateOptions(
+		bytes32 _id
+	)
+		external
+		returns (bool)
+	{
+		/*
+			at any time (on the legal layer, tracking a termination of service of the
+			option holder), issuer can call to an option and set it as "becomes cancelled
+			after X period of time", X is hardcoded at the time of the grant, but should
+			be extendable.
+		*/
 	}
 
 	function totalSupplyChanged(

@@ -7,8 +7,10 @@ contract VestedOptions is STModuleBase {
 	string public constant name = "Options";
 
 	uint256 public totalOptions;
+	uint256 public ethPeg;
 	uint32 public expiryDate;
 	uint32 public terminationGracePeriod;
+	address public receiver;
 
 	mapping (bytes32 => Option[]) optionData;
 	mapping (bytes32 => uint256) public options;
@@ -34,7 +36,20 @@ contract VestedOptions is STModuleBase {
 
 	}
 
-	constructor(address _token, address _issuer) public STModuleBase(_token, _issuer) { }
+	constructor(
+		address _token,
+		address _issuer,
+		uint32 _expiry,
+		uint32 _gracePeriod,
+		address _receiver
+	)
+		public
+		STModuleBase(_token, _issuer)
+	{
+		expiryDate = _expiry;
+		terminationGracePeriod = _gracePeriod;
+		receiver = _receiver;
+	}
 
 	function issueOptions(
 		bytes32 _id,
@@ -68,34 +83,36 @@ contract VestedOptions is STModuleBase {
 	{
 		if (!_onlyAuthority()) return false;
 		for (uint256 i; i < _idx.length; i++) {
-			require(optionData[_id][_idx[i]].vestDate >= _vestDate);
+			require(optionData[_id][_idx[i]].vestDate >= _vestDate, "Cannot extend vesting date");
 			optionData[_id][_idx[i]].vestDate = _vestDate;
 		}
 		return true;
 	}
 
 	function exerciseOptions(
-		bytes32 _id,
 		uint256[] _idx
 	)
 		external
+		payable
 		returns (bool)
 	{
-		require(issuer.getID(msg.sender) == _id);
+		bytes32 _id = issuer.getID(msg.sender);
 		uint256 _amount;
-		uint256 _exercisePrice;
+		uint256 _exerciseTotal;
 		for (uint256 i; i < _idx.length; i++) {
 			Option storage o = optionData[_id][_idx[i]];
 			require(o.vestDate <= now, "Options have not vested");
 			require(o.creationDate + expiryDate > now, "Options have expired");
 			_amount += o.amount;
-			_exercisePrice += o.exercisePrice;
+			_exerciseTotal += o.exercisePrice * o.amount;
 			delete optionData[_id][_idx[i]];
 		}
+		require(msg.value == _exerciseTotal * ethPeg, "Incorrect payment amount");
+		receiver.transfer(address(this).balance);
 		totalOptions -= _amount;
 		options[_id] -= _amount;
-		// need to use payable and verify amount sent, or transferFrom an ERC20
 		require(token.mint(msg.sender, _amount));
+		return true;
 	}
 
 	function cancelExpiredOptions(
@@ -104,8 +121,6 @@ contract VestedOptions is STModuleBase {
 		external
 		returns (bool)
 	{
-		require(issuer.getID(msg.sender) == _id);
-
 		Option[] storage o = optionData[_id];
 		uint256 _amount;
 		for (uint256 i; i < o.length; i++) {
@@ -124,12 +139,20 @@ contract VestedOptions is STModuleBase {
 		external
 		returns (bool)
 	{
-		/*
-			at any time (on the legal layer, tracking a termination of service of the
-			option holder), issuer can call to an option and set it as "becomes cancelled
-			after X period of time", X is hardcoded at the time of the grant, but should
-			be extendable.
-		*/
+		if (!_onlyAuthority()) return false;
+		Option[] storage o = optionData[_id];
+		uint256 _amount;
+		for (uint256 i; i < o.length; i++) {
+			if (o[i].vestDate > now) {
+				_amount += o[i].amount;
+				delete o[i];
+			} else {
+				o[i].creationDate = uint32(now) - expiryDate + terminationGracePeriod;
+			}
+		}
+		totalOptions -= _amount;
+		options[_id] -= _amount;
+		return true;
 	}
 
 	function totalSupplyChanged(

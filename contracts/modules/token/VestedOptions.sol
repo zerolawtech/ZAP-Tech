@@ -26,6 +26,22 @@ contract VestedOptions is STModuleBase {
 		uint32 vestDate;
 	}
 
+	event NewOptions(
+		bytes32 indexed id,
+		uint256 idx,
+		uint256 amount,
+		uint256 exercisePrice,
+		uint32 creationDate,
+		uint32 vestDate,
+		uint32 expiryDate
+	);
+	// todo
+	event VestDateModified();
+	event EthPegSet();
+	event ClaimedOptions();
+	event TerminatedOptions();
+	event ExpiredOptions();
+
 	/**
 		@notice supply permissions and hook points when attaching module
 		@dev
@@ -111,14 +127,24 @@ contract VestedOptions is STModuleBase {
 		require(_amount.length == _exercisePrice.length);
 		require(_amount.length == _vestDate.length);
 		uint256 _total;
+		uint32 _now = uint32(now);
 		for (uint256 i; i < _amount.length; i++) {
 			optionData[_id].push(Option(
 				_amount[i],
 				_exercisePrice[i],
-				uint32(now),
-				uint32(now).add(_vestDate[i])
+				_now,
+				_now.add(_vestDate[i])
 			));
 			_total = _total.add(_amount[i]);
+			emit NewOptions(
+				_id,
+				optionData[_id].length-1,
+				_amount[i],
+				_exercisePrice[i],
+				_now,
+				_now.add(_vestDate[i]),
+				_now.add(expiryDate)
+			);
 		}
 		options[_id] = options[_id].add(_total);
 		totalOptions = totalOptions.add(_total);

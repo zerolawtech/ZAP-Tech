@@ -47,14 +47,13 @@ contract Modular {
 			(
 				bytes4[] memory _permissions,
 				bytes4[] memory _hooks,
-				bool[] memory _hooksActive,
-				bool[] memory _hooksAlways
+				uint256 _hookBools
 			) = b.getPermissions();
 			for (uint256 i; i < _hooks.length; i++) {
 				m.hooks[_hooks[i]].permitted = true;
-				m.hooks[_hooks[i]].active = _hooksActive[i];
-				m.hooks[_hooks[i]].always = _hooksAlways[i];
-				emit ModuleHookSet(_module, _hooks[i], _hooksActive[i], _hooksAlways[i]);
+				m.hooks[_hooks[i]].active = ((_hookBools >> uint256(i)) & uint256(1) == 1);//_hooksActive[i];
+				m.hooks[_hooks[i]].always = ((_hookBools >> uint256(i+128)) & uint256(1) == 1);//_hooksAlways[i];
+				emit ModuleHookSet(_module, _hooks[i], m.hooks[_hooks[i]].active, m.hooks[_hooks[i]].always);
 			}
 			for (i = 0; i < _hooks.length; i++) {
 				m.permissions[_permissions[i]] = true;

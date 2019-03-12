@@ -33,11 +33,15 @@ contract VestedOptions is STModuleBase {
 	(
 		bytes4[] permissions,
 		bytes4[] hooks,
-		bool[] hooksActive,
-		bool[] hooksAlways
+		uint256 hookBools
 	)
 	{
-
+		permissions = new bytes4[](1);
+		permissions[0] = 0x40c10f19;
+		hooks = new bytes4[](2);
+		hooks[0] = 0xb1a1a455;
+		hooks[1] = 0x741b5078;
+		return (permissions, hooks, uint256(-1));
 	}
 
 	constructor(
@@ -69,7 +73,12 @@ contract VestedOptions is STModuleBase {
 		require(_amount.length == _vestDate.length);
 		uint256 _total;
 		for (uint256 i; i < _amount.length; i++) {
-			optionData[_id].push(Option(_amount[i], _exercisePrice[i], uint32(now), _vestDate[i]));
+			optionData[_id].push(Option(
+				_amount[i],
+				_exercisePrice[i],
+				uint32(now),
+				_vestDate[i]
+			));
 			_total = _total.add(_amount[i]);
 		}
 		options[_id] = options[_id].add(_total);
@@ -87,7 +96,10 @@ contract VestedOptions is STModuleBase {
 	{
 		if (!_onlyAuthority()) return false;
 		for (uint256 i; i < _idx.length; i++) {
-			require(optionData[_id][_idx[i]].vestDate >= _vestDate, "Cannot extend vesting date");
+			require(
+				optionData[_id][_idx[i]].vestDate >= _vestDate,
+				"Cannot extend vesting date"
+			);
 			optionData[_id][_idx[i]].vestDate = _vestDate;
 		}
 		return true;
@@ -102,16 +114,16 @@ contract VestedOptions is STModuleBase {
 	{
 		bytes32 _id = issuer.getID(msg.sender);
 		uint256 _amount;
-		uint256 _exerciseTotal;
+		uint256 _price;
 		for (uint256 i; i < _idx.length; i++) {
 			Option storage o = optionData[_id][_idx[i]];
 			require(o.vestDate <= now, "Options have not vested");
 			require(o.creationDate.add(expiryDate) > now, "Options have expired");
 			_amount = _amount.add(o.amount);
-			_exerciseTotal = _exerciseTotal.add(uint256(o.exercisePrice).mul(o.amount));
+			_price = _price.add(uint256(o.exercisePrice).mul(o.amount));
 			delete optionData[_id][_idx[i]];
 		}
-		require(msg.value == _exerciseTotal.mul(ethPeg), "Incorrect payment amount");
+		require(msg.value == _price.mul(ethPeg), "Incorrect payment amount");
 		receiver.transfer(address(this).balance);
 		totalOptions = totalOptions.sub(_amount);
 		options[_id] = options[_id].sub(_amount);

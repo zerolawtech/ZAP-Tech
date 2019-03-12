@@ -26,6 +26,14 @@ contract VestedOptions is STModuleBase {
 		uint32 vestDate;
 	}
 
+	/**
+		@notice supply permissions and hook points when attaching module
+		@dev
+			permissions: 0x40c10f19 - mint
+			hooks: 0xb1a1a455 - modifyAuthorizedSupply
+				   0x741b5078 - totalSupplyChanged
+			hookBools - all true
+	 */
 	function getPermissions()
 		external
 		pure
@@ -44,6 +52,15 @@ contract VestedOptions is STModuleBase {
 		return (permissions, hooks, uint256(-1));
 	}
 
+	/**
+		@notice constructor
+		@param _token token address
+		@param _issuer issuer address
+		@param _expiry time for options to expire, in seconds
+		@param _gracePeriod amount of time that already vested options are
+							claimable if terminated
+		@param _receiver address to send ETH to when options are exercised
+	 */
 	constructor(
 		address _token,
 		address _issuer,
@@ -59,6 +76,14 @@ contract VestedOptions is STModuleBase {
 		receiver = _receiver;
 	}
 
+	/**
+		@notice issue new options
+		@param _id investor ID
+		@param _amount array, quantities of options to issue
+		@param _exercisePrice array, exercise price per group of options
+		@param _vestDate array, relative time for options to vest (seconds from now)
+		@return bool success
+	 */
 	function issueOptions(
 		bytes32 _id,
 		uint96[] _amount,
@@ -77,7 +102,7 @@ contract VestedOptions is STModuleBase {
 				_amount[i],
 				_exercisePrice[i],
 				uint32(now),
-				_vestDate[i]
+				uint32(now).add(_vestDate[i])
 			));
 			_total = _total.add(_amount[i]);
 		}
@@ -86,6 +111,14 @@ contract VestedOptions is STModuleBase {
 		return true;
 	}
 
+	/**
+		@notice modify vesting date for one or more groups of options
+		@dev time to vest can only be shortened, not extended
+		@param _id investor ID
+		@param _idx array, option indexes
+		@param _vestDate new absolute time for options to vest
+		@return bool success
+	 */
 	function accellerateVestingDate(
 		bytes32 _id,
 		uint256[] _idx,
@@ -105,6 +138,13 @@ contract VestedOptions is STModuleBase {
 		return true;
 	}
 
+	/**
+		@notice exercise vested options
+		@dev payable method, payment must exactly equal:
+			exercise price * number of options * eth peg
+		@param _idx array, option indexes
+		@return bool success
+	 */
 	function exerciseOptions(
 		uint256[] _idx
 	)
@@ -132,12 +172,16 @@ contract VestedOptions is STModuleBase {
 		return true;
 	}
 
-	function cancelExpiredOptions(
-		bytes32 _id
-	)
-		external
-		returns (bool)
-	{
+	/**
+		@notice cancel expired options
+		@dev
+			This method does not need to be called to block the claim of expired
+			options. It is used to reduce totalOptions, freeing up the authorized
+			supply so that other options or tokens may be issued.
+		@param _id Investor ID
+		@return bool success
+	 */
+	function cancelExpiredOptions(bytes32 _id) external returns (bool) {
 		Option[] storage o = optionData[_id];
 		uint256 _amount;
 		for (uint256 i; i < o.length; i++) {
@@ -150,12 +194,16 @@ contract VestedOptions is STModuleBase {
 		return true;
 	}
 
-	function terminateOptions(
-		bytes32 _id
-	)
-		external
-		returns (bool)
-	{
+	/**
+		@notice Terminate options
+		@dev
+			Terminates all options associated with an investor ID. Any
+			groups that had already vested will still be available for
+			terminationGracePeriod seconds.
+		@param _id Investor ID
+		@return bool success
+	 */
+	function terminateOptions(bytes32 _id) external returns (bool) {
 		if (!_onlyAuthority()) return false;
 		Option[] storage o = optionData[_id];
 		uint256 _amount;
@@ -172,6 +220,10 @@ contract VestedOptions is STModuleBase {
 		return true;
 	}
 
+	/**
+		@notice Total supply hook point method
+		@dev Prevents totalSupply + totalOptions from exceeding authorizedSupply
+	 */
 	function totalSupplyChanged(
 		address,
 		bytes32,
@@ -191,6 +243,10 @@ contract VestedOptions is STModuleBase {
 		
 	}
 
+	/**
+		@notice Authorized supply hook point method
+		@dev Prevents totalSupply + totalOptions from exceeding authorizedSupply
+	 */
 	function modifyAuthorizedSupply(
 		address,
 		uint256 _oldSupply,

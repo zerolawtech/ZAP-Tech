@@ -77,6 +77,20 @@ contract VestedOptions is STModuleBase {
 	}
 
 	/**
+		@notice Modify eth peg
+		@dev
+			The peg is multiplied by the exercise price to determine the amount
+			in wei that must be paid when exercising an option.
+		@param _peg new peg value
+		@return bool
+	 */
+	function modifyPeg(uint256 _peg) external returns (bool) {
+		if (!_onlyAuthority()) return false;
+		ethPeg = _peg;
+		return true;
+	}
+
+	/**
 		@notice issue new options
 		@param _id investor ID
 		@param _amount array, quantities of options to issue
@@ -145,13 +159,7 @@ contract VestedOptions is STModuleBase {
 		@param _idx array, option indexes
 		@return bool success
 	 */
-	function exerciseOptions(
-		uint256[] _idx
-	)
-		external
-		payable
-		returns (bool)
-	{
+	function exerciseOptions(uint256[] _idx) external payable returns (bool) {
 		bytes32 _id = issuer.getID(msg.sender);
 		uint256 _amount;
 		uint256 _price;
@@ -167,7 +175,6 @@ contract VestedOptions is STModuleBase {
 		receiver.transfer(address(this).balance);
 		totalOptions = totalOptions.sub(_amount);
 		options[_id] = options[_id].sub(_amount);
-		/* if options are NFT, modify the following line */
 		require(token.mint(msg.sender, _amount));
 		return true;
 	}

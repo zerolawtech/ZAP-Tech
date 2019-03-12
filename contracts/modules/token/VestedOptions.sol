@@ -1,8 +1,12 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "../ModuleBase.sol";
+import "../../open-zeppelin/SafeMath.sol";
 
 contract VestedOptions is STModuleBase {
+
+	using SafeMath for uint256;
+	using SafeMath32 for uint32;
 
 	string public constant name = "Options";
 
@@ -66,10 +70,10 @@ contract VestedOptions is STModuleBase {
 		uint256 _total;
 		for (uint256 i; i < _amount.length; i++) {
 			optionData[_id].push(Option(_amount[i], _exercisePrice[i], uint32(now), _vestDate[i]));
-			_total += _amount[i];
+			_total = _total.add(_amount[i]);
 		}
-		options[_id] += _total;
-		totalOptions += _total;
+		options[_id] = options[_id].add(_total);
+		totalOptions = totalOptions.add(_total);
 		return true;
 	}
 
@@ -102,15 +106,16 @@ contract VestedOptions is STModuleBase {
 		for (uint256 i; i < _idx.length; i++) {
 			Option storage o = optionData[_id][_idx[i]];
 			require(o.vestDate <= now, "Options have not vested");
-			require(o.creationDate + expiryDate > now, "Options have expired");
-			_amount += o.amount;
-			_exerciseTotal += o.exercisePrice * o.amount;
+			require(o.creationDate.add(expiryDate) > now, "Options have expired");
+			_amount = _amount.add(o.amount);
+			_exerciseTotal = _exerciseTotal.add(uint256(o.exercisePrice).mul(o.amount));
 			delete optionData[_id][_idx[i]];
 		}
-		require(msg.value == _exerciseTotal * ethPeg, "Incorrect payment amount");
+		require(msg.value == _exerciseTotal.mul(ethPeg), "Incorrect payment amount");
 		receiver.transfer(address(this).balance);
-		totalOptions -= _amount;
-		options[_id] -= _amount;
+		totalOptions = totalOptions.sub(_amount);
+		options[_id] = options[_id].sub(_amount);
+		/* if options are NFT, modify the following line */
 		require(token.mint(msg.sender, _amount));
 		return true;
 	}
@@ -124,12 +129,12 @@ contract VestedOptions is STModuleBase {
 		Option[] storage o = optionData[_id];
 		uint256 _amount;
 		for (uint256 i; i < o.length; i++) {
-			if (o[i].creationDate + expiryDate > now) continue;
-			_amount += o[i].amount;
+			if (o[i].creationDate.add(expiryDate) > now) continue;
+			_amount = _amount.add(o[i].amount);
 			delete o[i];
 		}
-		totalOptions -= _amount;
-		options[_id] -= _amount;
+		totalOptions = totalOptions.sub(_amount);
+		options[_id] = options[_id].sub(_amount);
 		return true;
 	}
 
@@ -144,14 +149,14 @@ contract VestedOptions is STModuleBase {
 		uint256 _amount;
 		for (uint256 i; i < o.length; i++) {
 			if (o[i].vestDate > now) {
-				_amount += o[i].amount;
+				_amount = _amount.add(o[i].amount);
 				delete o[i];
 			} else {
-				o[i].creationDate = uint32(now) - expiryDate + terminationGracePeriod;
+				o[i].creationDate = uint32(now).sub(expiryDate).add(terminationGracePeriod);
 			}
 		}
-		totalOptions -= _amount;
-		options[_id] -= _amount;
+		totalOptions = totalOptions.sub(_amount);
+		options[_id] = options[_id].sub(_amount);
 		return true;
 	}
 
@@ -168,7 +173,7 @@ contract VestedOptions is STModuleBase {
 		returns (bool)
 	{
 		if (_old > _new) {
-			require(token.authorizedSupply() - token.totalSupply() >= totalOptions);
+			require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions);
 		}
 		return true;
 		
@@ -184,7 +189,7 @@ contract VestedOptions is STModuleBase {
 		returns (bool)
 	{
 		if (_oldSupply > _newSupply) {
-			require(_newSupply - token.totalSupply() >= totalOptions);
+			require(_newSupply.sub(token.totalSupply()) >= totalOptions);
 		}
 		return true;
 	}

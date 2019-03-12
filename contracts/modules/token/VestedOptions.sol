@@ -6,8 +6,12 @@ contract VestedOptions is STModuleBase {
 
 	string public constant name = "Options";
 
+	uint256 public totalOptions;
+	uint32 public expiryDate;
+	uint32 public terminationGracePeriod;
+
 	mapping (bytes32 => Option[]) optionData;
-	mapping (bytes32 => uint256) options;
+	mapping (bytes32 => uint256) public options;
 
 	struct Option {
 		uint96 amount;
@@ -15,10 +19,6 @@ contract VestedOptions is STModuleBase {
 		uint32 creationDate;
 		uint32 vestDate;
 	}
-
-	uint256 expiryDate;
-	uint256 terminationGracePeriod;
-	uint256 totalOptions;
 
 	function getPermissions()
 		external
@@ -99,16 +99,23 @@ contract VestedOptions is STModuleBase {
 	}
 
 	function cancelExpiredOptions(
-		bytes32 _id,
-		uint256[] _idx
+		bytes32 _id
 	)
 		external
 		returns (bool)
 	{
-		/*
-			have a hard expiry date (common to all options) after which the issuer
-			can cancel them (or as a legal matter are automatically deemed cancel)
-		*/
+		require(issuer.getID(msg.sender) == _id);
+
+		Option[] storage o = optionData[_id];
+		uint256 _amount;
+		for (uint256 i; i < o.length; i++) {
+			if (o[i].creationDate + expiryDate > now) continue;
+			_amount += o[i].amount;
+			delete o[i];
+		}
+		totalOptions -= _amount;
+		options[_id] -= _amount;
+		return true;
 	}
 
 	function terminateOptions(

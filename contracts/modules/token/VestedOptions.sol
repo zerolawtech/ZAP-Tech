@@ -28,19 +28,23 @@ contract VestedOptions is STModuleBase {
 
 	event NewOptions(
 		bytes32 indexed id,
-		uint256 idx,
+		uint256 index,
 		uint256 amount,
 		uint256 exercisePrice,
 		uint32 creationDate,
 		uint32 vestDate,
 		uint32 expiryDate
 	);
-	// todo
-	event VestDateModified();
-	event EthPegSet();
-	event ClaimedOptions();
-	event TerminatedOptions();
-	event ExpiredOptions();
+	event VestDateModified(bytes32 indexed id, uint256 index, uint32 vestDate);
+	event EthPegSet(uint256 peg);
+	event ClaimedOptions(
+		bytes32 indexed id,
+		uint256 index,
+		uint256 amount,
+		uint256 exercisePrice
+	);
+	event ExpiredOptions(bytes32 indexed id, uint256 index, uint256 amount);
+	event TerminatedOptions(bytes32 indexed id, uint256 amount);
 
 	/**
 		@notice supply permissions and hook points when attaching module
@@ -72,6 +76,7 @@ contract VestedOptions is STModuleBase {
 		@notice constructor
 		@param _token token address
 		@param _issuer issuer address
+		@param _ethPeg initial ethereum peg rate
 		@param _expiry time for options to expire, in seconds
 		@param _gracePeriod amount of time that already vested options are
 							claimable if terminated
@@ -80,6 +85,7 @@ contract VestedOptions is STModuleBase {
 	constructor(
 		address _token,
 		address _issuer,
+		uint256 _ethPeg,
 		uint32 _expiry,
 		uint32 _gracePeriod,
 		address _receiver
@@ -87,9 +93,11 @@ contract VestedOptions is STModuleBase {
 		public
 		STModuleBase(_token, _issuer)
 	{
+		ethPeg = _ethPeg;
 		expiryDate = _expiry;
 		terminationGracePeriod = _gracePeriod;
 		receiver = _receiver;
+		emit EthPegSet(_ethPeg);
 	}
 
 	/**
@@ -103,6 +111,7 @@ contract VestedOptions is STModuleBase {
 	function modifyPeg(uint256 _peg) external returns (bool) {
 		if (!_onlyAuthority()) return false;
 		ethPeg = _peg;
+		emit EthPegSet(_peg);
 		return true;
 	}
 
@@ -174,6 +183,7 @@ contract VestedOptions is STModuleBase {
 				"Cannot extend vesting date"
 			);
 			optionData[_id][_idx[i]].vestDate = _vestDate;
+			emit VestDateModified(_id, _idx[i], _vestDate);
 		}
 		return true;
 	}
@@ -195,6 +205,7 @@ contract VestedOptions is STModuleBase {
 			require(o.creationDate.add(expiryDate) > now, "Options have expired");
 			_amount = _amount.add(o.amount);
 			_price = _price.add(uint256(o.exercisePrice).mul(o.amount));
+			emit ClaimedOptions(_id, _idx[i], o.amount, o.exercisePrice);
 			delete optionData[_id][_idx[i]];
 		}
 		require(msg.value == _price.mul(ethPeg), "Incorrect payment amount");
@@ -220,6 +231,7 @@ contract VestedOptions is STModuleBase {
 		for (uint256 i; i < o.length; i++) {
 			if (o[i].creationDate.add(expiryDate) > now) continue;
 			_amount = _amount.add(o[i].amount);
+			emit ExpiredOptions(_id, i, o[i].amount);
 			delete o[i];
 		}
 		totalOptions = totalOptions.sub(_amount);
@@ -250,6 +262,7 @@ contract VestedOptions is STModuleBase {
 		}
 		totalOptions = totalOptions.sub(_amount);
 		options[_id] = options[_id].sub(_amount);
+		emit TerminatedOptions(_id, _amount);
 		return true;
 	}
 

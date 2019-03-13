@@ -29,6 +29,16 @@ contract Modular {
 	event ModuleDetached(address module);
 
 	/**
+		@notice get boolean from a bit field
+		@param _bool uint256 boolean bitfield
+		@param _i index of boolean
+		@return bool
+	 */
+	function _getBool(uint256 _bool, uint256 _i) internal pure returns (bool) {
+		return (_bool >> _i) & uint256(1) == 1;
+	}
+
+	/**
 		@notice Attach a security token module
 		@dev Can only be called indirectly from IssuingEntity.attachModule()
 		@param _module Address of the module contract
@@ -51,9 +61,14 @@ contract Modular {
 			) = b.getPermissions();
 			for (uint256 i; i < _hooks.length; i++) {
 				m.hooks[_hooks[i]].permitted = true;
-				m.hooks[_hooks[i]].active = ((_hookBools >> uint256(i)) & uint256(1) == 1);//_hooksActive[i];
-				m.hooks[_hooks[i]].always = ((_hookBools >> uint256(i+128)) & uint256(1) == 1);//_hooksAlways[i];
-				emit ModuleHookSet(_module, _hooks[i], m.hooks[_hooks[i]].active, m.hooks[_hooks[i]].always);
+				m.hooks[_hooks[i]].active = _getBool(_hookBools, i);
+				m.hooks[_hooks[i]].always = _getBool(_hookBools, i+128);
+				emit ModuleHookSet(
+					_module,
+					_hooks[i],
+					m.hooks[_hooks[i]].active,
+					m.hooks[_hooks[i]].always
+				);
 			}
 			for (i = 0; i < _hooks.length; i++) {
 				m.permissions[_permissions[i]] = true;
@@ -95,7 +110,14 @@ contract Modular {
 		@param _data calldata to send to module
 		@return bool did all called modules return true?
 	 */
-	function _callModules(bytes4 _sig, bytes2 _tag, bytes _data) internal returns (bool) {
+	function _callModules(
+		bytes4 _sig,
+		bytes2 _tag,
+		bytes _data
+	)
+		internal
+		returns (bool)
+	{
 		for (uint256 i; i < activeModules.length; i++) {
 			Hook storage h = moduleData[activeModules[i]].hooks[_sig];
 			if (!h.active) continue;
@@ -108,9 +130,9 @@ contract Modular {
 			if (_packedBool == 0) continue;
 			if (
 				/** hook for first byte of tag is true */
-				((_packedBool >> 0) & uint256(1) == 1) ||
+				_getBool(_packedBool, 0) ||
 				/** hook for entire tag is true */
-				((_packedBool >> uint256(_tag[1])) & uint256(1) == 1)
+				_getBool(_packedBool, uint256(_tag[1]))
 			) {
 				if (!activeModules[i].call(_sig, _data)) return false;
 				continue;
@@ -127,7 +149,14 @@ contract Modular {
 		@param _always should this hook always be called, regardless of tag?
 		@return bool success
 	 */
-	function setHook(bytes4 _sig, bool _active, bool _always) external returns (bool) {
+	function setHook(
+		bytes4 _sig,
+		bool _active,
+		bool _always
+	)
+		external
+		returns (bool)
+	{
 		require (isActiveModule(msg.sender));
 		Hook storage h = moduleData[msg.sender].hooks[_sig];
 		require (h.permitted);
@@ -176,7 +205,13 @@ contract Modular {
 		@param _tagBase array of first byte of tags to disable
 		@return bool success
 	 */
-	function clearHookTags(bytes4 _sig, bytes1[] _tagBase) external returns (bool) {
+	function clearHookTags(
+		bytes4 _sig,
+		bytes1[] _tagBase
+	)
+		external
+		returns (bool)
+	{
 		require (isActiveModule(msg.sender));
 		Hook storage h = moduleData[msg.sender].hooks[_sig];
 		require (h.permitted);

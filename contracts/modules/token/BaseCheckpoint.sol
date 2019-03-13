@@ -2,7 +2,7 @@ pragma solidity >=0.4.24 <0.5.0;
 
 import "../../open-zeppelin/SafeMath.sol";
 import "../ModuleBase.sol";
-import "../../interfaces/IMiniCustodian.sol";
+import "../../interfaces/IBaseCustodian.sol";
 
 contract CheckpointModule is STModuleBase {
 
@@ -13,8 +13,8 @@ contract CheckpointModule is STModuleBase {
 	mapping (address => uint256) balance;
 	mapping (address => bool) zeroBalance;
 
-	mapping (address => mapping(bytes32 => uint256)) custodianBalance;
-	mapping (address => mapping(bytes32 => bool)) custodianZeroBalance;
+	mapping (address => mapping(address => uint256)) custodianBalance;
+	mapping (address => mapping(address => bool)) custodianZeroBalance;
 
 	constructor(
 		address _token,
@@ -53,10 +53,10 @@ contract CheckpointModule is STModuleBase {
 		return token.balanceOf(_owner);
 	}
 
-	function _getCustodianBalance(address _custodian, bytes32 _id) internal view returns (uint256) {
-		if (custodianBalance[_custodian][_id] > 0) return custodianBalance[_custodian][_id];
-		if (custodianZeroBalance[_custodian][_id]) return 0;
-		return MiniCustodian(_custodian).balanceOf(token, _id);
+	function _getCustodianBalance(address _custodian, address _addr) internal view returns (uint256) {
+		if (custodianBalance[_custodian][_addr] > 0) return custodianBalance[_custodian][_addr];
+		if (custodianZeroBalance[_custodian][_addr]) return 0;
+		return token.custodianBalanceOf(_addr, _custodian);
 	}
 
 	function transferTokens(
@@ -72,12 +72,12 @@ contract CheckpointModule is STModuleBase {
 	{
 		if (now < time) return true;
 		if (_rating[0] == 0 && _id[0] != ownerID) {
-			_checkCustodianSent(MiniCustodian(_addr[0]), _id[1], _value);
+			_checkCustodianSent(IBaseCustodian(_addr[0]), _addr[1], _value);
 		} else if (balance[_addr[0]] == 0 && !zeroBalance[_addr[0]]) {
 			balance[_addr[0]] = token.balanceOf(_addr[0]).add(_value);
 		}
 		if (_rating[1] == 0 && _id[1] != ownerID) {
-			_checkCustodianReceived(MiniCustodian(_addr[1]), _id[0], _value);
+			_checkCustodianReceived(IBaseCustodian(_addr[1]), _addr[0], _value);
 		} else if (balance[_addr[1]] == 0 && !zeroBalance[_addr[1]]) {
 			uint256 _bal = token.balanceOf(_addr[1]).sub(_value);
 			if (_bal == 0) {
@@ -89,32 +89,33 @@ contract CheckpointModule is STModuleBase {
 		return true;
 	}
 
-	function _checkCustodianSent(MiniCustodian _cust, bytes32 _id, uint256 _value) internal {
+	function _checkCustodianSent(address _cust, address _addr, uint256 _value) internal {
 		if (
-			custodianBalance[_cust][_id] == 0 &&
-			!custodianZeroBalance[_cust][_id]
+			custodianBalance[_cust][_addr] == 0 &&
+			!custodianZeroBalance[_cust][_addr]
 		) {
-			custodianBalance[_cust][_id] = _cust.balanceOf(token, _id).add(_value);
+			custodianBalance[_cust][_addr] = token.custodianBalanceOf(_addr, _cust).add(_value);
 		}
 	}
 
-	function _checkCustodianReceived(MiniCustodian _cust, bytes32 _id, uint256 _value) internal {
+	function _checkCustodianReceived(address _cust, address _addr, uint256 _value) internal {
 		if (
-			custodianBalance[_cust][_id] == 0 &&
-			!custodianZeroBalance[_cust][_id]
+			custodianBalance[_cust][_addr] == 0 &&
+			!custodianZeroBalance[_cust][_addr]
 		) {
-			uint256 _bal = _cust.balanceOf(token, _id).sub(_value);
+			uint256 _bal = token.custodianBalanceOf(_addr, _cust).sub(_value);
 			if (_bal == 0) {
-				custodianZeroBalance[_cust][_id] == true;
+				custodianZeroBalance[_cust][_addr] == true;
 			} else {
-				custodianBalance[_cust][_id] = _bal;
+				custodianBalance[_cust][_addr] = _bal;
 			}
 		}
 	}
 
 	function transferTokensCustodian(
-		MiniCustodian _cust,
-		bytes32[2] _id,
+		address _cust,
+		address[2] _addr,
+		bytes32[2],
 		uint8[2],
 		uint16[2],
 		uint256 _value
@@ -123,8 +124,8 @@ contract CheckpointModule is STModuleBase {
 		returns (bool)
 	{
 		if (now < time) return true;
-		_checkCustodianSent(_cust, _id[0], _value);
-		_checkCustodianReceived(_cust, _id[1], _value);
+		_checkCustodianSent(_cust, _addr[0], _value);
+		_checkCustodianReceived(_cust, _addr[1], _value);
 		return true;
 	}
 

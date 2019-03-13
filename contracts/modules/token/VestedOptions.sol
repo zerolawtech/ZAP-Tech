@@ -3,6 +3,7 @@ pragma solidity >=0.4.24 <0.5.0;
 import "../ModuleBase.sol";
 import "../../open-zeppelin/SafeMath.sol";
 
+/** @title Vested Options Module */
 contract VestedOptions is STModuleBase {
 
 	using SafeMath for uint256;

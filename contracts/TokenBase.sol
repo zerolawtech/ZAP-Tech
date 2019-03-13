@@ -6,7 +6,7 @@ import "./interfaces/IBaseCustodian.sol";
 
 
 /**
-	@title Security Token
+	@title Security Token Base
 	@dev
 		Expands upon the ERC20 token standard
 		https://theethereum.wiki/w/index.php/ERC20_Token_Standard

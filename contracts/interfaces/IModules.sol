@@ -12,8 +12,9 @@ interface IBaseModule {
 	(
 		bytes4[] permissions,
 		bytes4[] hooks,
-		bool[] hooksActive,
-		bool[] hooksAlways
+		uint256 hookBools
+		//bool[] hooksActive,
+		//bool[] hooksAlways
 	);
 	function getOwner() external view returns (address);
 	function name() external view returns (string);

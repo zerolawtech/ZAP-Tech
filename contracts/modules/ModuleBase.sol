@@ -11,17 +11,10 @@ contract ModuleBase {
 
 	bytes32 public ownerID;
 	address owner;
-	
-	/** @dev Check that call originates from issuer or token contract */
-	modifier onlyOwner() {
-		require (msg.sender == owner);
-		_;
-	}
 
-	/** @dev Check that the call is from an approved authority */
-	modifier onlyAuthority() {
+	function _onlyAuthority() internal returns (bool) {
 		require (MultiSig(owner).isApprovedAuthority(msg.sender, msg.sig));
-		_;
+		return MultiSig(owner).checkMultiSigExternal(msg.sig, keccak256(msg.data));
 	}
 
 	/**

@@ -59,8 +59,7 @@ Hooks and permissions are set the first time a module is attached by calling the
 
     * ``permissions``: ``bytes4`` array of method signatures within the parent contract that the module is permitted to call.
     * ``hooks``: ``bytes4`` array of method signatures within the module that the parent contract may call into.
-    * ``hooksActive``: ``bool`` array corresponding to the hook signatures, sets if each hook is active initially.
-    * ``hooksAlways``: ``bool`` array to set if each hook should always be called.
+    * ``hookBools``: A ``uint256`` bit field. The first 128 bits set if each hook is active initially, the second half sets if each hook should be always called.
 
 Before attaching a module, be sure to check the return value of this function and compare the requested hook points and permissions to those that would be required for the documented functionality of the module. For example, a module intended to block token transfers should not require permission to mint new tokens.
 

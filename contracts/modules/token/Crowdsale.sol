@@ -124,8 +124,9 @@ contract CrowdsaleModule is STModuleBase {
 		uint256 _fiat
 	)
 		external
-		onlyAuthority
+		returns (bool)
 	{
+		if (!_onlyAuthority()) return false;
 		require (tokens.add(_tokens) <= tokensMax);
 		require (fiat.add(_fiat) <= fiatMax);
 		token.transferFrom(owner, _to, _tokens);
@@ -134,10 +135,13 @@ contract CrowdsaleModule is STModuleBase {
 		if (tokens == tokensMax || fiat == fiatMax) {
 			crowdsaleCompleted = uint64(now);
 		}
+		return true;
 	}
 
-	function setEthFiatRate(uint256 _rate) external onlyAuthority {
+	function setEthFiatRate(uint256 _rate) external returns (bool) {
+		if (!_onlyAuthority()) return false;
 		ethFiatRate = _rate;
+		return true;
 	}
 
 	function isOpen() public view returns (bool) {

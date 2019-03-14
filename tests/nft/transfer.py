@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.nftoken import main
+from scripts.deployment import main
 
 
 def setup():
     config['test']['always_transact'] = False
-    main()
+    main(NFToken)
     global token, issuer
     token = NFToken[0]
     issuer = IssuingEntity[0]

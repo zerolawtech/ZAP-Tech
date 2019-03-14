@@ -1,5 +1,5 @@
 from brownie import *
-from scripts.nftoken import main
+from scripts.deployment import main
 
 
 zero = "0x0000000000000000000000000000000000000000"
@@ -8,7 +8,7 @@ zero = "0x0000000000000000000000000000000000000000"
 def setup():
     config['test']['always_transact'] = False
     config['test']['default_contract_owner'] = True
-    main()
+    main(NFToken)
     global token, issuer
     token = NFToken[0]
     issuer = IssuingEntity[0]

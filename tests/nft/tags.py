@@ -136,19 +136,19 @@ def modify_join_many():
 
 def time():
     '''Block transfers with time lock'''
-    token.mint(a[1], 10000, rpc.time()+20, "0x00")
+    token.mint(a[1], 10000, rpc.time() + 20, "0x00")
     check.reverts(
         token.transfer,
-        (a[2], 1000, {'from':a[1]})
+        (a[2], 1000, {'from': a[1]})
     )
     rpc.sleep(21)
-    token.transfer(a[2],1000,{'from':a[1]})
+    token.transfer(a[2], 1000, {'from': a[1]})
 
 
 def time_partial():
     '''Partially block a transfer with time'''
     token.mint(a[1], 10000, 0, "0x00")
-    token.modifyRanges(2001, 6001, rpc.time()+20, "0x00")
+    token.modifyRanges(2001, 6001, rpc.time() + 20, "0x00")
     check.true(token.getRange(2001)['_stop'] == 6001)
     token.transfer(a[2], 4000, {'from': a[1]})
     check.equal(
@@ -156,7 +156,7 @@ def time_partial():
         ((8001, 10001), (2001, 6001))
     )
     rpc.sleep(25)
-    token.transfer(a[2], 6000, {'from':a[1]})
+    token.transfer(a[2], 6000, {'from': a[1]})
     check.equal(
         token.rangesOf(a[2]),
         ((1, 10001),)

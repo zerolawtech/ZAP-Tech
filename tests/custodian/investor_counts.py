@@ -4,8 +4,6 @@ from brownie import *
 from scripts.deployment import main
 
 
-# THIS IS NOWHERE NEAR COMPLETE
-
 def setup():
     config['test']['always_transact'] = False
     config['test']['default_contract_owner'] = True
@@ -16,13 +14,6 @@ def setup():
     cust = OwnedCustodian.deploy(a[0], [a[0]], 1)
     issuer.addCustodian(cust)
     token.mint(issuer, 100000)
-
-
-def to_and_from_issuer():
-    '''Send from and to issuer'''
-    token.transfer(a[1], 10000)
-    token.transfer(a[0], 10000, {'from': a[1]})
-    check.equal(issuer.getInvestorCounts()[0][0:3], (0, 0, 0))
 
 
 def into_custodian():
@@ -71,13 +62,3 @@ def issuer_cust():
     check.equal(issuer.getInvestorCounts()[0][0:3], (0, 0, 0))
     cust.transfer(token, issuer, 10000)
     check.equal(issuer.getInvestorCounts()[0][0:3], (0, 0, 0))
-
-
-def issuer_txfrom():
-    '''Issuer transferFrom custodian'''
-    token.transfer(a[1], 10000)
-    token.transfer(cust, 10000, {'from': a[1]})
-    token.transferFrom(cust, a[1], 5000, {'from': a[0]})
-    check.equal(token.balanceOf(a[1]), 5000)
-    check.equal(token.balanceOf(cust), 5000)
-    check.equal(token.custodianBalanceOf(a[1], cust), 5000)

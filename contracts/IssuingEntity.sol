@@ -89,12 +89,6 @@ contract IssuingEntity is Modular, MultiSig {
 		idMap[address(this)].id = ownerID;
 	}
 
-	/** @dev check that call originates from a registered, unrestricted token */
-	function _onlyToken() internal view {
-		require(tokens[msg.sender].set);
-		require(!tokens[msg.sender].restricted);
-	}
-
 	/**
 		@notice Fetch total investor counts and limits
 		@return counts, limits
@@ -566,8 +560,7 @@ contract IssuingEntity is Modular, MultiSig {
 		)
 	{
 		(_authID, _id, _rating, _country) = checkTransfer(_auth, _from, _to, _zero[0]);
-	
-		_onlyToken();
+
 		/* If no transfer of ownership, return true immediately */
 		if (_id[0] == _id[1]) return;
 
@@ -636,7 +629,8 @@ contract IssuingEntity is Modular, MultiSig {
 			uint16 _country
 		)
 	{
-		_onlyToken();
+		require(tokens[msg.sender].set);
+		require(!tokens[msg.sender].restricted);
 		if (_owner == address(this)) {
 			_id = ownerID;
 		} else {

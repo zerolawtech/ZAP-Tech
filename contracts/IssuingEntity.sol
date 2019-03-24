@@ -406,6 +406,7 @@ contract IssuingEntity is Modular, MultiSig {
 			_id = _map.id;
 		}
 		if (_addr == address(this) || authorityData[_id].addressCount > 0) {
+			require(!idMap[_addr].restricted, "Restricted Authority Address");
 			return ownerID;
 		}
 		if (
@@ -828,6 +829,7 @@ contract IssuingEntity is Modular, MultiSig {
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
+		require(authorityData[_id].addressCount == 0);
 		accounts[_id].restricted = !_allowed;
 		emit InvestorRestriction(_id, _allowed);
 		return true;

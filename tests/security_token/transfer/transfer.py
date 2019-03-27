@@ -161,3 +161,35 @@ def receiver_blocked_rating():
         (a[1], 1000, {'from': a[0]}),
         "Receiver blocked: Rating"
     )
+
+def total_investor_limit_blocked_issuer_investor():
+    '''total investor limit - blocked, issuer to investor'''
+    issuer.setInvestorLimits([1,0,0,0,0,0,0,0], {'from':a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    check.reverts(
+        token.transfer,
+        (a[2], 1000, {'from': a[0]}),
+        "Total Investor Limit"
+    )
+
+def total_investor_limit_blocked_investor_investor():
+    '''total investor limit - blocked, investor to investor'''
+    issuer.setInvestorLimits([1,0,0,0,0,0,0,0], {'from':a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    check.reverts(
+        token.transfer,
+        (a[2], 500, {'from': a[1]}),
+        "Total Investor Limit"
+    )
+
+def total_investor_limit_issuer_investor():
+    '''total investor limit - issuer to existing investor'''
+    issuer.setInvestorLimits([1,0,0,0,0,0,0,0], {'from':a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+
+def total_investor_limit_investor_investor():
+    '''total investor limit - investor to investor, full balance'''
+    issuer.setInvestorLimits([1,0,0,0,0,0,0,0], {'from':a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    token.transfer(a[2], 1000, {'from': a[1]})

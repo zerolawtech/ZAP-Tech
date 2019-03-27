@@ -33,14 +33,17 @@ def registrar_restricted():
         "Registrar restricted"
     )
 
-def new_registrar():
-    '''registrar restricted, use new registrar'''
+def switch_registrars():
+    '''switch between registrars'''
     id_ = issuer.getID(a[1])
-    check.equal(issuer.getInvestorRegistrar(id_), 0)
     token.transfer(a[1], 1000, {'from': a[0]})
     check.true(issuer.getInvestorRegistrar(id_) == kyc)
     issuer.setRegistrar(kyc, False, {'from': a[0]})
     token.transfer(a[1], 1000, {'from': a[0]})
     check.true(issuer.getInvestorRegistrar(id_) == kyc2)
-
-# todo multiple registrars, restrict and then lift
+    issuer.setRegistrar(kyc, True, {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    check.true(issuer.getInvestorRegistrar(id_) == kyc2)
+    issuer.setRegistrar(kyc2, False, {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    check.true(issuer.getInvestorRegistrar(id_) == kyc)

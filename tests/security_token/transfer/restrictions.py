@@ -95,3 +95,15 @@ def receiver_restricted_kyc_addr():
         (a[1], 1000, {'from': a[0]}),
         "Receiver restricted: Registrar"
     )
+
+def authority_not_permitted():
+    '''authority transfer permission'''
+    tx = issuer.addAuthority([a[-1]], ["0xa9059cbb"], 2000000000, 1, {'from':a[0]})
+    print(tx.events[0])
+    token.transfer(a[1], 1000, {'from': a[-1]})
+    issuer.setAuthoritySignatures(issuer.getID(a[-1]), ["0xa9059cbb"], False, {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[-1]}),
+        "Authority not permitted"
+    )

@@ -11,19 +11,12 @@ def setup():
     issuer = IssuingEntity[0]
     kyc = KYCRegistrar[0]
     token.mint(issuer, 1000000, {'from': a[0]})
-    issuer.setCountries(
-        [1, 2, 3, 4, 5],    # country
-        [1, 1, 1, 1, 1],    # minRating
-        [0, 0, 0, 0, 0],    # limit
-        {'from': a[0]}
-    )
-    issuer.setInvestorLimits([3, 2, 2, 1, 0, 0, 0, 0], {'from': a[0]})
+    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
 
 
 def country_investor_limit_blocked_issuer_investor():
     '''country investor limit - blocked, issuer to investor'''
-    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     check.reverts(
         token.transfer,
         (a[2], 1000, {'from': a[0]}),
@@ -32,8 +25,6 @@ def country_investor_limit_blocked_issuer_investor():
 
 def country_investor_limit_blocked_investor_investor():
     '''country investor limit - blocked, investor to investor'''
-    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     check.reverts(
         token.transfer,
         (a[2], 500, {'from': a[1]}),
@@ -42,28 +33,20 @@ def country_investor_limit_blocked_investor_investor():
 
 def country_investor_limit_issuer_investor():
     '''country investor limit - issuer to existing investor'''
-    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     token.transfer(a[1], 1000, {'from': a[0]})
 
 def country_investor_limit_investor_investor():
     '''country investor limit - investor to investor, full balance'''
-    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     token.transfer(a[2], 1000, {'from': a[1]})
 
 def country_investor_limit_investor_investor_different_country():
     '''country investor limit, investor to investor, different country'''
-    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     token.transfer(a[3], 500, {'from': a[1]})
-
 
 def country_investor_limit_rating_blocked_issuer_investor():
     '''country investor limit, rating - blocked, issuer to investor'''
     issuer.setCountry(1, True, 1, [0,1,0,0,0,0,0,0], {'from': a[0]})
     kyc.updateInvestor(kyc.getID(a[2]), 1, 1, 2000000000, {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     check.reverts(
         token.transfer,
         (a[2], 1000, {'from': a[0]}),
@@ -74,7 +57,6 @@ def country_investor_limit_rating_blocked_investor_investor():
     '''country investor limit, rating - blocked, investor to investor'''
     issuer.setCountry(1, True, 1, [0,1,0,0,0,0,0,0], {'from': a[0]})
     kyc.updateInvestor(kyc.getID(a[2]), 1, 1, 2000000000, {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     check.reverts(
         token.transfer,
         (a[2], 500, {'from': a[1]}),
@@ -85,17 +67,13 @@ def country_investor_limit_rating_issuer_investor():
     '''country investor limit, rating - issuer to existing investor'''
     issuer.setCountry(1, True, 1, [0,1,0,0,0,0,0,0], {'from': a[0]})
     token.transfer(a[1], 1000, {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
 
 def country_investor_limit_rating_investor_investor():
     '''country investor limit, rating - investor to investor, full balance'''
     issuer.setCountry(1, True, 1, [0,1,0,0,0,0,0,0], {'from': a[0]})
-    kyc.updateInvestor(kyc.getID(a[2]), 1, 1, 2000000000, {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     token.transfer(a[2], 1000, {'from': a[1]})
 
 def country_investor_limit_rating_investor_investor_different_country():
     '''country investor limit, rating - investor to investor, different rating'''
     issuer.setCountry(1, True, 1, [0,1,0,0,0,0,0,0], {'from': a[0]})
-    token.transfer(a[1], 1000, {'from': a[0]})
     token.transfer(a[2], 500, {'from': a[1]})

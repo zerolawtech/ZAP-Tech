@@ -84,7 +84,44 @@ def sender_restricted_issuer():
     '''sender restricted - issuer / investor'''
     check.reverts(
         issuer.setInvestorRestriction,
-        (issuer.getID(a[0]), False, {'from': a[0]})
+        (issuer.ownerID(), False, {'from': a[0]})
+    )
+    issuer.addAuthorityAddresses(issuer.ownerID(), [a[-1]], {'from':a[0]})
+    token.transfer(a[1], 1000, {'from': a[-1]})
+    issuer.removeAuthorityAddresses(issuer.ownerID(), [a[-1]], {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[-1]}),
+        "Restricted Authority Address"
+    )
+    issuer.addAuthorityAddresses(issuer.ownerID(), [a[-1]], {'from':a[0]})
+    token.transfer(a[1], 1000, {'from': a[-1]})
+
+def sender_restricted_kyc_id():
+    '''sender ID restricted at kyc'''
+    token.transfer(a[1], 1000, {'from': a[0]})
+    kyc.setInvestorRestriction(kyc.getID(a[1]), False, {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[2], 1000, {'from': a[1]}),
+        "Sender restricted: Registrar"
     )
 
-    # TODO - restrict via MultiSig, check tx fails, unrestrict, check tx works
+def sender_restricted_kyc_addr():
+    '''sender address restricted at kyc'''
+    token.transfer(a[1], 1000, {'from': a[0]})
+    kyc.restrictAddresses(kyc.getID(a[1]), [a[1]], {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[2], 1000, {'from': a[1]}),
+        "Sender restricted: Registrar"
+    )
+
+def receiver_restricted_issuer():
+    '''receiver restricted'''
+    issuer.setInvestorRestriction(issuer.getID(a[1]), False, {'from': a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[0]}),
+        "Receiver restricted: Issuer"
+    )

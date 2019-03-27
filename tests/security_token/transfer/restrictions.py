@@ -11,13 +11,6 @@ def setup():
     issuer = IssuingEntity[0]
     kyc = KYCRegistrar[0]
     token.mint(issuer, 1000000, {'from': a[0]})
-    issuer.setCountries(
-        [1, 2, 3, 4, 5],    # country
-        [1, 1, 1, 1, 1],    # minRating
-        [0, 0, 0, 0, 0],    # limit
-        {'from': a[0]}
-    )
-    issuer.setInvestorLimits([3, 2, 2, 1, 0, 0, 0, 0], {'from': a[0]})
 
 def sender_restricted():
     '''sender restricted - investor / investor'''
@@ -96,12 +89,12 @@ def receiver_restricted_kyc_addr():
         "Receiver restricted: Registrar"
     )
 
-def authority_not_permitted():
+def authority_permission():
     '''authority transfer permission'''
     tx = issuer.addAuthority([a[-1]], ["0xa9059cbb"], 2000000000, 1, {'from':a[0]})
-    print(tx.events[0])
+    id_ = tx.events[2]['data'][0]['value']
     token.transfer(a[1], 1000, {'from': a[-1]})
-    issuer.setAuthoritySignatures(issuer.getID(a[-1]), ["0xa9059cbb"], False, {'from':a[0]})
+    issuer.setAuthoritySignatures(id_, ["0xa9059cbb"], False, {'from':a[0]})
     check.reverts(
         token.transfer,
         (a[1], 1000, {'from': a[-1]}),

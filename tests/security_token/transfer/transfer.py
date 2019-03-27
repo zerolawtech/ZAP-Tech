@@ -193,3 +193,41 @@ def total_investor_limit_investor_investor():
     issuer.setInvestorLimits([1,0,0,0,0,0,0,0], {'from':a[0]})
     token.transfer(a[1], 1000, {'from': a[0]})
     token.transfer(a[2], 1000, {'from': a[1]})
+
+def country_investor_limit_blocked_issuer_investor():
+    '''country investor limit - blocked, issuer to investor'''
+    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    check.reverts(
+        token.transfer,
+        (a[2], 1000, {'from': a[0]}),
+        "Country Investor Limit"
+    )
+
+def country_investor_limit_blocked_investor_investor():
+    '''country investor limit - blocked, investor to investor'''
+    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    check.reverts(
+        token.transfer,
+        (a[2], 500, {'from': a[1]}),
+        "Country Investor Limit"
+    )
+
+def country_investor_limit_issuer_investor():
+    '''country investor limit - issuer to existing investor'''
+    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+
+def country_investor_limit_investor_investor():
+    '''country investor limit - investor to investor, full balance'''
+    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    token.transfer(a[2], 1000, {'from': a[1]})
+
+def country_investor_limit_investor_investor_different_country():
+    '''country investor limit, investor to investor, different country'''
+    issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
+    token.transfer(a[1], 1000, {'from': a[0]})
+    token.transfer(a[3], 500, {'from': a[1]})

@@ -308,7 +308,7 @@ contract IssuingEntity is Modular, MultiSig {
 			*/
 			if (_rating[1] != 0) {
 				Country storage c = countries[_country[1]];
-				require(c.allowed, "Reciever blocked: Country");
+				require(c.allowed, "Receiver blocked: Country");
 				require(_rating[1] >= c.minRating, "Receiver blocked: Rating");
 				/*  
 					If the receiving investor currently has 0 balance and no

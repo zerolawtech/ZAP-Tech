@@ -12,9 +12,9 @@ def setup():
     kyc = KYCRegistrar[0]
     token.mint(issuer, 1000000, {'from': a[0]})
     issuer.setCountries(
-        [1, 2, 3, 4, 5],
-        [1, 1, 1, 2, 2],
-        [1, 2, 2, 3, 3],
+        [1, 2, 3, 4, 5],    # country
+        [1, 1, 1, 2, 2],    # minRating
+        [1, 2, 2, 3, 3],    # limit
         {'from': a[0]}
     )
     issuer.setInvestorLimits([3, 2, 2, 1, 0, 0, 0, 0], {'from': a[0]})
@@ -124,4 +124,40 @@ def receiver_restricted_issuer():
         token.transfer,
         (a[1], 1000, {'from': a[0]}),
         "Receiver restricted: Issuer"
+    )
+
+def receiver_restricted_kyc_id():
+    '''receiver ID restricted at kyc'''
+    kyc.setInvestorRestriction(kyc.getID(a[1]), False, {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[0]}),
+        "Receiver restricted: Registrar"
+    )
+
+def receiver_restricted_kyc_addr():
+    '''receiver address restricted at kyc'''
+    kyc.restrictAddresses(kyc.getID(a[1]), [a[1]], {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[0]}),
+        "Receiver restricted: Registrar"
+    )
+
+def receiver_blocked_country():
+    '''receiver blocked - country'''
+    issuer.setCountry(1, False, 0, [0]*8, {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[0]}),
+        "Receiver blocked: Country"
+    )
+
+def receiver_blocked_rating():
+    '''receiver blocked - rating'''
+    issuer.setCountry(1, True, 3, [0]*8, {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[0]}),
+        "Receiver blocked: Rating"
     )

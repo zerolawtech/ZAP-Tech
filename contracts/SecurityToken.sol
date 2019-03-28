@@ -113,7 +113,7 @@ contract SecurityToken is TokenBase {
 		view
 		returns (address[2])
 	{
-		require(_value > 0 || _cust != 0x00, "Cannot send 0 tokens");
+		require(_value > 0, "Cannot send 0 tokens");
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[0] == ownerID) {
 			_addr[0] = address(issuer);

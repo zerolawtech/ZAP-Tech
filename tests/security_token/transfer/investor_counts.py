@@ -5,6 +5,7 @@ from scripts.deployment import main
 
 
 def setup():
+    config['test']['always_transact'] = False
     main(SecurityToken)
     global token, issuer
     token = SecurityToken[0]

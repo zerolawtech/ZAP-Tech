@@ -14,18 +14,13 @@ def setup():
     token.transfer(a[1], 1000, {'from': a[0]})
 
 def transfer_from():
-    '''issuer transferFrom'''
+    '''investor transferFrom - approved'''
     token.approve(a[3], 500, {'from': a[1]})
     check.equal(token.allowance(a[1], a[3]), 500)
     token.transferFrom(a[1], a[2], 400, {'from': a[3]})
     check.equal(token.allowance(a[1], a[3]), 100)
     token.transferFrom(a[1], a[2], 100, {'from': a[3]})
     check.equal(token.allowance(a[1], a[3]), 0)
-
-def transfer_from_check_approval():
-    '''issuer transferFrom'''
-    token.approve(a[3], 1000, {'from': a[1]})
-    token.transferFrom(a[1], a[2], 1000, {'from': a[3]})
 
 def transfer_from_investor_no_approval():
     '''transferFrom - no approval'''
@@ -43,6 +38,11 @@ def transfer_from_investor_insufficient_approval():
         (a[1], a[2], 1000, {'from': a[3]}),
         "Insufficient allowance"
     )
+
+def transfer_from_same_id():
+    '''transferFrom - same investor ID'''
+    kyc.registerAddresses(kyc.getID(a[1]), [a[-1]], {'from': a[0]})
+    token.transferFrom(a[1], a[2], 500, {'from':a[-1]})
 
 def transfer_from_issuer():
     '''issuer transferFrom'''

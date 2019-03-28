@@ -100,3 +100,4 @@ def authority_permission():
         (a[1], 1000, {'from': a[-1]}),
         "Authority not permitted"
     )
+    token.transfer(a[-1], 100, {'from': a[1]})

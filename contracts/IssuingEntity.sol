@@ -237,8 +237,8 @@ contract IssuingEntity is Modular, MultiSig {
 			[_addr, _to],
 			[accounts[idMap[_addr].id].regKey, accounts[_id[1]].regKey]
 		);
-		if (custodians[_id[0]].addr != 0) {
-			require(custodians[_id[1]].addr == 0, "Receiver is custodian");
+		if (custodians[_authID].addr != 0) {
+			require(custodians[_id[1]].addr == 0, "Custodian to Custodian");
 		}
 		Account storage a = accounts[_id[0]];
 		_checkTransfer(

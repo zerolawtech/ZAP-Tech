@@ -24,6 +24,16 @@ def zero():
         "Cannot send 0 tokens"
     )
 
+def exceed():
+    '''Custodian transfer internal - exceed balance'''
+    token.transfer(a[2], 10000, {'from': a[0]})
+    token.transfer(cust, 5000, {'from': a[2]})
+    check.reverts(
+        cust.transferInternal,
+        (token, a[2], a[3], 6000, {'from': a[0]}),
+        "Insufficient Custodial Balance"
+    )
+
 def cust_to_cust():
     '''custodian to custodian'''
     cust2 = OwnedCustodian.deploy(a[0], [a[0]], 1)

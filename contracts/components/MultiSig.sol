@@ -91,7 +91,6 @@ contract MultiSig {
 		}
 	}
 
-
 	/**
 		@notice Internal function to add new addresses
 		@param _id investor or authority ID
@@ -216,6 +215,15 @@ contract MultiSig {
 			a.multiSigThreshold
 		);
 		return false;
+	}
+
+	/**
+		@notice External view to fetch an authority ID from an address
+		@param _addr address of token being transferred
+		@return bytes32 authority ID
+	 */
+	function getID(address _addr) external view returns (bytes32) {
+		return idMap[_addr].id;
 	}
 
 	/**

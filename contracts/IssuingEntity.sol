@@ -217,9 +217,9 @@ contract IssuingEntity is Modular, MultiSig {
 			uint16[2] _country
 		)
 	{
-		_authID = _getID(_auth, 0);
-		_id[0] = _getID(_from, 0);
-		_id[1] = _getID(_to, 0);
+		_authID = _getID(_auth);
+		_id[0] = _getID(_from);
+		_id[1] = _getID(_to);
 		
 		if (_authID == ownerID && idMap[_auth].id != ownerID) {
 			/* This enforces sub-authority permissioning around transfers */
@@ -382,30 +382,27 @@ contract IssuingEntity is Modular, MultiSig {
 		@param _addr address of token being transferred
 		@return bytes32 investor ID
 	 */
-	function getID(address _addr) external view returns (bytes32) {
-		return _getID(_addr, 0);
+	function getID(address _addr) external view returns (bytes32 _id) {
+		_id = _getID(_addr);
+		if (_id == ownerID) {
+			return idMap[_addr].id;
+		}
+		return _id;
 	}
 
 	/**
 		@notice internal investor ID fetch
-		@dev common logic for getID() and _getID()
-		@dev Either of the params may be given as 0
 		@param _addr Investor address
-		@param _id Investor ID
-		@return bytes32 investor ID, uint8 registrar index
+		@return bytes32 investor ID
 	 */
 	function _getID(
-		address _addr,
-		bytes32 _id
+		address _addr
 	)
 		internal
-		returns (bytes32)
+		returns (bytes32 _id)
 	{
-		Address storage _map = idMap[_addr];
-		if (_id == 0) {
-			_id = _map.id;
-		}
-		if (_addr == address(this) || authorityData[_id].addressCount > 0) {
+		_id = idMap[_addr].id;
+		if (authorityData[_id].addressCount > 0) {
 			require(!idMap[_addr].restricted, "Restricted Authority Address");
 			return ownerID;
 		}
@@ -426,7 +423,7 @@ contract IssuingEntity is Modular, MultiSig {
 				if (!registrars[i].restricted) {
 					_id = registrars[i].addr.getID(_addr);
 					if (_id != 0) {
-						_map.id = _id;
+						idMap[_addr].id = _id;
 						accounts[_id].regKey = uint8(i);
 						return _id;
 					}

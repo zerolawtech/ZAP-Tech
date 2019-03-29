@@ -92,9 +92,8 @@ def receiver_restricted_kyc_addr():
 def authority_permission():
     '''authority transfer permission'''
     tx = issuer.addAuthority([a[-1]], ["0xa9059cbb"], 2000000000, 1, {'from':a[0]})
-    id_ = tx.events[2]['data'][0]['value']
     token.transfer(a[1], 1000, {'from': a[-1]})
-    issuer.setAuthoritySignatures(id_, ["0xa9059cbb"], False, {'from':a[0]})
+    issuer.setAuthoritySignatures(issuer.getID(a[-1]), ["0xa9059cbb"], False, {'from':a[0]})
     check.reverts(
         token.transfer,
         (a[1], 1000, {'from': a[-1]}),

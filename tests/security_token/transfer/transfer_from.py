@@ -51,9 +51,8 @@ def transfer_from_issuer():
 def authority_permission():
     '''authority transferFrom permission'''
     tx = issuer.addAuthority([a[-1]], ["0x23b872dd"], 2000000000, 1, {'from':a[0]})
-    id_ = tx.events[2]['data'][0]['value']
     token.transferFrom(a[1], a[2], 500, {'from': a[-1]})
-    issuer.setAuthoritySignatures(id_, ["0x23b872dd"], False, {'from':a[0]})
+    issuer.setAuthoritySignatures(issuer.getID(a[-1]), ["0x23b872dd"], False, {'from':a[0]})
     check.reverts(
         token.transferFrom,
         (a[1], a[2], 500, {'from': a[-1]}),

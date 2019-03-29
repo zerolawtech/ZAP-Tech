@@ -213,14 +213,14 @@ contract TokenBase is Modular {
 	function modifyAuthorizedSupply(uint256 _value) external returns (bool) {
 		/* msg.sig = 0xc39f42ed */
 		if (!_checkPermitted()) return false;
-		require(_value >= totalSupply);
+		require(_value >= totalSupply, "dev: auth below total");
 		/* bytes4 signature for token module modifyAuthorizedSupply() */
 		_callModules(
 			0xb1a1a455,
 			0x00,
-			abi.encode(address(this), totalSupply, _value)
+			abi.encode(address(this), authorizedSupply, _value)
 		);
-		emit AuthorizedSupplyChanged(totalSupply, _value);
+		emit AuthorizedSupplyChanged(authorizedSupply, _value);
 		authorizedSupply = _value;
 		return true;
 	}

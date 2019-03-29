@@ -346,7 +346,7 @@ contract SecurityToken is TokenBase {
 		uint256 _old = balances[_owner];
 		balances[_owner] = _old.add(_value);
 		totalSupply = totalSupply.add(_value);
-		require(totalSupply <= authorizedSupply);
+		require(totalSupply <= authorizedSupply, "dev: exceed auth");
 		emit Transfer(0x00, _owner, _value);
 		return _modifyTotalSupply(_owner, _old);
 	}

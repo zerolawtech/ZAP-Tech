@@ -102,6 +102,58 @@ def burn_zero():
         "dev: burn 0"
     )
 
+def authorized_supply():
+    '''modify authorized supply'''
+    token.modifyAuthorizedSupply(10000, {'from': a[0]})
+    check.equal(token.authorizedSupply(), 10000)
+    check.equal(token.totalSupply(), 0)
+    token.modifyAuthorizedSupply(0, {'from': a[0]})
+    check.equal(token.authorizedSupply(), 0)
+    check.equal(token.totalSupply(), 0)
+    token.modifyAuthorizedSupply(1234567, {'from': a[0]})
+    check.equal(token.authorizedSupply(), 1234567)
+    check.equal(token.totalSupply(), 0)
+    token.modifyAuthorizedSupply(2400000000, {'from': a[0]})
+    check.equal(token.authorizedSupply(), 2400000000)
+    check.equal(token.totalSupply(), 0)
+    
+
+def authorized_below_total():
+    '''authorized supply below total supply'''
+    token.mint(issuer, 100000, {'from': a[0]})
+    check.reverts(
+        token.modifyAuthorizedSupply,
+        (10000, {'from': a[0]}),
+        "dev: auth below total"
+    )
+
+def total_above_authorized():
+    '''total supply above authorized'''
+    token.modifyAuthorizedSupply(10000, {'from': a[0]})
+    check.reverts(
+        token.mint,
+        (issuer, 20000, {'from': a[0]}),
+        "dev: exceed auth"
+    )
+    token.mint(issuer, 6000, {'from': a[0]})
+    check.reverts(
+        token.mint,
+        (issuer, 6000, {'from': a[0]}),
+        "dev: exceed auth"
+    )
+    token.mint(issuer, 4000, {'from': a[0]})
+    check.reverts(
+        token.mint,
+        (issuer, 1, {'from': a[0]}),
+        "dev: exceed auth"
+    )
+    check.reverts(
+        token.mint,
+        (issuer, 0, {'from': a[0]}),
+        "dev: mint 0"
+    )
+
+
 # TODO
 # exceed authorized supply
 # burn > balance

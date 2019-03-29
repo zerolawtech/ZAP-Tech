@@ -336,7 +336,7 @@ contract SecurityToken is TokenBase {
 	function mint(address _owner, uint256 _value) external returns (bool) {
 		/* msg.sig = 0x40c10f19 */
 		if (!_checkPermitted()) return false;
-		require(_value > 0);
+		require(_value > 0, "dev: mint 0");
 		issuer.checkTransfer(
 			address(issuer),
 			address(issuer),
@@ -361,7 +361,7 @@ contract SecurityToken is TokenBase {
 	function burn(address _owner, uint256 _value) external returns (bool) {
 		/* msg.sig = 0x9dc29fac */
 		if (!_checkPermitted()) return false;
-		require(_value > 0);
+		require(_value > 0, "dev: burn 0");
 		uint256 _old = balances[_owner];
 		balances[_owner] = _old.sub(_value);
 		totalSupply = totalSupply.sub(_value);

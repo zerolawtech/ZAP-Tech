@@ -104,7 +104,7 @@ contract MultiSig {
 		internal
 		returns (uint32 _count) 
 	{
-		for (uint256 i = 0; i < _addr.length; i++) {
+		for (uint256 i; i < _addr.length; i++) {
 			if (idMap[_addr[i]].id == _id && idMap[_addr[i]].restricted) {
 				idMap[_addr[i]].restricted = false;
 			} else if (idMap[_addr[i]].id == 0) {
@@ -197,7 +197,7 @@ contract MultiSig {
 		returns (bool)
 	{
 		Authority storage a = authorityData[_id];
-		for (uint256 i = 0; i < a.multiSigAuth[_callHash].length; i++) {
+		for (uint256 i; i < a.multiSigAuth[_callHash].length; i++) {
 			require(a.multiSigAuth[_callHash][i] != _sender);
 		}
 		if (a.multiSigAuth[_callHash].length + 1 >= a.multiSigThreshold) {
@@ -275,7 +275,7 @@ contract MultiSig {
 		Authority storage a = authorityData[_id];
 		require(a.addressCount == 0);
 		require(_id != 0);
-		for (uint256 i = 0; i < _signatures.length; i++) {
+		for (uint256 i; i < _signatures.length; i++) {
 			a.signatures[_signatures[i]] = true;
 		}
 		a.approvedUntil = _approvedUntil;
@@ -328,7 +328,7 @@ contract MultiSig {
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_id];
 		require(a.addressCount > 0);
-		for (uint256 i = 0; i < _signatures.length; i++) {
+		for (uint256 i; i < _signatures.length; i++) {
 			a.signatures[_signatures[i]] = _allowed;
 		}
 		if (_allowed) {
@@ -399,7 +399,7 @@ contract MultiSig {
 		_onlySelfAuthority(_id);
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_id];
-		for (uint256 i = 0; i < _addr.length; i++) {
+		for (uint256 i; i < _addr.length; i++) {
 			require(idMap[_addr[i]].id == _id);
 			require(!idMap[_addr[i]].restricted);
 			idMap[_addr[i]].restricted = true;

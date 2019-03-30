@@ -7,55 +7,26 @@ from scripts.deployment import main
 def setup():
     config['test']['always_transact'] = False
     main(SecurityToken)
-    global token, issuer, ownerid, id1, id2
+    global token, nft, issuer, ownerid, id1
     token = SecurityToken[0]
     issuer = IssuingEntity[0]
-    a[0].deploy(SecurityToken, issuer, "Test", "TST", 1000000)
-    a[0].deploy(OwnedCustodian, [a[0]], 1)
+    nft = a[0].deploy(NFToken, issuer, "Test NFT", "NFT", 1000000)
+    issuer.addToken(nft, {'from': a[0]})
     for i in range(6):
         a.add()
         a[0].transfer(a[-1], "1 ether")
     issuer.addAuthority(a[-6:-3],[], 2000000000, 1, {'from': a[0]})
-    issuer.addAuthority((a[-3:]), [], 2000000000, 1, {'from': a[0]})
     ownerid = issuer.ownerID()
     id1 = issuer.getID(a[-6])
-    id2 = issuer.getID(a[-3])
 
-def setCountry():
-    _multisig(issuer.setCountry, 1, True, 1, [0]*8)
+def modifyAuthorizedSupply():
+    _multisig(token.modifyAuthorizedSupply, 10000)
+    rpc.revert()
+    _multisig(nft.modifyAuthorizedSupply, 10000)
 
-def setCountries():
-    _multisig(issuer.setCountries, [1,2], [1,1], [0,0])
 
-def setInvestorLimits():
-    _multisig(issuer.setInvestorLimits, [0]*8)
 
-def setDocumentHash():
-    _multisig(issuer.setDocumentHash, "blah blah", "0x1234")
 
-def setRegistrar():
-    _multisig(issuer.setRegistrar, a[9], True)
-
-def addCustodian():
-    _multisig(issuer.addCustodian, OwnedCustodian[0])
-
-def addToken():
-    _multisig(issuer.addToken, SecurityToken[1])
-
-def setInvestorRestriction():
-    _multisig(issuer.setInvestorRestriction, "0x11", False)
-
-def setTokenRestriction():
-    _multisig(issuer.setTokenRestriction, token, True)
-
-def setGlobalRestriction():
-    _multisig(issuer.setGlobalRestriction, False)
-
-def attachModule(skip=True):
-    _multisig(issuer.attachModule)
-
-def detachModule(skip=True):
-    _multisig(issuer.detachModule)
 
 def _multisig(fn, *args):
     args = list(args)+[{'from':a[-6]}]

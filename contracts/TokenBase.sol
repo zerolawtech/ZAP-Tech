@@ -330,7 +330,6 @@ contract TokenBase is Modular {
 	 */
 	function _checkPermitted() internal returns (bool) {
 		if (isPermittedModule(msg.sender, msg.sig)) return true;
-		require(issuer.isApprovedAuthority(msg.sender, msg.sig));
 		return issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data));
 	}
 

@@ -133,11 +133,10 @@ contract MultiSig {
 	 */
 	function _checkMultiSig() internal returns (bool) {
 		bytes32 _id = idMap[msg.sender].id;
-		require(_id != 0);
 		require(!idMap[msg.sender].restricted);
 		if (_id != ownerID) {
-			require(authorityData[_id].signatures[msg.sig]);
-			require(authorityData[_id].approvedUntil >= now);
+			require(authorityData[_id].signatures[msg.sig], "dev: not permitted");
+			require(authorityData[_id].approvedUntil >= now, "dev: expired");
 		}
 		return _multiSigPrivate(
 			_id,
@@ -199,7 +198,7 @@ contract MultiSig {
 	{
 		Authority storage a = authorityData[_id];
 		for (uint256 i; i < a.multiSigAuth[_callHash].length; i++) {
-			require(a.multiSigAuth[_callHash][i] != _sender);
+			require(a.multiSigAuth[_callHash][i] != _sender, "dev: repeat caller");
 		}
 		if (a.multiSigAuth[_callHash].length + 1 >= a.multiSigThreshold) {
 			delete a.multiSigAuth[_callHash];

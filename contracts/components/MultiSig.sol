@@ -132,14 +132,8 @@ contract MultiSig {
 		@return bool - has call met multisig threshold?
 	 */
 	function _checkMultiSig() internal returns (bool) {
-		bytes32 _id = idMap[msg.sender].id;
-		require(!idMap[msg.sender].restricted);
-		if (_id != ownerID) {
-			require(authorityData[_id].signatures[msg.sig], "dev: not permitted");
-			require(authorityData[_id].approvedUntil >= now, "dev: expired");
-		}
 		return _multiSigPrivate(
-			_id,
+			idMap[msg.sender].id,
 			msg.sig,
 			keccak256(msg.data),
 			msg.sender
@@ -163,15 +157,8 @@ contract MultiSig {
 		external
 		returns (bool)
 	{
-		bytes32 _id = idMap[tx.origin].id;
-		require(_id != 0);
-		require(!idMap[tx.origin].restricted);
-		if (_id != ownerID) {
-			require(authorityData[_id].signatures[_sig]);
-			require(authorityData[_id].approvedUntil >= now);
-		}
 		return _multiSigPrivate(
-			_id,
+			idMap[tx.origin].id,
 			_sig,
 			keccak256(abi.encodePacked(_callHash, _sig, msg.sender)),
 			tx.origin
@@ -196,6 +183,11 @@ contract MultiSig {
 		private
 		returns (bool)
 	{
+		require(!idMap[_sender].restricted);
+		if (_id != ownerID) {
+			require(authorityData[_id].signatures[_sig], "dev: not permitted");
+			require(authorityData[_id].approvedUntil >= now, "dev: expired");
+		}
 		Authority storage a = authorityData[_id];
 		for (uint256 i; i < a.multiSigAuth[_callHash].length; i++) {
 			require(a.multiSigAuth[_callHash][i] != _sender, "dev: repeat caller");

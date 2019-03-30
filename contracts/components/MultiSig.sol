@@ -109,17 +109,17 @@ contract MultiSig {
 				idMap[_addr[i]].restricted = false;
 			} else if (idMap[_addr[i]].id == 0) {
 				idMap[_addr[i]].id = _id;
-				_count = _count.add(1);
 			} else {
-				revert();
+				revert("dev: repeat address");
 			}
 		}
+		_count = uint32(_addr.length);
 		emit NewAuthorityAddresses(
 			_id,
 			_addr,
 			authorityData[_id].addressCount.add(_count)
 		);
-		return _count;
+		return uint32(_count);
 	}
 
 	/**
@@ -291,17 +291,16 @@ contract MultiSig {
 	{
 		_onlyOwner();
 		if (!_checkMultiSig()) return false;
-		require (_addr.length > 0);
+		require (_threshold > 0, "dev: threshold zero");
 		bytes32 _id = keccak256(abi.encodePacked(_addr));
 		Authority storage a = authorityData[_id];
-		require(a.addressCount == 0);
-		require(_id != 0);
+		require(a.addressCount == 0, "dev: known authority");
 		for (uint256 i; i < _signatures.length; i++) {
 			a.signatures[_signatures[i]] = true;
 		}
 		a.approvedUntil = _approvedUntil;
 		a.addressCount = _addAddresses(_id, _addr);
-		require (a.addressCount >= _threshold);
+		require (a.addressCount >= _threshold, "dev: treshold > count");
 		a.multiSigThreshold = _threshold;
 		emit NewAuthority(_id, _threshold, _approvedUntil);
 		emit NewAuthorityPermissions(_id, _signatures);

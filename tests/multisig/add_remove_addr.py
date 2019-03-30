@@ -7,42 +7,84 @@ from scripts.deployment import main
 def setup():
     config['test']['always_transact'] = False
     main(SecurityToken)
-    global token, issuer, id1, id2
+    global token, issuer, ownerid, id1, id2
     token = SecurityToken[0]
     issuer = IssuingEntity[0]
     for i in range(10):
         a.add()
     issuer.addAuthority([a[-2]], [], 2000000000, 1, {'from': a[0]})
     issuer.addAuthority([a[-1]], [], 2000000000, 1, {'from': a[0]})
+    ownerid = issuer.ownerID()
     id1 = issuer.getID(a[-2])
     id2 =issuer.getID(a[-1])
 
 def add_addr_owner():
     '''add addresses to owner'''
-    issuer.addAuthorityAddresses(issuer.ownerID(), a[-6:-4], {'from': a[0]})
-    check.equal(issuer.getAuthority(issuer.ownerID()), (1, 3, 0))
-    issuer.addAuthorityAddresses(issuer.ownerID(), [a[-4]], {'from': a[0]})
-    check.equal(issuer.getAuthority(issuer.ownerID()), (1, 4, 0))
+    issuer.addAuthorityAddresses(ownerid, a[-6:-4], {'from': a[0]})
+    check.equal(issuer.getAuthority(ownerid), (1, 3, 0))
+    issuer.addAuthorityAddresses(ownerid, [a[-4]], {'from': a[0]})
+    check.equal(issuer.getAuthority(ownerid), (1, 4, 0))
 
 def remove_addr_owner():
     '''remove addresses from owner'''
-    issuer.addAuthorityAddresses(issuer.ownerID(), a[-10:-5], {'from': a[0]})
-    issuer.removeAuthorityAddresses(issuer.ownerID(), a[-10:-6], {'from': a[0]})
-    check.equal(issuer.getAuthority(issuer.ownerID()), (1, 2, 0))
+    issuer.addAuthorityAddresses(ownerid, a[-10:-5], {'from': a[0]})
+    issuer.removeAuthorityAddresses(ownerid, a[-10:-6], {'from': a[0]})
+    check.equal(issuer.getAuthority(ownerid), (1, 2, 0))
 
 def add_remove_owner():
     '''add and remove - owner'''
-    issuer.addAuthorityAddresses(issuer.ownerID(), a[-10:-5], {'from': a[0]})
-    issuer.removeAuthorityAddresses(issuer.ownerID(), a[-10:-6], {'from': a[0]})
-    issuer.addAuthorityAddresses(issuer.ownerID(), [a[-10],a[-9],a[-4]], {'from': a[0]})
-    check.equal(issuer.getAuthority(issuer.ownerID()), (1, 5, 0))
-
+    issuer.addAuthorityAddresses(ownerid, a[-10:-5], {'from': a[0]})
+    issuer.removeAuthorityAddresses(ownerid, a[-10:-6], {'from': a[0]})
+    issuer.addAuthorityAddresses(ownerid, [a[-10], a[-9], a[-4]], {'from': a[0]})
+    check.equal(issuer.getAuthority(ownerid), (1, 5, 0))
 
 def add_addr_auth():
-    '''add addresses to subauthorities'''
+    '''add addresses to authorities'''
     issuer.addAuthorityAddresses(id1, a[-10:-7], {'from': a[0]})
     check.equal(issuer.getAuthority(id1), (1, 4, 2000000000))
     issuer.addAuthorityAddresses(id1, [a[-7]], {'from': a[0]})
     check.equal(issuer.getAuthority(id1), (1, 5, 2000000000))
     issuer.addAuthorityAddresses(id2, a[-4:-2], {'from': a[0]})
     check.equal(issuer.getAuthority(id2), (1, 3, 2000000000))
+
+def remove_addr_auth():
+    '''remove addresses from authorities'''
+    issuer.addAuthorityAddresses(id1, a[-10:-7], {'from': a[0]})
+    issuer.addAuthorityAddresses(id2, a[-4:-2], {'from': a[0]})
+    issuer.removeAuthorityAddresses(id1, a[-10:-8], {'from': a[0]})
+    issuer.removeAuthorityAddresses(id2, a[-4:-2], {'from': a[0]})
+    check.equal(issuer.getAuthority(id1), (1, 2, 2000000000))
+    check.equal(issuer.getAuthority(id2), (1, 1, 2000000000))
+
+
+def add_remove_auth():
+    '''add and remove - authorities'''
+    issuer.addAuthorityAddresses(id1, a[-10:-7], {'from': a[0]})
+    issuer.addAuthorityAddresses(id2, a[-7:-5], {'from': a[0]})
+    issuer.removeAuthorityAddresses(id1, a[-10:-8], {'from': a[0]})
+    issuer.removeAuthorityAddresses(id2, [a[-7]], {'from': a[0]})
+    issuer.addAuthorityAddresses(id1, (a[-10], a[-9], a[-5]), {'from': a[0]})
+    issuer.addAuthorityAddresses(id2, (a[-7], a[-4]), {'from': a[0]})
+    check.equal(issuer.getAuthority(id1), (1, 5, 2000000000))
+    check.equal(issuer.getAuthority(id2), (1, 4, 2000000000))
+
+def remove_below_threshold():
+    '''remove below threshold'''
+    issuer.addAuthorityAddresses(id1, a[-10:-7], {'from': a[0]})
+    issuer.setAuthorityThreshold(id1, 3, {'from': a[0]})
+    check.reverts(
+        issuer.removeAuthorityAddresses,
+        (id1, a[-10:-7], {'from': a[0]}),
+        "dev: count below threshold"
+    )
+    issuer.removeAuthorityAddresses(id1, [a[-10]], {'from': a[0]})
+    check.reverts(
+        issuer.removeAuthorityAddresses,
+        (id1, a[-9:-7], {'from': a[0]}),
+        "dev: count below threshold"
+    )
+    check.reverts(
+        issuer.removeAuthorityAddresses,
+        (id2, [a[-1]], {'from': a[0]}),
+        "dev: count below threshold"
+    )

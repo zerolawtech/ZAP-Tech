@@ -65,6 +65,7 @@ contract MultiSig {
 	 */ 
 	constructor(address[] _owners, uint32 _threshold) public {
 		require(_owners.length > 0);
+		require (_threshold > 0);
 		ownerID = keccak256(abi.encodePacked(address(this)));
 		Authority storage a = authorityData[ownerID];
 		a.addressCount = _addAddresses(ownerID, _owners);
@@ -374,7 +375,8 @@ contract MultiSig {
 	{
 		_onlySelfAuthority(_id);
 		if (!_checkMultiSig()) return false;
-		Authority storage a = authorityData[idMap[msg.sender].id];
+		require (_threshold > 0, "dev: threshold zero");
+		Authority storage a = authorityData[_id];
 		require(a.addressCount >= _threshold);
 		a.multiSigThreshold = _threshold;
 		emit ThresholdSet(_id, _threshold);
@@ -425,8 +427,7 @@ contract MultiSig {
 			idMap[_addr[i]].restricted = true;
 		}
 		a.addressCount = a.addressCount.sub(uint32(_addr.length));
-		require (a.addressCount >= a.multiSigThreshold);
-		require (a.addressCount > 0);
+		require (a.addressCount >= a.multiSigThreshold, "dev: count below threshold");
 		emit RemovedAuthorityAddresses(_id, _addr, a.addressCount);
 		return true;
 	}

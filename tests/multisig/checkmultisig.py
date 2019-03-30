@@ -19,7 +19,7 @@ def setup():
     issuer.addAuthority((a[-3:]), [], 2000000000, 1, {'from': a[0]})
     ownerid = issuer.ownerID()
     id1 = issuer.getID(a[-6])
-    id2 =issuer.getID(a[-3])
+    id2 = issuer.getID(a[-3])
 
 def setCountry():
     _multisig(issuer.setCountry, 1, True, 1, [0]*8)

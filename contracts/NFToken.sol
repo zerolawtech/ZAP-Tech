@@ -383,12 +383,12 @@ contract NFToken is TokenBase  {
 		public
 		returns (bool)
 	{
+		if (!_checkPermitted()) return false;
 		_checkBounds(_pointer);
 		require(tokens[_pointer] == _pointer);
 		Range storage r = rangeMap[_pointer];
 		require(r.owner != 0x00);
 		require(_time == 0 || _time > now);
-		if (!_checkPermitted()) return false;
 		if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag, r.custodian)) {
 			/* merge with previous range */
 			uint48 _prev = tokens[_pointer-1];
@@ -435,11 +435,11 @@ contract NFToken is TokenBase  {
 		public
 		returns (bool)
 	{
+		if (!_checkPermitted()) return false;
 		_checkBounds(_start);
 		_checkBounds(_stop-1);
 		require(_start < _stop);
 		require(_time == 0 || _time > now);
-		if (!_checkPermitted()) return false;
 		uint48 _pointer = _getPointer(_stop);
 		if (_pointer != _stop) {
 			Range storage r = rangeMap[_pointer];

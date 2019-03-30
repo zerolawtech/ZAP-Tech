@@ -42,7 +42,7 @@ def repeat_addr():
     check.reverts(
         issuer.addAuthority,
         ([a[-1],a[-1]], [], 2000000000, 1, {'from': a[0]}),
-        "dev: repeat address"
+        "dev: known address"
     )
 
 def known_address():
@@ -50,13 +50,13 @@ def known_address():
     check.reverts(
         issuer.addAuthority,
         ([a[0]], [], 2000000000, 1, {'from': a[0]}),
-        "dev: repeat address"
+        "dev: known address"
     )
     token.mint(a[1], 100, {'from':a[0]})
     check.reverts(
         issuer.addAuthority,
         ([a[1]], [], 2000000000, 1, {'from': a[0]}),
-        "dev: repeat address"
+        "dev: known address"
     )
 
 def known_auth():

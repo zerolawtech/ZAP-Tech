@@ -88,7 +88,7 @@ contract MultiSig {
 	function _onlySelfAuthority(bytes32 _id) internal view {
 		require (_id != 0);
 		if (idMap[msg.sender].id != ownerID) {
-			require(idMap[msg.sender].id == _id);
+			require(idMap[msg.sender].id == _id, "dev: wrong authority");
 		}
 	}
 

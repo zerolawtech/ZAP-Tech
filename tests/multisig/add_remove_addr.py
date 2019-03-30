@@ -12,8 +12,14 @@ def setup():
     issuer = IssuingEntity[0]
     for i in range(10):
         a.add()
-    issuer.addAuthority([a[-2]], [], 2000000000, 1, {'from': a[0]})
-    issuer.addAuthority([a[-1]], [], 2000000000, 1, {'from': a[0]})
+    sigs = (
+        issuer.signatures['addAuthorityAddresses'],
+        issuer.signatures['removeAuthorityAddresses'],
+    )
+    issuer.addAuthority([a[-2]], sigs, 2000000000, 1, {'from': a[0]})
+    issuer.addAuthority([a[-1]], sigs, 2000000000, 1, {'from': a[0]})
+    a[0].transfer(a[-2], "1 ether")
+    a[0].transfer(a[-1], "1 ether")
     ownerid = issuer.ownerID()
     id1 = issuer.getID(a[-2])
     id2 =issuer.getID(a[-1])
@@ -150,4 +156,33 @@ def remove_unknown_id():
         issuer.removeAuthorityAddresses,
         ("0x1234", (a[-10],), {'from': a[0]}),
         "dev: wrong ID"
+    )
+
+def authority_add_to_self():
+    '''authority - add to self'''
+    issuer.addAuthorityAddresses(id1, a[-10:-8], {'from': a[-2]})
+    issuer.addAuthorityAddresses(id2, a[-8:-6], {'from': a[-1]})
+
+def authority_remove_self():
+    '''authority - remove from self'''
+    issuer.addAuthorityAddresses(id1, a[-10:-8], {'from': a[-2]})
+    issuer.addAuthorityAddresses(id2, a[-8:-6], {'from': a[-1]})
+    issuer.removeAuthorityAddresses(id1, a[-10:-8], {'from': a[-2]})
+    issuer.removeAuthorityAddresses(id2, (a[-8],a[-1]), {'from': a[-1]})
+
+def authority_add_to_other():
+    '''authority - add to other'''
+    check.reverts(
+        issuer.addAuthorityAddresses,
+        (id1, a[-10:-8], {'from': a[-1]}),
+        "dev: wrong authority"
+    )
+
+def authority_remove_from_other():
+    '''authority - remove from other'''
+    issuer.addAuthorityAddresses(id1, a[-10:-8], {'from': a[-2]})
+    check.reverts(
+        issuer.removeAuthorityAddresses,
+        (id1, a[-10:-8], {'from': a[-1]}),
+        "dev: wrong authority"
     )

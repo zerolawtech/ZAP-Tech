@@ -111,7 +111,7 @@ contract MultiSig {
 			} else if (idMap[_addr[i]].id == 0) {
 				idMap[_addr[i]].id = _id;
 			} else {
-				revert("dev: repeat address");
+				revert("dev: known address");
 			}
 		}
 		_count = uint32(_addr.length);
@@ -399,7 +399,7 @@ contract MultiSig {
 		_onlySelfAuthority(_id);
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_id];
-		require(a.addressCount > 0);
+		require(a.addressCount > 0, "dev: unknown ID");
 		a.addressCount = a.addressCount.add(_addAddresses(_id, _addr));
 		return true;
 	}
@@ -422,8 +422,8 @@ contract MultiSig {
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_id];
 		for (uint256 i; i < _addr.length; i++) {
-			require(idMap[_addr[i]].id == _id);
-			require(!idMap[_addr[i]].restricted);
+			require(idMap[_addr[i]].id == _id, "dev: wrong ID");
+			require(!idMap[_addr[i]].restricted, "dev: already restricted");
 			idMap[_addr[i]].restricted = true;
 		}
 		a.addressCount = a.addressCount.sub(uint32(_addr.length));

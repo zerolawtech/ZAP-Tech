@@ -76,7 +76,9 @@ Only the owner may add, modify or restrict other authorities.
 
 .. method:: MultiSig.isApprovedAuthority(address _addr, bytes4 _sig)
 
-    Returns true if the authority associated with the given address is permitted to call the method with the given signature.
+    Returns true if the given address is associated with an authority, and currently permitted to call the method with the given signature.
+
+    Note that this is a general check; specific logic within the given method may still prevent this address from completing the call.
 
 Implementing MultiSig
 =====================

@@ -22,36 +22,36 @@ def setup():
     a[0].transfer(a[-1], "1 ether")
     ownerid = issuer.ownerID()
     id1 = issuer.getID(a[-2])
-    id2 =issuer.getID(a[-1])
+    id2 = issuer.getID(a[-1])
 
 def add_addr_owner():
     '''add addresses to owner'''
     issuer.addAuthorityAddresses(ownerid, a[-6:-4], {'from': a[0]})
-    check.equal(issuer.getAuthority(ownerid), (1, 3, 0))
+    check.equal(issuer.getAuthority(ownerid), (3, 1, 0))
     issuer.addAuthorityAddresses(ownerid, (a[-4],), {'from': a[0]})
-    check.equal(issuer.getAuthority(ownerid), (1, 4, 0))
+    check.equal(issuer.getAuthority(ownerid), (4, 1, 0))
 
 def remove_addr_owner():
     '''remove addresses from owner'''
     issuer.addAuthorityAddresses(ownerid, a[-10:-5], {'from': a[0]})
     issuer.removeAuthorityAddresses(ownerid, a[-10:-6], {'from': a[0]})
-    check.equal(issuer.getAuthority(ownerid), (1, 2, 0))
+    check.equal(issuer.getAuthority(ownerid), (2, 1, 0))
 
 def add_remove_owner():
     '''add and remove - owner'''
     issuer.addAuthorityAddresses(ownerid, a[-10:-5], {'from': a[0]})
     issuer.removeAuthorityAddresses(ownerid, a[-10:-6], {'from': a[0]})
     issuer.addAuthorityAddresses(ownerid, (a[-10], a[-9], a[-4]), {'from': a[0]})
-    check.equal(issuer.getAuthority(ownerid), (1, 5, 0))
+    check.equal(issuer.getAuthority(ownerid), (5, 1, 0))
 
 def add_addr_auth():
     '''add addresses to authorities'''
     issuer.addAuthorityAddresses(id1, a[-10:-7], {'from': a[0]})
-    check.equal(issuer.getAuthority(id1), (1, 4, 2000000000))
+    check.equal(issuer.getAuthority(id1), (4, 1, 2000000000))
     issuer.addAuthorityAddresses(id1, (a[-7],), {'from': a[0]})
-    check.equal(issuer.getAuthority(id1), (1, 5, 2000000000))
+    check.equal(issuer.getAuthority(id1), (5, 1, 2000000000))
     issuer.addAuthorityAddresses(id2, a[-4:-2], {'from': a[0]})
-    check.equal(issuer.getAuthority(id2), (1, 3, 2000000000))
+    check.equal(issuer.getAuthority(id2), (3, 1, 2000000000))
 
 def remove_addr_auth():
     '''remove addresses from authorities'''
@@ -59,7 +59,7 @@ def remove_addr_auth():
     issuer.addAuthorityAddresses(id2, a[-4:-2], {'from': a[0]})
     issuer.removeAuthorityAddresses(id1, a[-10:-8], {'from': a[0]})
     issuer.removeAuthorityAddresses(id2, a[-4:-2], {'from': a[0]})
-    check.equal(issuer.getAuthority(id1), (1, 2, 2000000000))
+    check.equal(issuer.getAuthority(id1), (2, 1, 2000000000))
     check.equal(issuer.getAuthority(id2), (1, 1, 2000000000))
 
 def add_remove_auth():
@@ -70,8 +70,8 @@ def add_remove_auth():
     issuer.removeAuthorityAddresses(id2, [a[-7]], {'from': a[0]})
     issuer.addAuthorityAddresses(id1, (a[-10], a[-9], a[-5]), {'from': a[0]})
     issuer.addAuthorityAddresses(id2, (a[-7], a[-4]), {'from': a[0]})
-    check.equal(issuer.getAuthority(id1), (1, 5, 2000000000))
-    check.equal(issuer.getAuthority(id2), (1, 4, 2000000000))
+    check.equal(issuer.getAuthority(id1), (5, 1, 2000000000))
+    check.equal(issuer.getAuthority(id2), (4, 1, 2000000000))
 
 def add_known():
     '''add known addresses'''

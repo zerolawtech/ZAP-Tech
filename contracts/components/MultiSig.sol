@@ -230,7 +230,7 @@ contract MultiSig {
 	/**
 		@notice External view to fetch authority information from an ID
 		@param _id authority ID
-		@return authority threshold, address count, approved until
+		@return authority address count, threshold, approved until
 	 */
 	function getAuthority(
 		bytes32 _id
@@ -238,14 +238,14 @@ contract MultiSig {
 		external
 		view
 		returns (
-			uint32 _threshold,
 			uint32 _addressCount,
+			uint32 _threshold,
 			uint32 _approvedUntil
 		)
 	{
 		Authority storage a = authorityData[_id];
 		require (a.addressCount > 0);
-		return (a.multiSigThreshold, a.addressCount, a.approvedUntil);
+		return (a.addressCount, a.multiSigThreshold, a.approvedUntil);
 	}
 
 	/**
@@ -263,14 +263,14 @@ contract MultiSig {
 		view
 		returns (bool)
 	{
+		
+		if (idMap[_addr].restricted) return false;
 		bytes32 _id = idMap[_addr].id;
-		require(_id != 0);
-		require(!idMap[_addr].restricted);
-		if (_id != ownerID) {
-			require(authorityData[_id].signatures[_sig]);
-			require(authorityData[_id].approvedUntil >= now);
-		}
-		return true;
+		if (_id == ownerID) return true;
+		return (
+			authorityData[_id].signatures[_sig] &&
+			authorityData[_id].approvedUntil >= now
+		);
 	}
 
 	/**
@@ -324,7 +324,7 @@ contract MultiSig {
 	{
 		_onlyOwner();
 		if (!_checkMultiSig()) return false;
-		require(authorityData[_id].addressCount > 0);
+		require(authorityData[_id].addressCount > 0, "dev: unknown ID");
 		authorityData[_id].approvedUntil = _approvedUntil;
 		emit ApprovedUntilSet(_id, _approvedUntil);
 		return true;
@@ -377,7 +377,7 @@ contract MultiSig {
 		if (!_checkMultiSig()) return false;
 		require (_threshold > 0, "dev: threshold zero");
 		Authority storage a = authorityData[_id];
-		require(a.addressCount >= _threshold);
+		require(a.addressCount >= _threshold, "dev: threshold too high");
 		a.multiSigThreshold = _threshold;
 		emit ThresholdSet(_id, _threshold);
 		return true;

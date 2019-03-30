@@ -219,11 +219,32 @@ contract MultiSig {
 
 	/**
 		@notice External view to fetch an authority ID from an address
-		@param _addr address of token being transferred
+		@param _addr authority address
 		@return bytes32 authority ID
 	 */
 	function getID(address _addr) external view returns (bytes32) {
 		return idMap[_addr].id;
+	}
+
+	/**
+		@notice External view to fetch authority information from an ID
+		@param _id authority ID
+		@return authority threshold, address count, approved until
+	 */
+	function getAuthority(
+		bytes32 _id
+	)
+		external
+		view
+		returns (
+			uint32 _threshold,
+			uint32 _addressCount,
+			uint32 _approvedUntil
+		)
+	{
+		Authority storage a = authorityData[_id];
+		require (a.addressCount > 0);
+		return (a.multiSigThreshold, a.addressCount, a.approvedUntil);
 	}
 
 	/**

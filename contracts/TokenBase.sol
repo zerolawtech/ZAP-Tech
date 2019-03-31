@@ -261,7 +261,7 @@ contract TokenBase is Modular {
 		@return bool success
 	 */
 	function attachModule(address _module) external returns (bool) {
-		require(msg.sender == address(issuer));
+		require(msg.sender == address(issuer), "dev: only issuer");
 		_attachModule(_module);
 		return true;
 	}
@@ -276,7 +276,7 @@ contract TokenBase is Modular {
 	 */
 	function detachModule(address _module) external returns (bool) {
 		if (_module != msg.sender) {
-			require(msg.sender == address(issuer));
+			require(msg.sender == address(issuer), "dev: only issuer");
 		} else {
 			/* msg.sig = 0xbb2a8522 */
 			require(isPermittedModule(msg.sender, msg.sig));

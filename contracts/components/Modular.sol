@@ -45,9 +45,9 @@ contract Modular {
 		@return bool success
 	 */
 	function _attachModule(address _module) internal {
-		require (!moduleData[_module].active);
+		require (!moduleData[_module].active, "dev: already active");
 		IBaseModule b = IBaseModule(_module);
-		require (b.getOwner() == address(this));
+		require (b.getOwner() == address(this), "dev: wrong owner");
 		Module storage m = moduleData[_module];
 		m.active = true;
 		activeModules.push(_module);
@@ -93,7 +93,7 @@ contract Modular {
 			activeModules.length--;
 			return;
 		}
-		for (uint256 i = 0; i < activeModules.length - 1; i++) {
+		for (uint256 i; i < activeModules.length - 1; i++) {
 			if (activeModules[i] == _module) {
 				activeModules[i] = activeModules[activeModules.length - 1];
 				activeModules.length--;

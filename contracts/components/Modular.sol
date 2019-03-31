@@ -51,7 +51,6 @@ contract Modular {
 		Module storage m = moduleData[_module];
 		m.active = true;
 		activeModules.push(_module);
-		emit ModuleAttached(_module, _hooks, _permissions);
 		/* hooks and permissions are only set the first time a module attaches */
 		if (!m.set) {
 			(
@@ -70,11 +69,12 @@ contract Modular {
 					m.hooks[_hooks[i]].always
 				);
 			}
-			for (i = 0; i < _hooks.length; i++) {
+			for (i = 0; i < _permissions.length; i++) {
 				m.permissions[_permissions[i]] = true;
 			}
 			m.set = true;
 		}
+		emit ModuleAttached(_module, _hooks, _permissions);
 	}
 
 	/**

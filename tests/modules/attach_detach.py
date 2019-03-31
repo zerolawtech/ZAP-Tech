@@ -104,3 +104,22 @@ def already_active():
         (token, module_token, {'from': a[0]}),
         "dev: already active"
     )
+
+def token_locked():
+    '''attach and detach - locked token'''
+    issuer.setTokenRestriction(token, False, {'from': a[0]})
+    issuer.attachModule(token, module_token, {'from': a[0]})
+    issuer.detachModule(token, module_token, {'from': a[0]})
+
+def attach_unknown_target():
+    '''attach and detach - unknown target'''
+    check.reverts(
+        issuer.attachModule,
+        (a[0], module_token, {'from': a[0]}),
+        "dev: unknown target"
+    )
+    check.reverts(
+        issuer.detachModule,
+        (a[0], module_token, {'from': a[0]}),
+        "dev: unknown target"
+    )

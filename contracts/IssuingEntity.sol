@@ -890,7 +890,7 @@ contract IssuingEntity is Modular, MultiSig {
 		if (_target == address(this)) {
 			_attachModule(_module);
 		} else {
-			require(tokens[_target].set);
+			require(tokens[_target].set, "dev: unknown target");
 			SecurityToken(_target).attachModule(_module);
 		}
 		return true;
@@ -919,7 +919,7 @@ contract IssuingEntity is Modular, MultiSig {
 		if (_target == address(this)) {
 			_detachModule(_module);
 		} else {
-			require(tokens[_target].set);
+			require(tokens[_target].set, "dev: unknown target");
 			SecurityToken(_target).detachModule(_module);
 		}
 		return true;

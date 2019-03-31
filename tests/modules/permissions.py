@@ -41,10 +41,11 @@ def setup():
     global token, issuer
     token = SecurityToken[0]
     issuer = IssuingEntity[0]
+    token.mint(issuer, 1000000, {'from': a[0]})
 
 def is_permitted():
     '''check permitted'''
-    module = compile_source(module_source.format("0xbb2a8522"))[0].deploy(a[0], token)
+    module = _deploy_module('0xbb2a8522')
     check.false(token.isPermittedModule(module, "0xbb2a8522"))
     check.false(issuer.isPermittedModule(module, "0xbb2a8522"))
     issuer.attachModule(token, module, {'from': a[0]})
@@ -56,7 +57,28 @@ def is_permitted():
 
 
 def token_detachModule():
-    '''detach'''
-    module = compile_source(module_source.format("0xbb2a8522"))[0].deploy(a[0], token)
+    '''detach module'''
+    module = _deploy_module('0xbb2a8522')
+    check.reverts(
+        module.test,
+        (token.detachModule.encode_abi(module), {'from': a[0]})
+    )
     issuer.attachModule(token, module, {'from': a[0]})
     module.test(token.detachModule.encode_abi(module), {'from': a[0]})
+    check.reverts(
+        module.test,
+        (token.detachModule.encode_abi(module), {'from': a[0]})
+    )
+
+def token_transferFrom():
+    '''token transferFrom'''
+    module = _deploy_module('0x23b872dd')
+    issuer.attachModule(token, module, {'from': a[0]})
+    module.test(token.transferFrom.encode_abi(issuer, a[2], 3000), {'from': a[0]})
+    module.test(token.transferFrom.encode_abi(a[2], a[3], 1000), {'from': a[0]})
+    check.equal(token.balanceOf(a[2]), 2000)
+    check.equal(token.balanceOf(a[3]), 1000)
+
+
+def _deploy_module(sig):
+    return compile_source(module_source.format(sig))[0].deploy(a[0], token)

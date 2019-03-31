@@ -80,5 +80,20 @@ def token_transferFrom():
     check.equal(token.balanceOf(a[3]), 1000)
 
 
+def token_modifyAuthorizedSupply():
+    '''token modifyAuthorizedSupply'''
+    module = _deploy_module('0xc39f42ed')
+    issuer.attachModule(token, module, {'from': a[0]})
+    module.test(token.modifyAuthorizedSupply.encode_abi("10 ether"), {'from': a[0]})
+    check.equal(token.authorizedSupply(), "10 ether")
+    issuer.detachModule(token, module, {'from': a[0]})
+    check.reverts(
+        module.test,
+        (token.modifyAuthorizedSupply.encode_abi("10 ether"), {'from': a[0]})
+    )
+
+
+
 def _deploy_module(sig):
     return compile_source(module_source.format(sig))[0].deploy(a[0], token)
+    

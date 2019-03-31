@@ -142,26 +142,25 @@ contract MultiSig {
 
 	/**
 		@notice External multisig functionality
-		@dev
-			This call allows you to add multisig functionality to modules.
-			It uses tx.origin to confirm that the original caller is an
-			approved authority.
-		@param _sig original msg.sig
+		@dev This call allows you to add multisig functionality to modules.
+		@param _caller Address of caller
 		@param _callHash keccack256 of original msg.calldata
+		@param _sig original msg.sig
 		@return bool - has call met multisig threshold?
 	 */
 	function checkMultiSigExternal(
-		bytes4 _sig,
-		bytes32 _callHash
+		address _caller,
+		bytes32 _callHash,
+		bytes4 _sig
 	)
 		external
 		returns (bool)
 	{
 		return _multiSigPrivate(
-			idMap[tx.origin].id,
+			idMap[_caller].id,
 			_sig,
 			keccak256(abi.encodePacked(_callHash, _sig, msg.sender)),
-			tx.origin
+			_caller
 		);
 	}
 

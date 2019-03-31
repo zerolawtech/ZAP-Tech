@@ -13,8 +13,11 @@ contract ModuleBase {
 	address owner;
 
 	function _onlyAuthority() internal returns (bool) {
-		require (MultiSig(owner).isApprovedAuthority(msg.sender, msg.sig));
-		return MultiSig(owner).checkMultiSigExternal(msg.sig, keccak256(msg.data));
+		return MultiSig(owner).checkMultiSigExternal(
+			msg.sender,
+			keccak256(msg.data),
+			msg.sig
+		);
 	}
 
 	/**

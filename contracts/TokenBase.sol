@@ -4,7 +4,6 @@ import "./IssuingEntity.sol";
 import "./components/Modular.sol";
 import "./interfaces/IBaseCustodian.sol";
 
-
 /**
 	@title Security Token Base
 	@dev
@@ -12,8 +11,6 @@ import "./interfaces/IBaseCustodian.sol";
 		https://theethereum.wiki/w/index.php/ERC20_Token_Standard
  */
 contract TokenBase is Modular {
-
-	//using SafeMath for uint256;
 
 	bytes32 public ownerID;
 	IssuingEntity public issuer;
@@ -72,7 +69,7 @@ contract TokenBase is Modular {
 		@return integer
 	 */
 	function circulatingSupply() external view returns (uint256) {
-		return totalSupply - balanceOf(address(issuer));//.sub(balanceOf(address(issuer)));
+		return totalSupply - balanceOf(address(issuer));
 	}
 
 	/**
@@ -330,7 +327,11 @@ contract TokenBase is Modular {
 	 */
 	function _checkPermitted() internal returns (bool) {
 		if (isPermittedModule(msg.sender, msg.sig)) return true;
-		return issuer.checkMultiSigExternal(msg.sig, keccak256(msg.data));
+		return issuer.checkMultiSigExternal(
+			msg.sender,
+			keccak256(msg.data),
+			msg.sig
+		);
 	}
 
 }

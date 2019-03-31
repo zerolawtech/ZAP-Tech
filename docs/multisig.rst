@@ -101,22 +101,19 @@ Multisig functionality can be implemented within any contract method as well as 
 
     Repeating a multi-sig call from the same address before reaching the threshold will revert.
 
-.. method:: MultiSig.checkMultiSigExternal(bytes4 _sig, bytes32 _callHash)
+.. method:: MultiSig.checkMultiSigExternal(address _caller, bytes32 _callHash, bytes4 _sig)
 
     External function, used to implement multisig in an external contract.
 
-    * ``_sig``: The original function signature being called
+    * ``_caller``: caller address
     * ``_callHash``: a keccak hash of the original calldata
+    * ``_sig``: The original function signature being called
 
     Use the following code to implement this in an external contract:
 
     ::
 
         bytes32 _callHash = keccak256(msg.data);
-        if (!MultiSigContract.checkMultiSigExternal(msg.sig, _callHash)) {
+        if (!MultiSigContract.checkMultiSigExternal(msg.sender, _callHash, msg.sig)) {
             return false;
         }
-
-    This function relies on ``tx.origin`` to verify that the original caller is an approved authority. Permissions are checked against the signature value in the same way as with an internal call. The recorded hash of the call is formed from a concatenation of the address of the supplied call hash, the signature and the calling contract.
-
-    .. warning:: Because of the use of ``tx.origin``, you must also include a call to ``isApprovedAuthority`` within the external method to verify that ``msg.sender`` is a permitted authority. Without this check the contract will be vulnerable to an `authentication exploit <https://vessenes.com/tx-origin-and-ethereum-oh-my/>`__.

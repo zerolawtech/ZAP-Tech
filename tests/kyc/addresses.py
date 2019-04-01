@@ -14,6 +14,7 @@ def setup():
     owner_id = kyc.getAuthorityID(a[0])
     auth_id = kyc.getAuthorityID(a[-1])
 
+
 def owner_add_authority_addresses():
     '''add addresses to authority'''
     check.reverts(kyc.getAuthorityID, ((a[1],)))
@@ -21,6 +22,7 @@ def owner_add_authority_addresses():
     kyc.registerAddresses(owner_id, (a[1], a[2]), {'from':a[0]})
     check.equal(kyc.getAuthorityID(a[1]), owner_id)
     check.equal(kyc.getAuthorityID(a[2]), owner_id)
+
 
 def owner_restrict_authority_addresses():
     '''restrict authority addresses'''
@@ -30,6 +32,7 @@ def owner_restrict_authority_addresses():
     kyc.restrictAddresses(auth_id, (a[3], a[4]), {'from':a[0]})
     for i in range(1,5):
         check.false(kyc.isApprovedAuthority(a[i], 1))
+
 
 def owner_unrestrict_authority_address():
     '''unrestrict authority addresses'''
@@ -85,6 +88,7 @@ def add_address_repeat():
         "dev: known address"
     )
 
+
 def restrict_already_restricted():
     '''cannot restrict - already restricted'''
     kyc.registerAddresses(owner_id, (a[1], a[2]), {'from': a[0]})
@@ -109,6 +113,7 @@ def restrict_already_restricted():
         "dev: already restricted"
     )
 
+
 def restrict_wrong_ID():
     '''cannot restrict - wrong ID'''
     kyc.registerAddresses(owner_id, (a[1], a[2]), {'from': a[0]})
@@ -129,6 +134,7 @@ def restrict_wrong_ID():
         ("0x123456", (a[1],), {'from': a[0]}),
         "dev: wrong ID"
     )
+
 
 def remove_address_threshold():
     '''cannot restrict authority addresses - below threshold'''
@@ -153,6 +159,7 @@ def authority_add_authority_addresses():
         "dev: not owner"
     )
 
+
 def authority_restrict_authority_addresses():
     '''authority cannot restrict authority addresses'''
     kyc.registerAddresses(owner_id, (a[1], a[2]), {'from':a[0]})
@@ -167,6 +174,7 @@ def authority_restrict_authority_addresses():
         (auth_id, (a[3], a[4]), {'from':a[-1]}),
         "dev: not owner"
     )
+
 
 def owner_add_investor_addresses():
     '''owner - add investor addresses'''

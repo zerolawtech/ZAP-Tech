@@ -9,8 +9,6 @@ def setup():
     global kyc, issuer, auth_id
     kyc = a[0].deploy(KYCRegistrar, [a[0]], 1)
     issuer = a[0].deploy(IssuingEntity, [a[0]], 1)
-    #token = accounts[0].deploy(token_contract, issuer, "Test NFT", "NFT", 1000000)
-    #issuer.addToken(token, {'from': accounts[0]})
     issuer.setRegistrar(kyc, True, {'from': a[0]})
     kyc.addAuthority((a[-1],a[-2]), [], 1, {'from': a[0]})
     auth_id = kyc.getAuthorityID(a[-1])

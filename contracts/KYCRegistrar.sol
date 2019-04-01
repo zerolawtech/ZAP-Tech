@@ -37,6 +37,7 @@ contract KYCRegistrar is KYCBase {
 
 	/**
 		@notice Internal multisig functionality
+		@param _onlyOwner is the call only possible via the owning authority?
 		@return bool - has call met multisig threshold?
 	 */
 	function _checkMultiSig(bool _onlyOwner) internal returns (bool) {
@@ -66,7 +67,6 @@ contract KYCRegistrar is KYCBase {
 		bytes32 _id = idMap[msg.sender].id;
 		require(_country != 0);
 		Authority storage a = authorityData[_id];
-		require(a.addressCount > 0);
 		require(!a.restricted, "dev: restricted");
 		require(!idMap[msg.sender].restricted);
 		if (_id == ownerID) return;
@@ -109,6 +109,12 @@ contract KYCRegistrar is KYCBase {
 		return _count;
 	}
 
+	/**
+		@notice Internal function set authority country booleans
+		@param _countries Storage pointer to authority country bit field
+		@param _toSet Array of country codes
+		@param _value Boolean to set countries to
+	 */
 	function _setCountries(
 		uint256[8] storage _countries,
 		uint16[] memory _toSet,
@@ -142,7 +148,7 @@ contract KYCRegistrar is KYCBase {
 		@notice Add a new authority to this registrar
 		@param _addr Array of addressses to register as authority
 		@param _countries Array of country codes the authority is approved for
-		@param _threshold Minimum number of calls to a method for multisigk
+		@param _threshold Minimum number of calls to a method for multisig
 		@return bool success
 	 */
 	function addAuthority(

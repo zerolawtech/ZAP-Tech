@@ -43,8 +43,8 @@ contract KYCRegistrar is KYCBase {
 	function _checkMultiSig(bool _onlyOwner) internal returns (bool) {
 		bytes32 _id = idMap[msg.sender].id;
 		if (_onlyOwner) {
-			require(_id == ownerID);
-			require(!idMap[msg.sender].restricted);
+			require(_id == ownerID, "dev: only owner");
+			require(!idMap[msg.sender].restricted, "dev: restricted owner");
 		}
 		Authority storage a = authorityData[_id];
 		bytes32 _callHash = keccak256(msg.data);
@@ -102,7 +102,7 @@ contract KYCRegistrar is KYCBase {
 				_count++;
 			/* In all other cases, revert */
 			} else {
-				revert();
+				revert("dev: known address");
 			}
 		}
 		emit RegisteredAddresses(_id, _addr, idMap[msg.sender].id);
@@ -160,13 +160,14 @@ contract KYCRegistrar is KYCBase {
 		returns (bool)
 	{
 		if (!_checkMultiSig(true)) return false;
-		require(_threshold > 0);
+		require(_threshold > 0, "dev: zero threshold");
 		bytes32 _id = keccak256(abi.encodePacked(address(this), _addr[0]));
-		require(investorData[_id].authority == 0);
+		emit NewAuthority(_id);
+		require(investorData[_id].authority == 0, "dev: investor ID");
 		Authority storage a = authorityData[_id];
-		require(authorityData[_id].addressCount == 0);
+		require(a.addressCount == 0, "dev: authority exists");
 		a.addressCount = _addAddresses(_id, _addr);
-		require(a.addressCount >= _threshold);
+		require(a.addressCount >= _threshold, "dev: threshold too high");
 		a.multiSigThreshold = _threshold;
 		_setCountries(a.countries, _countries, true);
 		emit NewAuthority(_id);
@@ -187,9 +188,9 @@ contract KYCRegistrar is KYCBase {
 		returns (bool)
 	{
 		if (!_checkMultiSig(true)) return false;
-		require(_threshold > 0);
-		require(authorityData[_id].addressCount > 0);
-		require(_threshold <= authorityData[_id].addressCount);
+		require(_threshold > 0, "dev: zero threshold");
+		require(authorityData[_id].addressCount > 0, "dev: not authority");
+		require(_threshold <= authorityData[_id].addressCount, "dev: threshold too high");
 		authorityData[_id].multiSigThreshold = _threshold;
 		return true;
 	}
@@ -446,6 +447,17 @@ contract KYCRegistrar is KYCBase {
 		}
 		emit RestrictedAddresses(_id, _addr, idMap[msg.sender].id);
 		return true;
+	}
+
+	/**
+		@notice Fetch the ID of an authority
+		@param _addr Authority address
+		@return bytes32 Authority ID
+	 */
+	function getAuthorityID(address _addr) external view returns (bytes32 _id) {
+		_id = idMap[_addr].id;
+		require (authorityData[_id].addressCount > 0);
+		return _id;
 	}
 
 	/**

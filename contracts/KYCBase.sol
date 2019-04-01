@@ -193,6 +193,7 @@ contract KYCBase {
 		@return bytes32 investor ID
 	 */
 	function getID(address _addr) external view returns (bytes32) {
+		require(idMap[_addr].id != 0x00);
 		return idMap[_addr].id;
 	}
 

@@ -67,8 +67,8 @@ contract KYCRegistrar is KYCBase {
 		bytes32 _id = idMap[msg.sender].id;
 		require(_country != 0);
 		Authority storage a = authorityData[_id];
-		require(!a.restricted, "dev: restricted");
-		require(!idMap[msg.sender].restricted);
+		require(!a.restricted, "dev: restricted ID");
+		require(!idMap[msg.sender].restricted, "dev: restricted address");
 		if (_id == ownerID) return;
 		uint256 _idx = _country / 256;
 		require(
@@ -403,7 +403,7 @@ contract KYCRegistrar is KYCBase {
 		if (a.addressCount > 0) {
 			/* Only the owner can register addresses for an authority. */
 			require(idMap[msg.sender].id == ownerID, "dev: not owner");
-			require(!idMap[msg.sender].restricted);
+			require(!idMap[msg.sender].restricted, "dev: restricted address");
 			a.addressCount += _addAddresses(_id, _addr);
 		} else {
 			_authorityCheck(investorData[_id].country);
@@ -433,16 +433,16 @@ contract KYCRegistrar is KYCBase {
 		if (!_checkMultiSig(false)) return false;
 		if (authorityData[_id].addressCount > 0) {
 			/* Only the owner can unregister addresses for an authority. */
-			require(idMap[msg.sender].id == ownerID);
+			require(idMap[msg.sender].id == ownerID, "dev: not owner");
 			Authority storage a = authorityData[_id];
 			a.addressCount -= uint32(_addr.length);
-			require(a.addressCount >= a.multiSigThreshold);
+			require(a.addressCount >= a.multiSigThreshold, "dev: below threshold");
 		} else {
 			_authorityCheck(investorData[_id].country);
 		}
 		for (uint256 i; i < _addr.length; i++) {
-			require(idMap[_addr[i]].id == _id);
-			require(!idMap[_addr[i]].restricted);
+			require(idMap[_addr[i]].id == _id, "dev: wrong ID");
+			require(!idMap[_addr[i]].restricted, "dev: already restricted");
 			idMap[_addr[i]].restricted = true;
 		}
 		emit RestrictedAddresses(_id, _addr, idMap[msg.sender].id);
@@ -462,12 +462,12 @@ contract KYCRegistrar is KYCBase {
 
 	/**
 		@notice Check address belongs to an authority approved for a country
-		@param _id Authority ID
+		@param _addr Authority address
 		@param _country Country code
 		@return bool approval
 	 */
 	function isApprovedAuthority(
-		bytes32 _id,
+		address _addr,
 		uint16 _country
 	)
 		external
@@ -475,6 +475,8 @@ contract KYCRegistrar is KYCBase {
 		returns (bool)
 	{
 		if (_country == 0) return false;
+		if (idMap[_addr].restricted) return false;
+		bytes32 _id = idMap[_addr].id;
 		if (_id == ownerID) return true;
 		Authority storage a = authorityData[_id];
 		if (a.restricted) return false;

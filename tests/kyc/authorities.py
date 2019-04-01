@@ -107,7 +107,7 @@ def country():
         _check_country(c)
     for c in countries:
         kyc.setAuthorityCountries(auth_id, [c], False, {'from': a[0]})
-        check.false(kyc.isApprovedAuthority(auth_id, c))
+        check.false(kyc.isApprovedAuthority(a[-1], c))
 
 
 def country_not_authority():
@@ -122,11 +122,11 @@ def country_not_authority():
 def restricted():
     '''restrict authority'''
     kyc.setAuthorityCountries(auth_id, (1,), True, {'from': a[0]})
-    check.true(kyc.isApprovedAuthority(auth_id, 1))
+    check.true(kyc.isApprovedAuthority(a[-1], 1))
     kyc.setAuthorityRestriction(auth_id, False, {'from': a[0]})
-    check.false(kyc.isApprovedAuthority(auth_id, 1))
+    check.false(kyc.isApprovedAuthority(a[-1], 1))
     kyc.setAuthorityRestriction(auth_id, True, {'from': a[0]})
-    check.true(kyc.isApprovedAuthority(auth_id, 1))
+    check.true(kyc.isApprovedAuthority(a[-1], 1))
 
 
 def restricted_not_authority():
@@ -139,6 +139,6 @@ def restricted_not_authority():
 
 
 def _check_country(country):
-    check.false(kyc.isApprovedAuthority(auth_id, country-1))
-    check.true(kyc.isApprovedAuthority(auth_id, country))
-    check.false(kyc.isApprovedAuthority(auth_id, country+1))
+    check.false(kyc.isApprovedAuthority(a[-1], country-1))
+    check.true(kyc.isApprovedAuthority(a[-1], country))
+    check.false(kyc.isApprovedAuthority(a[-1], country+1))

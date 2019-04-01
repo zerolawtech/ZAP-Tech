@@ -12,7 +12,7 @@ def setup():
     #token = accounts[0].deploy(token_contract, issuer, "Test NFT", "NFT", 1000000)
     #issuer.addToken(token, {'from': accounts[0]})
     issuer.setRegistrar(kyc, True, {'from': a[0]})
-    kyc.addAuthority((a[-1],a[-2]), (1,2,3), 1, {'from': a[0]})
+    kyc.addAuthority((a[-1],a[-2]), [], 1, {'from': a[0]})
     auth_id = kyc.getAuthorityID(a[-1])
 
 
@@ -23,6 +23,7 @@ def add_threshold_zero():
         ((a[1],), (1,2,3), 0, {'from': a[0]}),
         "dev: zero threshold"
     )
+
 
 def add_exists_as_investor():
     '''add - ID already assigned to investor'''
@@ -36,6 +37,7 @@ def add_exists_as_investor():
         "dev: investor ID"
     )
 
+
 def authority_exists():
     '''add - authority already exists'''
     kyc.addAuthority((a[1],), (1,2,3), 1, {'from': a[0]})
@@ -45,6 +47,7 @@ def authority_exists():
         "dev: authority exists"
     )
 
+
 def add_threshold_high():
     '''add - threshold exceed address count'''
     check.reverts(
@@ -52,6 +55,7 @@ def add_threshold_high():
         ((a[1],), (1,2,3), 2, {'from': a[0]}),
         "dev: threshold too high"
     )
+
 
 def add_repeat_address():
     '''add - repeat address'''
@@ -61,6 +65,13 @@ def add_repeat_address():
         "dev: known address"
     )
 
+
+def threshold():
+    '''set threshold'''
+    kyc.setAuthorityThreshold(auth_id, 2, {'from': a[0]})
+    kyc.setAuthorityThreshold(auth_id, 1, {'from': a[0]})
+
+
 def threshold_zero():
     '''set threshold - zero'''
     check.reverts(
@@ -68,6 +79,7 @@ def threshold_zero():
         (auth_id, 0, {'from': a[0]}),
         "dev: zero threshold"
     )
+
 
 def threshold_not_auth():
     '''set threshold - not an authority'''
@@ -77,6 +89,7 @@ def threshold_not_auth():
         "dev: not authority"
     )
 
+
 def threshold_too_high():
     '''set threshold - too high'''
     check.reverts(
@@ -84,3 +97,48 @@ def threshold_too_high():
         (auth_id, 3, {'from': a[0]}),
         "dev: threshold too high"
     )
+
+
+def country():
+    '''set countries'''
+    countries = (10,300,700,1022,1024,1027,1100)
+    kyc.setAuthorityCountries(auth_id, countries, True, {'from': a[0]})
+    for c in countries:
+        _check_country(c)
+    for c in countries:
+        kyc.setAuthorityCountries(auth_id, [c], False, {'from': a[0]})
+        check.false(kyc.isApprovedAuthority(auth_id, c))
+
+
+def country_not_authority():
+    '''set countries - not an authority'''
+    check.reverts(
+        kyc.setAuthorityCountries,
+        ("0x1234", (10,20,), True, {'from': a[0]}),
+        "dev: not authority"
+    )
+
+
+def restricted():
+    '''restrict authority'''
+    kyc.setAuthorityCountries(auth_id, (1,), True, {'from': a[0]})
+    check.true(kyc.isApprovedAuthority(auth_id, 1))
+    kyc.setAuthorityRestriction(auth_id, False, {'from': a[0]})
+    check.false(kyc.isApprovedAuthority(auth_id, 1))
+    kyc.setAuthorityRestriction(auth_id, True, {'from': a[0]})
+    check.true(kyc.isApprovedAuthority(auth_id, 1))
+
+
+def restricted_not_authority():
+    '''restrict - not authority'''
+    check.reverts(
+        kyc.setAuthorityRestriction,
+        ("0x1234", True, {'from': a[0]}),
+        "dev: not authority"
+    )
+
+
+def _check_country(country):
+    check.false(kyc.isApprovedAuthority(auth_id, country-1))
+    check.true(kyc.isApprovedAuthority(auth_id, country))
+    check.false(kyc.isApprovedAuthority(auth_id, country+1))

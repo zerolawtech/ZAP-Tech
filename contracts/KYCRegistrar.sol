@@ -269,15 +269,9 @@ contract KYCRegistrar is KYCBase {
 		require(authorityData[_id].addressCount == 0, "dev: authority ID");
 		require(investorData[_id].authority == 0, "dev: investor ID");
 		if (!_checkMultiSig(false)) return false;
-		_setInvestor(idMap[msg.sender].id, _id, _country, _region, _rating, _expires);
-		emit NewInvestor(
-			_id,
-			_country,
-			_region,
-			_rating,
-			_expires,
-			idMap[msg.sender].id
-		);
+		bytes32 _authID = idMap[msg.sender].id;
+		_setInvestor(_authID, _id, _country, _region, _rating, _expires);
+		emit NewInvestor(_id, _country, _region, _rating, _expires, _authID);
 		_addAddresses(_id, _addr);
 		return true;
 	}
@@ -303,14 +297,9 @@ contract KYCRegistrar is KYCBase {
 		require(investorData[_id].country != 0, "dev: unknown ID");
 		_authorityCheck(investorData[_id].country);
 		if (!_checkMultiSig(false)) return false;
-		_setInvestor(idMap[msg.sender].id, _id, 0, _region, _rating, _expires);
-		emit UpdatedInvestor(
-			_id,
-			_region,
-			_rating,
-			_expires,
-			idMap[msg.sender].id
-		);
+		bytes32 _authID = idMap[msg.sender].id;
+		_setInvestor(_authID, _id, 0, _region, _rating, _expires);
+		emit UpdatedInvestor(_id, _region, _rating, _expires, _authID);
 		return true;
 	}
 

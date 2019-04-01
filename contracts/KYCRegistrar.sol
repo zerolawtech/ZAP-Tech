@@ -1,29 +1,11 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./open-zeppelin/SafeMath.sol";
-import "./interfaces/IKYCRegistrar.sol";
+import "./KYCBase.sol";
 
 /** @title KYC Registrar */
-contract KYCRegistrar is IKYCRegistrar {
-
-	using SafeMath for uint256;
-	using SafeMath32 for uint32;
+contract KYCRegistrar is KYCBase {
 
 	bytes32 ownerID;
-
-	struct Address {
-		bytes32 id;
-		bool restricted;
-	}
-
-	struct Investor {
-		uint8 rating;
-		uint16 country;
-		uint40 expires;
-		bool restricted;
-		bytes3 region;
-		bytes32 authority;
-	}
 
 	struct Authority {
 		uint32 multiSigThreshold;
@@ -33,62 +15,10 @@ contract KYCRegistrar is IKYCRegistrar {
 		mapping (bytes32 => address[]) multiSigAuth;
 	}
 
-	mapping (address => Address) idMap;
-	mapping (bytes32 => Investor) investorData;
 	mapping (bytes32 => Authority) authorityData;
 
-	event NewInvestor(
-		bytes32 indexed id,
-		uint16 indexed country,
-		bytes3 region,
-		uint8 rating,
-		uint40 expires,
-		bytes32 indexed authority
-	);
-	event UpdatedInvestor(
-		bytes32 indexed id,
-		bytes3 region,
-		uint8 rating,
-		uint40 expires,
-		bytes32 indexed authority
-	);
 	event NewAuthority(bytes32 indexed id);
 	event AuthorityRestriction(bytes32 indexed id, bool permitted);
-	event InvestorRestriction(
-		bytes32 indexed id,
-		bool restricted,
-		bytes32 indexed authority
-	);
-	event RegisteredAddresses(
-		bytes32 indexed id,
-		address[] addr,
-		bytes32 indexed authority
-	);
-	event RestrictedAddresses(
-		bytes32 indexed id,
-		address[] addr,
-		bytes32 indexed authority
-	);
-
-
-	/** @dev Checks that the calling address is associated with the owner */
-	modifier onlyOwner() {
-		require(idMap[msg.sender].id == ownerID);
-		require(!idMap[msg.sender].restricted);
-		_;
-	}
-
-	/**
-		@dev
-	 		Checks that the calling address is associated with an authority
-	 		and that the authority is approved to make changes based on the
-	 		country of the investor they are updating.
-		@param _id ID of investor that the authority is modifying
-	 */
-	modifier onlyAuthority(bytes32 _id) {
-		_authorityCheck(investorData[_id].country);
-		_;
-	}
 
 	/**
 		@notice KYC registrar constructor
@@ -109,14 +39,18 @@ contract KYCRegistrar is IKYCRegistrar {
 		@notice Internal multisig functionality
 		@return bool - has call met multisig threshold?
 	 */
-	function _checkMultiSig() internal returns (bool) {
+	function _checkMultiSig(bool _onlyOwner) internal returns (bool) {
 		bytes32 _id = idMap[msg.sender].id;
+		if (_onlyOwner) {
+			require(_id == ownerID);
+			require(!idMap[msg.sender].restricted);
+		}
 		Authority storage a = authorityData[_id];
 		bytes32 _callHash = keccak256(msg.data);
-		for (uint256 i = 0; i < a.multiSigAuth[_callHash].length; i++) {
+		for (uint256 i; i < a.multiSigAuth[_callHash].length; i++) {
 			require(a.multiSigAuth[_callHash][i] != msg.sender);
 		}
-		if (a.multiSigAuth[_callHash].length.add(1) >= a.multiSigThreshold) {
+		if (a.multiSigAuth[_callHash].length + 1 >= a.multiSigThreshold) {
 			delete a.multiSigAuth[_callHash];
 			return true;
 		}
@@ -152,7 +86,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		internal
 		returns (uint32 _count) 
 	{
-		for (uint256 i = 0; i < _addr.length; i++) {
+		for (uint256 i; i < _addr.length; i++) {
 			Address storage _inv = idMap[_addr[i]];
 			/** If address was previous assigned to this investor ID
 				and is currently restricted - remove the restriction */
@@ -161,7 +95,7 @@ contract KYCRegistrar is IKYCRegistrar {
 			/* If address has not had an investor ID associated - set the ID */
 			} else if (_inv.id == 0) {
 				_inv.id = _id;
-				_count = _count.add(1);
+				_count++;
 			/* In all other cases, revert */
 			} else {
 				revert();
@@ -184,10 +118,9 @@ contract KYCRegistrar is IKYCRegistrar {
 		uint32 _threshold
 	)
 		external
-		onlyOwner
 		returns (bool)
 	{
-		if (!_checkMultiSig()) return false;
+		if (!_checkMultiSig(true)) return false;
 		require(_threshold > 0);
 		bytes32 _id = keccak256(abi.encodePacked(address(this), _addr[0]));
 		require(investorData[_id].authority == 0);
@@ -196,7 +129,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		a.addressCount = _addAddresses(_id, _addr);
 		require(a.addressCount >= _threshold);
 		a.multiSigThreshold = _threshold;
-		for (uint256 i = 0; i < _countries.length; i++) {
+		for (uint256 i; i < _countries.length; i++) {
 			a.countries[_countries[i]] = true;
 		}
 		emit NewAuthority(_id);
@@ -214,10 +147,9 @@ contract KYCRegistrar is IKYCRegistrar {
 		uint32 _threshold
 	)
 		external
-		onlyOwner
 		returns (bool)
 	{
-		if (!_checkMultiSig()) return false;
+		if (!_checkMultiSig(true)) return false;
 		require(_threshold > 0);
 		require(authorityData[_id].addressCount > 0);
 		require(_threshold <= authorityData[_id].addressCount);
@@ -238,13 +170,12 @@ contract KYCRegistrar is IKYCRegistrar {
 		bool _auth
 	)
 		external
-		onlyOwner
 		returns (bool)
 	{
-		if (!_checkMultiSig()) return false;
+		if (!_checkMultiSig(true)) return false;
 		Authority storage a = authorityData[_id];
 		require(authorityData[_id].addressCount > 0);
-		for (uint256 i = 0; i < _countries.length; i++) {
+		for (uint256 i; i < _countries.length; i++) {
 			a.countries[_countries[i]] = _auth;
 		}
 		return true;
@@ -264,10 +195,9 @@ contract KYCRegistrar is IKYCRegistrar {
 		bool _permitted
 	)
 		external
-		onlyOwner
 		returns (bool)
 	{
-		if (!_checkMultiSig()) return false;
+		if (!_checkMultiSig(true)) return false;
 		require(authorityData[_id].addressCount > 0);
 		authorityData[_id].restricted = !_permitted;
 		emit AuthorityRestriction(_id, !_permitted);
@@ -304,7 +234,7 @@ contract KYCRegistrar is IKYCRegistrar {
 		require(_expires > now, "dev: expired");
 		require(authorityData[_id].addressCount == 0);
 		require(investorData[_id].authority == 0);
-		if (!_checkMultiSig()) return false;
+		if (!_checkMultiSig(false)) return false;
 		investorData[_id] = Investor(
 			_rating,
 			_country,
@@ -341,11 +271,11 @@ contract KYCRegistrar is IKYCRegistrar {
 		uint40 _expires
 	)
 		external
-		onlyAuthority(_id)
 		returns (bool)
 	{
 		require(investorData[_id].country != 0);
-		if (!_checkMultiSig()) return false;
+		_authorityCheck(investorData[_id].country);
+		if (!_checkMultiSig(false)) return false;
 		Investor storage i = investorData[_id];
 		i.authority = idMap[msg.sender].id;
 		i.region = _region;
@@ -373,11 +303,11 @@ contract KYCRegistrar is IKYCRegistrar {
 		bool _permitted
 	)
 		external
-		onlyAuthority(_id)
 		returns (bool)
 	{
 		require(investorData[_id].country != 0);
-		if (!_checkMultiSig()) return false;
+		_authorityCheck(investorData[_id].country);
+		if (!_checkMultiSig(false)) return false;
 		investorData[_id].restricted = !_permitted;
 		emit InvestorRestriction(_id, !_permitted, idMap[msg.sender].id);
 		return true;
@@ -397,12 +327,11 @@ contract KYCRegistrar is IKYCRegistrar {
 		bytes32 _authID
 	)
 		external
-		onlyOwner
 		returns (bool)
 	{
 		require(authorityData[_authID].addressCount > 0, "dev: not authority");
-		if (!_checkMultiSig()) return false;
-		for (uint256 i = 0; i < _id.length; i++) {
+		if (!_checkMultiSig(true)) return false;
+		for (uint256 i; i < _id.length; i++) {
 			require(investorData[_id[i]].country != 0);
 			Investor storage inv = investorData[_id[i]];
 			inv.authority = _authID;
@@ -433,13 +362,13 @@ contract KYCRegistrar is IKYCRegistrar {
 		external
 		returns (bool)
 	{
-		if (!_checkMultiSig()) return false;
+		if (!_checkMultiSig(false)) return false;
 		Authority storage a = authorityData[_id];
 		if (a.addressCount > 0) {
 			/* Only the owner can register addresses for an authority. */
 			require(idMap[msg.sender].id == ownerID, "dev: not owner");
 			require(!idMap[msg.sender].restricted);
-			a.addressCount = a.addressCount.add(_addAddresses(_id, _addr));
+			a.addressCount += _addAddresses(_id, _addr);
 		} else {
 			_authorityCheck(investorData[_id].country);
 			_addAddresses(_id, _addr);
@@ -465,244 +394,23 @@ contract KYCRegistrar is IKYCRegistrar {
 		external
 		returns (bool) 
 	{
-		if (!_checkMultiSig()) return false;
+		if (!_checkMultiSig(false)) return false;
 		if (authorityData[_id].addressCount > 0) {
 			/* Only the owner can unregister addresses for an authority. */
 			require(idMap[msg.sender].id == ownerID);
 			Authority storage a = authorityData[_id];
-			a.addressCount = a.addressCount.sub(uint32(_addr.length));
+			a.addressCount -= uint32(_addr.length);
 			require(a.addressCount >= a.multiSigThreshold);
 		} else {
 			_authorityCheck(investorData[_id].country);
 		}
-		for (uint256 i = 0; i < _addr.length; i++) {
+		for (uint256 i; i < _addr.length; i++) {
 			require(idMap[_addr[i]].id == _id);
 			require(!idMap[_addr[i]].restricted);
 			idMap[_addr[i]].restricted = true;
 		}
 		emit RestrictedAddresses(_id, _addr, idMap[msg.sender].id);
 		return true;
-	}
-
-	/**
-		@notice Fetch investor information using an address
-		@dev
-			This call increases gas efficiency around token transfers
-			by minimizing the amount of calls to the registrar
-		@param _addr Address to query
-		@return bytes32 investor ID
-		@return bool investor permission from isPermitted()
-		@return uint8 investor rating
-		@return uint16 investor country code
-	 */
-	function getInvestor(
-		address _addr
-	)
-		external
-		view
-		returns (
-			bytes32 _id,
-			bool _allowed,
-			uint8 _rating,
-			uint16 _country
-		)
-	{
-		_id = idMap[_addr].id;
-		Investor storage i = investorData[_id];
-		require(i.country != 0, "Address not registered");
-		return (_id, isPermitted(_addr), i.rating, i.country);
-	}
-
-	/**
-		@notice Fetch investor information using an ID
-		@dev
-			This call increases gas efficiency around token transfers
-			by minimizing the amount of calls to the registrar
-		@param _id investor ID
-		@return bool investor permission from isPermitted()
-		@return uint8 investor rating
-		@return uint16 investor country code
-	 */
-	function getInvestorByID(
-		bytes32 _id
-	)
-		external
-		view
-		returns (
-			bool _allowed,
-			uint8 _rating,
-			uint16 _country
-		)
-	{
-		Investor storage i = investorData[_id];
-		require(i.country != 0, "Address not registered");
-		return (isPermittedID(_id), i.rating, i.country);
-	}
-
-	/**
-		@notice Use addresses to fetch information on 2 investors
-		@dev
-			This call is increases gas efficiency around token transfers
-			by minimizing the amount of calls to the registrar.
-		@param _from first address to query
-		@param _to second address to query
-		@return bytes32 array of investor ID
-		@return bool array - Investor permission from isPermitted()
-		@return uint8 array of investor ratings
-		@return uint16 array of investor country codes
-	 */
-	function getInvestors(
-		address _from,
-		address _to
-	)
-		external
-		view
-		returns (
-			bytes32[2] _id,
-			bool[2] _allowed,
-			uint8[2] _rating,
-			uint16[2] _country
-		)
-	{
-		Investor storage f = investorData[idMap[_from].id];
-		require(f.country != 0, "Sender not Registered");
-		Investor storage t = investorData[idMap[_to].id];
-		require(t.country != 0, "Receiver not Registered");
-		return (
-			[idMap[_from].id, idMap[_to].id],
-			[isPermitted(_from), isPermitted(_to)],
-			[f.rating,t.rating],
-			[f.country, t.country]
-		);
-	}
-
-	/**
-		@notice Use IDs to fetch information on 2 investors
-		@dev
-			This call is increases gas efficiency around token transfers
-			by minimizing the amount of calls to the registrar.
-		@param _fromID first ID to query
-		@param _toID second ID to query
-		@return bool array - Investor permission from isPermitted()
-		@return uint8 array of investor ratings
-		@return uint16 array of investor country codes
-	 */
-	function getInvestorsByID(
-		bytes32 _fromID,
-		bytes32 _toID
-	)
-		external
-		view
-		returns (
-			bool[2] _allowed,
-			uint8[2] _rating,
-			uint16[2] _country
-		)
-	{
-		Investor storage f = investorData[_fromID];
-		require(f.country != 0, "Sender not Registered");
-		Investor storage t = investorData[_toID];
-		require(t.country != 0, "Receiver not Registered");
-		return (
-			[isPermittedID(_fromID), isPermittedID(_toID)],
-			[f.rating,t.rating],
-			[f.country, t.country]
-		);
-	}
-
-	/**
-		@notice Returns true if an ID is registered in this contract
-		@param _id investor ID
-		@return bool
-	 */
-	function isRegistered(bytes32 _id) external view returns (bool) {
-		return investorData[_id].country != 0;
-	}
-
-	/**
-		@notice Fetch investor ID from an address
-		@param _addr Address to query
-		@return bytes32 investor ID
-	 */
-	function getID(address _addr) external view returns (bytes32) {
-		return idMap[_addr].id;
-	}
-
-	/**
-		@notice Fetch investor rating from an ID
-		@dev If the investor is unknown the call will throw
-		@param _id Investor ID
-		@return uint8 rating code
-	 */
-	function getRating(bytes32 _id) external view returns (uint8) {
-		require (investorData[_id].country != 0);
-		return investorData[_id].rating;
-	}
-
-	/**
-		@notice Fetch investor region from an ID
-		@dev If the investor is unknown the call will throw
-		@param _id Investor ID
-		@return bytes3 region code
-	 */
-	function getRegion(bytes32 _id) external view returns (bytes3) {
-		require (investorData[_id].country != 0);
-		return investorData[_id].region;
-	}
-
-	/**
-		@notice Fetch investor country from an ID
-		@dev If the investor is unknown the call will throw
-		@param _id Investor ID
-		@return string
-	 */
-	function getCountry(bytes32 _id) external view returns (uint16) {
-		require (investorData[_id].country != 0);
-		return investorData[_id].country;
-	}
-
-	/**
-		@notice Fetch investor KYC expiration from an ID
-		@dev If the investor is unknown the call will throw
-		@param _id Investor ID
-		@return uint40 expiration epoch time
-	 */
-	function getExpires(bytes32 _id) external view returns (uint40) {
-		require (investorData[_id].country != 0);
-		return investorData[_id].expires;
-	}
-
-	/**
-		@notice Check if an an investor and address are permitted
-		@param _addr Address to query
-		@return bool permission
-	 */
-	function isPermitted(address _addr) public view returns (bool) {
-		if (idMap[_addr].restricted) return false;
-		return isPermittedID(idMap[_addr].id);
-	}
-
-	/**
-		@notice Check if an an investor is permitted based on ID
-		@param _id Investor ID to query
-		@return bool permission
-	 */
-	function isPermittedID(bytes32 _id) public view returns (bool) {
-		Investor storage i = investorData[_id];
-		if (i.restricted) return false;
-		if (i.expires < now) return false;
-		if (authorityData[i.authority].restricted) return false;
-		return true;
-	}
-
-	/**
-		@notice Generate a unique investor ID
-		@dev https://sft-protocol.readthedocs.io/en/latest/data-standards.html
-		@param _idString ID string to generate hash from
-		@return bytes32 investor ID hash
-	 */
-	function generateID(string _idString) external pure returns (bytes32) {
-		return keccak256(abi.encodePacked(_idString));
 	}
 
 }

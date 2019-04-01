@@ -383,6 +383,7 @@ contract NFToken is TokenBase  {
 		public
 		returns (bool)
 	{
+		/* msg.sig = 0x712a516a */
 		if (!_checkPermitted()) return false;
 		_checkBounds(_pointer);
 		require(tokens[_pointer] == _pointer);
@@ -435,6 +436,7 @@ contract NFToken is TokenBase  {
 		public
 		returns (bool)
 	{
+		/* msg.sig = 0x786500aa */
 		if (!_checkPermitted()) return false;
 		_checkBounds(_start);
 		_checkBounds(_stop-1);

@@ -95,7 +95,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		returns (bool)
 	{
 		if (
-			/* msg.sig = 0x75219e4e */
+			/* msg.sig = 0xbeabacc8 */
 			!isPermittedModule(msg.sender, msg.sig) &&
 			!_checkMultiSig()
 		) {
@@ -152,7 +152,7 @@ contract OwnedCustodian is Modular, MultiSig {
 		returns (bool)
 	{
 		if (
-			/* msg.sig = 0x2965c868 */
+			/* msg.sig = 0x2f98a4c3 */
 			!isPermittedModule(msg.sender, msg.sig) &&
 			!_checkMultiSig()
 		) {

@@ -356,29 +356,21 @@ Custodian
 
 See :ref:`custodian` for more detailed information on these methods.
 
-.. method:: Custodian.transfer(address _token, address _to, uint256 _value, bool _stillOwner)
+.. method:: Custodian.transfer(address _token, address _to, uint256 _value)
 
-    * Permission signature: ``0x75219e4e``
+    * Permission signature: ``0xbeabacc8``
 
     Transfers tokens from the custodian to an investor.
 
     Calling this method will also call any hooked in ``sentTokens`` methods.
 
-.. method:: Custodian.transferInternal(address _token, bytes32 _fromID, bytes32 _toID, uint256 _value, bool _stillOwner)
+.. method:: Custodian.transferInternal(address _token, address _from, address _to, uint256 _value)
 
-    * Permission signature: ``0x2965c868``
+    * Permission signature: ``0x2f98a4c3``
 
     Transfers the ownership of tokens between investors within the Custodian contract.
 
     Calling this method will also call any hooked in ``internalTransfer`` methods.
-
-.. method:: Custodian.releaseOwnership(address _issuer, bytes32 _id)
-
-    * Permission signature: ``0xc07f6f8e``
-
-    Removes an investor from the Custodian's list of beneficial owners.
-
-    Calling this method will also call any hooked in ``ownershipReleased`` methods.
 
 .. method:: Custodian.detachModule(address _module)
 

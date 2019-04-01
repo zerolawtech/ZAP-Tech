@@ -8,11 +8,11 @@ contract KYCRegistrar is KYCBase {
 	bytes32 ownerID;
 
 	struct Authority {
+		mapping (bytes32 => address[]) multiSigAuth;
+		uint256[8] countries;
 		uint32 multiSigThreshold;
 		uint32 addressCount;
 		bool restricted;
-		mapping (uint16 => bool) countries;
-		mapping (bytes32 => address[]) multiSigAuth;
 	}
 
 	mapping (bytes32 => Authority) authorityData;
@@ -65,12 +65,16 @@ contract KYCRegistrar is KYCBase {
 	function _authorityCheck(uint16 _country) internal view {
 		bytes32 _id = idMap[msg.sender].id;
 		require(_country != 0);
-		require(authorityData[_id].addressCount > 0);
-		require(!authorityData[_id].restricted, "dev: restricted");
+		Authority storage a = authorityData[_id];
+		require(a.addressCount > 0);
+		require(!a.restricted, "dev: restricted");
 		require(!idMap[msg.sender].restricted);
-		if (_id != ownerID) {
-			require(authorityData[_id].countries[_country], "dev: country");
-		}
+		if (_id == ownerID) return;
+		uint256 _idx = _country / 256;
+		require(
+			a.countries[_idx] >> (_country - _idx * 256) & uint256(1) == 1,
+			"dev: country"
+		);
 	}
 
 	/**
@@ -105,6 +109,35 @@ contract KYCRegistrar is KYCBase {
 		return _count;
 	}
 
+	function _setCountries(
+		uint256[8] storage _countries,
+		uint16[] memory _toSet,
+		bool _value
+	)
+		internal
+	{
+		uint256[8] memory _bitfield;
+		for (uint256 i; i < _toSet.length; i++) {
+			uint256 _idx = _toSet[i] / 256;
+			if (_value) {
+				_bitfield[_idx] = (
+					_bitfield[_idx] | uint256(1) <<
+					(_toSet[i] - _idx*256)
+				);
+			} else {
+				_bitfield[_idx] = (
+					_bitfield[_idx] & ~(uint256(1) <<
+					(_toSet[i] - _idx*256))
+				);
+			}
+		}
+		for (i = 0; i < 8; i++) {
+			if (_bitfield[i] != _countries[i]) {
+				_countries[i] = _bitfield[i];
+			}
+		}
+	}
+
 	/**
 		@notice Add a new authority to this registrar
 		@param _addr Array of addressses to register as authority
@@ -129,9 +162,7 @@ contract KYCRegistrar is KYCBase {
 		a.addressCount = _addAddresses(_id, _addr);
 		require(a.addressCount >= _threshold);
 		a.multiSigThreshold = _threshold;
-		for (uint256 i; i < _countries.length; i++) {
-			a.countries[_countries[i]] = true;
-		}
+		_setCountries(a.countries, _countries, true);
 		emit NewAuthority(_id);
 		return true;
 	}
@@ -174,10 +205,8 @@ contract KYCRegistrar is KYCBase {
 	{
 		if (!_checkMultiSig(true)) return false;
 		Authority storage a = authorityData[_id];
-		require(authorityData[_id].addressCount > 0);
-		for (uint256 i; i < _countries.length; i++) {
-			a.countries[_countries[i]] = _auth;
-		}
+		require(a.addressCount > 0);
+		_setCountries(a.countries, _countries, _auth);
 		return true;
 	}
 
@@ -412,5 +441,30 @@ contract KYCRegistrar is KYCBase {
 		emit RestrictedAddresses(_id, _addr, idMap[msg.sender].id);
 		return true;
 	}
+
+	/**
+		@notice Check address belongs to an authority approved for a country
+		@param _addr Address of authority
+		@param _country Country code
+		@return bool approval
+	 */
+	function isApprovedAuthority(
+		address _addr,
+		uint16 _country
+	)
+		external
+		view
+		returns (bool)
+	{
+		if (_country != 0) return false;
+		if (idMap[_addr].restricted) return false;
+		bytes32 _id = idMap[_addr].id;
+		if (_id == ownerID) return true;
+		Authority storage a = authorityData[_id];
+		if (a.restricted) return false;
+		uint256 _idx = _country / 256;
+		return a.countries[_idx] >> (_country - _idx * 256) & uint256(1) == 1;
+	}
+
 
 }

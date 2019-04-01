@@ -65,7 +65,7 @@ contract KYCRegistrar is KYCBase {
 	 */
 	function _authorityCheck(uint16 _country) internal view {
 		bytes32 _id = idMap[msg.sender].id;
-		require(_country != 0);
+		require(_country != 0, "dev: country 0");
 		Authority storage a = authorityData[_id];
 		require(!a.restricted, "dev: restricted ID");
 		require(!idMap[msg.sender].restricted, "dev: restricted address");
@@ -266,19 +266,10 @@ contract KYCRegistrar is KYCBase {
 		returns (bool)
 	{
 		_authorityCheck(_country);
-		require(_rating > 0);
-		require(_expires > now, "dev: expired");
-		require(authorityData[_id].addressCount == 0);
-		require(investorData[_id].authority == 0);
+		require(authorityData[_id].addressCount == 0, "dev: authority ID");
+		require(investorData[_id].authority == 0, "dev: investor ID");
 		if (!_checkMultiSig(false)) return false;
-		investorData[_id] = Investor(
-			_rating,
-			_country,
-			_expires,
-			false,
-			_region,
-			idMap[msg.sender].id
-		);
+		_setInvestor(idMap[msg.sender].id, _id, _country, _region, _rating, _expires);
 		emit NewInvestor(
 			_id,
 			_country,
@@ -309,14 +300,10 @@ contract KYCRegistrar is KYCBase {
 		external
 		returns (bool)
 	{
-		require(investorData[_id].country != 0);
+		require(investorData[_id].country != 0, "dev: unknown ID");
 		_authorityCheck(investorData[_id].country);
 		if (!_checkMultiSig(false)) return false;
-		Investor storage i = investorData[_id];
-		i.authority = idMap[msg.sender].id;
-		i.region = _region;
-		i.rating = _rating;
-		i.expires = _expires;
+		_setInvestor(idMap[msg.sender].id, _id, 0, _region, _rating, _expires);
 		emit UpdatedInvestor(
 			_id,
 			_region,

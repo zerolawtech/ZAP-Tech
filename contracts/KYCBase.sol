@@ -53,6 +53,44 @@ contract KYCBase {
 	);
 
 	/**
+		@notice Internal method to set investor values
+		@param _authID Authority ID
+		@param _id Investor ID
+		@param _country Investor country code
+		@param _region Investor region code
+		@param _rating Investor rating (accreditted, qualified, etc)
+		@param _expires Registry expiration in epoch time
+	*/
+	function _setInvestor(
+		bytes32 _authID,
+		bytes32 _id,
+		uint16 _country,
+		bytes3 _region,
+		uint8 _rating,
+		uint40 _expires
+	)
+		internal
+	{
+		Investor storage i = investorData[_id];
+		if (i.country == 0) {
+			i.country = _country;
+		}
+		if (i.rating != _rating) {
+			i.rating = _rating;
+		}
+		require(i.rating > 0, "dev: rating");
+		if (i.region != _region) {
+			i.region = _region;
+		}
+		if (i.expires != _expires) {
+			i.expires = _expires;
+		}
+		if (i.authority != _authID) {
+			i.authority = _authID;
+		}
+	}
+
+	/**
 		@notice Fetch investor information using an address
 		@dev
 			This call increases gas efficiency around token transfers

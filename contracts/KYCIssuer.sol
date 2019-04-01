@@ -73,16 +73,8 @@ contract KYCIssuer is KYCBase {
 		returns (bool)
 	{
 		if (!_onlyAuthority()) return false;
-		require(_rating > 0);
-		require(_expires > now);
-		investorData[_id] = Investor(
-			_rating,
-			_country,
-			_expires,
-			false,
-			_region,
-			0x00
-		);
+		require(_country > 0, "dev: country 0");
+		_setInvestor(0x00, _id, _country, _region, _rating, _expires);
 		emit NewInvestor(
 			_id,
 			_country,
@@ -115,10 +107,7 @@ contract KYCIssuer is KYCBase {
 	{
 		if (!_onlyAuthority()) return false;
 		require(investorData[_id].country != 0);
-		Investor storage i = investorData[_id];
-		i.region = _region;
-		i.rating = _rating;
-		i.expires = _expires;
+		_setInvestor(0x00, _id, 0, _region, _rating, _expires);
 		emit UpdatedInvestor(
 			_id,
 			_region,

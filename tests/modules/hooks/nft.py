@@ -64,7 +64,7 @@ def checkTransfer():
     _hook(nft, nft.checkTransfer, (a[0], a[1], 1000), source, "0x70aaf928")
 
 
-def checkTransferRange(pending=True):
+def checkTransferRange():
     source = '''checkTransferRange(
         address[2] _addr,
         bytes32 _authID,
@@ -72,7 +72,14 @@ def checkTransferRange(pending=True):
         uint8[2] _rating,
         uint16[2] _country,
         uint48[2] _range'''
-    _hook(nft, nft.checkTransfer, (a[0], a[1], 1000), source, "0x2d79c6d7")
+    module = compile_source(module_source.format("0x2d79c6d7", source))[0].deploy(a[0], nft)
+    nft.transferRange(a[1], 100, 200, {'from': a[0]})
+    issuer.attachModule(nft, module, {'from': a[0]})
+    nft.transferRange(a[1], 300, 400, {'from': a[0]})
+    module.setReturn(False, {'from': a[0]})
+    check.reverts(nft.transferRange, (a[1], 500, 600, {'from': a[0]}))
+    issuer.detachModule(nft, module, {'from': a[0]})
+    nft.transferRange(a[1], 500, 600, {'from': a[0]})
 
 
 def transferTokenRange():

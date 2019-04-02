@@ -239,6 +239,24 @@ contract MultiSig {
 	}
 
 	/**
+		@notice Check if address belongs to an authority
+		@param _addr authority address
+		@return boolean
+	 */
+	function isAuthority(address _addr) external view returns (bool) {
+		return authorityData[idMap[_addr].id].addressCount > 0;
+	}
+
+	/**
+		@notice Check if ID belongs to an authority
+		@param _id authority ID
+		@return boolean
+	 */
+	function isAuthorityID(bytes32 _id) external view returns (bool) {
+		return authorityData[_id].addressCount > 0;
+	}
+
+	/**
 		@notice Check if address belongs to an approved authority
 		@dev Used to verify permission for calls to modules
 		@param _addr Address of caller

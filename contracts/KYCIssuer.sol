@@ -38,6 +38,7 @@ contract KYCIssuer is KYCBase {
 				_inv.restricted = false;
 			/* If address has not had an investor ID associated - set the ID */
 			} else if (_inv.id == 0) {
+				require(!issuer.isAuthority(_addr[i]), "dev: auth address");
 				_inv.id = _id;
 			/* In all other cases, revert */
 			} else {
@@ -73,6 +74,8 @@ contract KYCIssuer is KYCBase {
 		returns (bool)
 	{
 		if (!_onlyAuthority()) return false;
+		require(!issuer.isAuthorityID(_id), "dev: authority ID");
+		require(investorData[_id].country == 0, "dev: investor ID");
 		require(_country > 0, "dev: country 0");
 		_setInvestor(0x00, _id, _country, _region, _rating, _expires);
 		emit NewInvestor(
@@ -106,7 +109,7 @@ contract KYCIssuer is KYCBase {
 		returns (bool)
 	{
 		if (!_onlyAuthority()) return false;
-		require(investorData[_id].country != 0);
+		require(investorData[_id].country != 0, "dev: unknown ID");
 		_setInvestor(0x00, _id, 0, _region, _rating, _expires);
 		emit UpdatedInvestor(
 			_id,

@@ -45,3 +45,7 @@ def cust_to_cust():
         (token, a[2], cust2, 500, {'from': a[0]}),
         "Custodian to Custodian"
     )
+
+def mint():
+    '''mint to custodian'''
+    check.reverts(token.mint, (cust, 1000, {'from': a[0]}))

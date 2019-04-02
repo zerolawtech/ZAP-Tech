@@ -726,7 +726,6 @@ contract NFToken is TokenBase  {
 		_checkBounds(_stop-1);
 		require(_start < _stop);
 		uint48 _pointer = _getPointer(_stop-1);
-		require(msg.sender == rangeMap[_pointer].owner);
 		require(rangeMap[_pointer].custodian == 0x00);
 		require(_pointer <= _start);
 		require(_checkTime(_pointer));
@@ -760,6 +759,10 @@ contract NFToken is TokenBase  {
 		}
 
 		require(_addr[0] != _addr[1], "Cannot send to self");
+		require(
+			_addr[0] == rangeMap[_pointer].owner,
+			"Sender does not own range"
+		);
 
 		/* hook point for NFTModule.checkTransfer() */
 		require(_callModules(

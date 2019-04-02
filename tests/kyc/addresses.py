@@ -6,10 +6,8 @@ from scripts.deployment import main
 
 def setup():
     config['test']['always_transact'] = False
-    global kyc, issuer, owner_id, auth_id
+    global kyc, owner_id, auth_id
     kyc = a[0].deploy(KYCRegistrar, [a[0]], 1)
-    issuer = a[0].deploy(IssuingEntity, [a[0]], 1)
-    issuer.setRegistrar(kyc, True, {'from': a[0]})
     kyc.addAuthority((a[-1],a[-2]), (1,), 1, {'from': a[0]})
     owner_id = kyc.getAuthorityID(a[0])
     auth_id = kyc.getAuthorityID(a[-1])

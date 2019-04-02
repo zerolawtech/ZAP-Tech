@@ -188,4 +188,16 @@ contract KYCIssuer is KYCBase {
 		return true;
 	}
 
+	/**
+		@notice Check if an an investor is permitted based on ID
+		@param _id Investor ID to query
+		@return bool permission
+	 */
+	function isPermittedID(bytes32 _id) public view returns (bool) {
+		Investor storage i = investorData[_id];
+		if (i.restricted) return false;
+		if (i.expires < now) return false;
+		return true;
+	}
+
 }

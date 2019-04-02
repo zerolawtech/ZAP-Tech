@@ -6,10 +6,8 @@ from scripts.deployment import main
 
 def setup():
     config['test']['always_transact'] = False
-    global kyc, issuer, auth_id
+    global kyc, auth_id
     kyc = a[0].deploy(KYCRegistrar, [a[0]], 1)
-    issuer = a[0].deploy(IssuingEntity, [a[0]], 1)
-    issuer.setRegistrar(kyc, True, {'from': a[0]})
     kyc.addAuthority((a[-1],a[-2]), [], 1, {'from': a[0]})
     auth_id = kyc.getAuthorityID(a[-1])
 
@@ -135,6 +133,14 @@ def restricted_not_authority():
         "dev: not authority"
     )
 
+
+def restricted_owner():
+    '''restrict - owner'''
+    check.reverts(
+        kyc.setAuthorityRestriction,
+        (kyc.getAuthorityID(a[0]), False, {'from': a[0]}),
+        "dev: owner"
+    )
 
 def _check_country(country):
     check.false(kyc.isApprovedAuthority(a[-1], country-1))

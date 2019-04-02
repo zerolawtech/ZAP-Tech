@@ -227,11 +227,14 @@ contract KYCBase {
 
 	/**
 		@notice Fetch investor ID from an address
+		@dev
+			This cannot revert on fail because IssuingEntity may call multiple
+			registrar contracts. A response of 0x00 is means the address is
+			not registered.
 		@param _addr Address to query
 		@return bytes32 investor ID
 	 */
 	function getID(address _addr) external view returns (bytes32) {
-		require(idMap[_addr].id != 0x00);
 		return idMap[_addr].id;
 	}
 
@@ -294,12 +297,7 @@ contract KYCBase {
 		@param _id Investor ID to query
 		@return bool permission
 	 */
-	function isPermittedID(bytes32 _id) public view returns (bool) {
-		Investor storage i = investorData[_id];
-		if (i.restricted) return false;
-		if (i.expires < now) return false;
-		return true;
-	}
+	function isPermittedID(bytes32 _id) public view returns (bool);
 
 	/**
 		@notice Generate a unique investor ID

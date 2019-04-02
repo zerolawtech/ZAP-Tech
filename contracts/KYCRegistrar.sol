@@ -19,6 +19,20 @@ contract KYCRegistrar is KYCBase {
 
 	event NewAuthority(bytes32 indexed id);
 	event AuthorityRestriction(bytes32 indexed id, bool permitted);
+	event MultiSigCall (
+		bytes32 indexed id,
+		bytes4 indexed callSignature,
+		bytes32 indexed callHash,
+		address caller,
+		uint256 callCount,
+		uint256 threshold
+	);
+	event MultiSigCallApproved (
+		bytes32 indexed id,
+		bytes4 indexed callSignature,
+		bytes32 indexed callHash,
+		address caller
+	);
 
 	/**
 		@notice KYC registrar constructor
@@ -49,13 +63,22 @@ contract KYCRegistrar is KYCBase {
 		Authority storage a = authorityData[_id];
 		bytes32 _callHash = keccak256(msg.data);
 		for (uint256 i; i < a.multiSigAuth[_callHash].length; i++) {
-			require(a.multiSigAuth[_callHash][i] != msg.sender);
+			require(a.multiSigAuth[_callHash][i] != msg.sender, "dev: repeat caller");
 		}
 		if (a.multiSigAuth[_callHash].length + 1 >= a.multiSigThreshold) {
 			delete a.multiSigAuth[_callHash];
+			emit MultiSigCallApproved(_id, msg.sig, _callHash, msg.sender);
 			return true;
 		}
 		a.multiSigAuth[_callHash].push(msg.sender);
+		emit MultiSigCall(
+			_id, 
+			msg.sig,
+			_callHash,
+			msg.sender,
+			a.multiSigAuth[_callHash].length,
+			a.multiSigThreshold
+		);
 		return false;
 	}
 
@@ -234,6 +257,7 @@ contract KYCRegistrar is KYCBase {
 		returns (bool)
 	{
 		if (!_checkMultiSig(true)) return false;
+		require(_id != ownerID, "dev: owner");
 		require(authorityData[_id].addressCount > 0, "dev: not authority");
 		authorityData[_id].restricted = !_permitted;
 		emit AuthorityRestriction(_id, !_permitted);
@@ -294,7 +318,6 @@ contract KYCRegistrar is KYCBase {
 		external
 		returns (bool)
 	{
-		require(investorData[_id].country != 0, "dev: unknown ID");
 		_authorityCheck(investorData[_id].country);
 		if (!_checkMultiSig(false)) return false;
 		bytes32 _authID = idMap[msg.sender].id;
@@ -317,7 +340,6 @@ contract KYCRegistrar is KYCBase {
 		external
 		returns (bool)
 	{
-		require(investorData[_id].country != 0);
 		_authorityCheck(investorData[_id].country);
 		if (!_checkMultiSig(false)) return false;
 		investorData[_id].restricted = !_permitted;
@@ -330,13 +352,13 @@ contract KYCRegistrar is KYCBase {
 		@dev
 			This function is used by the owner to reassign investors to an
 			unrestricted authority if their original authority was restricted.
-		@param _id Investor ID
 		@param _authID Authority ID
+		@param _id Investor ID
 		@return bool success
 	 */
 	function setInvestorAuthority(
-		bytes32[] _id,
-		bytes32 _authID
+		bytes32 _authID,
+		bytes32[] _id
 	)
 		external
 		returns (bool)
@@ -344,7 +366,7 @@ contract KYCRegistrar is KYCBase {
 		require(authorityData[_authID].addressCount > 0, "dev: not authority");
 		if (!_checkMultiSig(true)) return false;
 		for (uint256 i; i < _id.length; i++) {
-			require(investorData[_id[i]].country != 0);
+			require(investorData[_id[i]].country != 0, "dev: unknown ID");
 			Investor storage inv = investorData[_id[i]];
 			inv.authority = _authID;
 			emit UpdatedInvestor(
@@ -460,5 +482,17 @@ contract KYCRegistrar is KYCBase {
 		return a.countries[_idx] >> (_country - _idx * 256) & uint256(1) == 1;
 	}
 
+	/**
+		@notice Check if an an investor is permitted based on ID
+		@param _id Investor ID to query
+		@return bool permission
+	 */
+	function isPermittedID(bytes32 _id) public view returns (bool) {
+		Investor storage i = investorData[_id];
+		if (authorityData[i.authority].restricted) return false;
+		if (i.restricted) return false;
+		if (i.expires < now) return false;
+		return true;
+	}
 
 }

@@ -6,12 +6,8 @@ from scripts.deployment import main
 
 def setup():
     config['test']['always_transact'] = False
-    global kyc, issuer, auth_id
+    global kyc, auth_id
     kyc = a[0].deploy(KYCRegistrar, [a[0]], 1)
-    issuer = a[0].deploy(IssuingEntity, [a[0]], 1)
-    #token = accounts[0].deploy(token_contract, issuer, "Test NFT", "NFT", 1000000)
-    #issuer.addToken(token, {'from': accounts[0]})
-    issuer.setRegistrar(kyc, True, {'from': a[0]})
     kyc.addAuthority((a[-1],a[-2]), [], 1, {'from': a[0]})
     kyc.addInvestor("0x1111", 1, 1, 1, 9999999999, (a[-3],), {'from': a[0]})
     auth_id = kyc.getAuthorityID(a[-1])
@@ -99,12 +95,12 @@ def update_investor_unknown_id():
     check.reverts(
         kyc.updateInvestor,
         ("0x1234", 1, 1, 9999999999, {'from': a[0]}),
-        "dev: unknown ID"
+        "dev: country 0"
     )
     check.reverts(
         kyc.updateInvestor,
         (auth_id, 1, 1, 9999999999, {'from': a[0]}),
-        "dev: unknown ID"
+        "dev: country 0"
     )
 
 
@@ -136,9 +132,38 @@ def update_investor_authority_country():
 
 def set_restriction():
     '''set investor restriction'''
+    check.true(kyc.isPermittedID("0x1111"))
+    kyc.setInvestorRestriction("0x1111", False, {'from': a[0]})
+    check.false(kyc.isPermittedID("0x1111"))
+    kyc.setInvestorRestriction("0x1111", True, {'from': a[0]})
+    check.true(kyc.isPermittedID("0x1111"))
 
 def set_authority():
     '''set investor authority'''
+    check.true(kyc.isPermittedID("0x1111"))
+    kyc.setAuthorityRestriction(auth_id, False, {'from':a[0]})
+    check.true(kyc.isPermittedID("0x1111"))
+    kyc.setInvestorAuthority(auth_id, ("0x1111",), {'from': a[0]})
+    check.false(kyc.isPermittedID("0x1111"))
+    kyc.setInvestorAuthority(kyc.getAuthorityID(a[0]), ("0x1111",), {'from': a[0]})
+    check.true(kyc.isPermittedID("0x1111"))
 
-# setInvestorRestriction
-# setInvestorAuthority
+
+def set_authority_unknown_id():
+    '''set investor authority - unknown id'''
+    id_ = kyc.getAuthorityID(a[0])
+    check.reverts(
+        kyc.setInvestorAuthority,
+        (id_, (auth_id,), {'from': a[0]}),
+        "dev: unknown ID"
+    )
+    check.reverts(
+        kyc.setInvestorAuthority,
+        (auth_id, (id_,), {'from': a[0]}),
+        "dev: unknown ID"
+    )
+    check.reverts(
+        kyc.setInvestorAuthority,
+        (id_, ("0x1234",), {'from': a[0]}),
+        "dev: unknown ID"
+    )

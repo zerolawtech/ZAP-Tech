@@ -788,10 +788,11 @@ contract IssuingEntity is Modular, MultiSig {
 	function addCustodian(address _custodian) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		bytes32 _id = IBaseCustodian(_custodian).ownerID();
-		require(idMap[_custodian].id == 0);
-		require(accounts[_id].rating == 0);
-		require(authorityData[_id].addressCount == 0);
-		require(custodians[_id].addr == 0);
+		require(_id != 0, "dev: zero id");
+		require(idMap[_custodian].id == 0, "dev: known address");
+		require(custodians[_id].addr == 0, "dev: custodian ID");
+		require(accounts[_id].rating == 0, "dev: investor ID");
+		require(authorityData[_id].addressCount == 0, "dev: authority ID");
 		idMap[_custodian].id = _id;
 		custodians[_id].addr = _custodian;
 		emit CustodianAdded(_custodian);

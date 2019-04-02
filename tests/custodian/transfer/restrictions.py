@@ -50,15 +50,16 @@ def to_issuer():
     check.reverts(
         cust.transfer,
         (token, a[0], 500, {'from': a[0]}),
-        "Authority restricted"
+        "Sender restricted: Issuer"
     )
+
 
 def to_investor():
     '''restricted custodian - to investor'''
     check.reverts(
         cust.transfer,
         (token, a[2], 500, {'from': a[0]}),
-        "Authority restricted"
+        "Sender restricted: Issuer"
     )
 
 def issuer_transferFrom():

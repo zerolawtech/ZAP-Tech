@@ -8,20 +8,24 @@ contract KYCIssuer is KYCBase {
 
 	MultiSig public issuer;
 
-	function _onlyAuthority() internal returns (bool) {
-		return issuer.checkMultiSigExternal(
-			msg.sender,
-			keccak256(msg.data),
-			msg.sig
-		);
-	}
-
 	/**
 		@notice KYC registrar constructor
 		@param _issuer IssuingEntity contract address
 	 */
 	constructor (MultiSig _issuer) public {
 		issuer = _issuer;
+	}
+
+	/**
+		@notice Check that the call originates from an approved authority
+		@return bool success
+	 */
+	function _onlyAuthority() internal returns (bool) {
+		return issuer.checkMultiSigExternal(
+			msg.sender,
+			keccak256(msg.data),
+			msg.sig
+		);
 	}
 
 	/**

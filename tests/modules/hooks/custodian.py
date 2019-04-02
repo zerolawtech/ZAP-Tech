@@ -54,93 +54,21 @@ def setup():
     token.transfer(a[2], 10000, {'from': a[0]})
 
 
-def token_checkTransfer():
-    source = '''checkTransfer(
-        address[2] _addr,
-        bytes32 _authID,
-        bytes32[2] _id,
-        uint8[2] _rating,
-        uint16[2] _country,
-        uint256 _value'''
-    _hook(token, token.checkTransfer, (a[0], a[1], 1000), source, "0x70aaf928")
-
-
-def token_transferTokens():
-    source = '''transferTokens(
-        address[2] _addr,
-        bytes32[2] _id,
-        uint8[2] _rating,
-        uint16[2] _country,
-        uint256 _value'''
-    _hook(token, token.transfer, (a[1], 1000), source, "0x35a341da")
-
-
-def token_transferTokensCustodian():
-    source = '''transferTokensCustodian(
-        address _custodian,
-        address[2] _addr,
-        bytes32[2] _id,
-        uint8[2] _rating,
-        uint16[2] _country,
-        uint256 _value'''
-    token.transfer(cust, 5000, {'from': a[2]})
-    _hook(token, cust.transferInternal, (token, a[2], a[3], 100), source, "0x8b5f1240")
-
-
-def token_modifyAuthorizedSupply():
-    source = '''modifyAuthorizedSupply(
-        address _token,
-        uint256 _oldSupply,
-        uint256 _newSupply'''
-    _hook(token, token.modifyAuthorizedSupply, (100000000,), source, "0xb1a1a455")
-
-
-def token_totalSupplyChanged():
-    source = '''totalSupplyChanged(
-        address _addr,
-        bytes32 _id,
-        uint8 _rating,
-        uint16 _country,
-        uint256 _old,
-        uint256 _new'''
-    _hook(token, token.burn, (issuer, 1000), source, "0x741b5078")
-    _hook(token, token.mint, (a[2], 1000), source, "0x741b5078")
-
-
-def issuer_checkTransfer():
-    source = '''checkTransfer(
-        address _token,
-        bytes32 _authID,
-        bytes32[2] _id,
-        uint8[2] _rating,
-        uint16[2] _country'''
-    _hook(issuer, token.checkTransfer, (a[0], a[1], 1000), source, "0x9a5150fc")
-
-def issuer_tokenTotalSupplyChanged():
-    source = '''tokenTotalSupplyChanged(
-        address _token,
-        bytes32 _id,
-        uint8 _rating,
-        uint16 _country,
-        uint256 _old,
-        uint256 _new'''
-    _hook(issuer, token.burn, (issuer, 1000), source, "0xb446f3ca")
-    _hook(issuer, token.mint, (a[2], 1000), source, "0xb446f3ca")
-
-
 def custodian_sentTokens():
     source = '''sentTokens(
         address _token,
         address _to,
         uint256 _value'''
-    "0x31b45d35"
+    token.transfer(cust, 10000, {'from': a[0]})
+    _hook(cust.transfer, (token, a[0], 100), source, "0xb4684410")
+
 
 def custodian_receivedTokens():
     source = '''receivedTokens(
         address _token,
         address _from,
         uint256 _value'''
-    _hook(cust, token.transfer, (cust, 1000), source, "0xa0e7f751")
+    _hook(token.transfer, (cust, 1000), source, "0xb15bcbc4")
 
 
 def custodian_internalTransfer():
@@ -149,16 +77,17 @@ def custodian_internalTransfer():
         address _from,
         address _to,
         uint256 _value'''
-    "0x7054b724"
+    token.transfer(cust, 10000, {'from': a[0]})
+    _hook(cust.transferInternal, (token, a[0], a[2], 100), source, "0x44a29e2a")
 
-def _hook(contract, fn, args, source, sig):
+
+def _hook(fn, args, source, sig):
     args = list(args)+[{'from': a[0]}]
-    module = compile_source(module_source.format(sig, source))[0].deploy(a[0], contract)
-    print(fn.signature)
+    module = compile_source(module_source.format(sig, source))[0].deploy(a[0], cust)
     fn(*args)
-    issuer.attachModule(contract, module, {'from': a[0]})
+    cust.attachModule(module, {'from': a[0]})
     fn(*args)
     module.setReturn(False, {'from': a[0]})
     check.reverts(fn, args)
-    issuer.detachModule(contract, module, {'from': a[0]})
+    cust.detachModule(module, {'from': a[0]})
     fn(*args)

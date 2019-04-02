@@ -192,18 +192,16 @@ interface ICustodianModule {
 		@notice Custodian sent tokens
 		@dev
 			Called after a successful token transfer from the custodian.
-			Use 0x31b45d35 as the hook value for this method.
+			Use 0xb4684410 as the hook value for this method.
 		@param _token Token address
-		@param _id Recipient ID
+		@param _to Recipient address
 		@param _value Amount of tokens transfered
-		@param _stillOwner Is recipient still a beneficial owner for this token?
 		@return bool success
 	 */
 	function sentTokens(
 		address _token,
-		bytes32 _id,
-		uint256 _value,
-		bool _stillOwner
+		address _to,
+		uint256 _value
 	)
 		external
 		returns (bool);
@@ -212,35 +210,26 @@ interface ICustodianModule {
 		@notice Custodian received tokens
 		@dev
 			Called after a successful token transfer to the custodian.
-			Use 0xa0e7f751 as the hook value for this method.
+			Use 0xb15bcbc4 as the hook value for this method.
 		@param _token Token address
-		@param _id Recipient ID
+		@param _from Sender address
 		@param _value Amount of tokens transfered
 		@return bool success
 	 */
 	function receivedTokens(
 		address _token,
-		bytes32 _id,
+		address _from,
 		uint256 _value
 	)
 		external
 		returns (bool);
 
-	/* 0x7054b724 */
+	/* 0x44a29e2a */
 	function internalTransfer(
 		address _token,
-		bytes32 _fromID,
-		bytes32 _toID,
-		uint256 _value,
-		bool _stillOwner
-	)
-		external
-		returns (bool);
-
-	/* 0x054d1c76 */
-	function ownershipReleased(
-		address _issuer,
-		bytes32 _id
+		address _from,
+		address _to,
+		uint256 _value
 	)
 		external
 		returns (bool);

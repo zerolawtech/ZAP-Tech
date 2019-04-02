@@ -103,11 +103,11 @@ contract OwnedCustodian is Modular, MultiSig {
 		}
 		require(_token.transfer(_to, _value));
 		/* bytes4 signature for custodian module sentTokens() */
-		_callModules(
+		require(_callModules(
 			0x31b45d35, // TODO
 			0x00,
 			abi.encode(_token, _to, _value)
-		);
+		));
 		emit SentTokens(_token, _to, _value);
 		return true;
 	}
@@ -128,7 +128,7 @@ contract OwnedCustodian is Modular, MultiSig {
 	{
 		
 		/* bytes4 signature for custodian module receivedTokens() */
-		_callModules(0xa0e7f751, 0x00, abi.encode(msg.sender, _from, _value));
+		require(_callModules(0xa0e7f751, 0x00, abi.encode(msg.sender, _from, _value)));
 		emit ReceivedTokens(msg.sender, _from, _value);
 		return true;
 	}
@@ -160,11 +160,11 @@ contract OwnedCustodian is Modular, MultiSig {
 		}
 		_token.transferCustodian([_from, _to], _value);
 		/* bytes4 signature for custodian module internalTransfer() */
-		_callModules(
+		require(_callModules(
 			0x7054b724,
 			0x00,
 			abi.encode(_token, _from, _to, _value)
-		);
+		));
 		emit TransferOwnership(_token, _from, _to, _value);
 		return true;
 	}

@@ -120,6 +120,7 @@ contract Modular {
 	{
 		for (uint256 i; i < activeModules.length; i++) {
 			Hook storage h = moduleData[activeModules[i]].hooks[_sig];
+			emit Debug(_sig, h.active, h.always);
 			if (!h.active) continue;
 			if (h.always) {
 				if (!activeModules[i].call(_sig, _data)) return false;
@@ -140,6 +141,8 @@ contract Modular {
 		}
 		return true;
 	}
+
+	event Debug(bytes4 sig, bool active, bool always);
 
 	/**
 		@notice Enable or disable a hook point for an active module

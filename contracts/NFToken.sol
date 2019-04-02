@@ -219,11 +219,11 @@ contract NFToken is TokenBase  {
 			);
 		}
 		/* bytes4 signature for token module checkTransfer() */
-		_callModules(
+		require(_callModules(
 			0x70aaf928,
 			0x00,
 			abi.encode(_addr, _authID, _id, _rating, _country, _value)
-		);
+		));
 		_range = _findTransferrableRanges(
 			_authID,
 			_id,
@@ -640,11 +640,11 @@ contract NFToken is TokenBase  {
 		custBalances[_addr[0]][msg.sender] -= _value;
 		custBalances[_addr[1]][msg.sender] += _value;
 		/* bytes4 signature for token module transferTokensCustodian() */
-		_callModules(
+		require(_callModules(
 			0x8b5f1240,
 			0x00,
 			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
-		);
+		));
 		_transferMultipleRanges(
 			_id,
 			_addr,
@@ -694,11 +694,11 @@ contract NFToken is TokenBase  {
 			}
 			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop, _custodian);
 			/** hook point for NFToken.transferTokenRange() */
-			_callModules(
+			require(_callModules(
 				0xead529f5,
 				rangeMap[_range[i]].tag,
 				abi.encode(_addr, _id, _rating, _country, uint48[2]([_start, _stop]))
-			);
+			));
 			if (_value == 0) {
 				return;
 			}
@@ -762,11 +762,11 @@ contract NFToken is TokenBase  {
 		require(_addr[0] != _addr[1], "Cannot send to self");
 
 		/* hook point for NFTModule.checkTransfer() */
-		_callModules(
+		require(_callModules(
 			0x70aaf928,
 			0x00,
 			abi.encode(_addr, _authID, _id, _rating, _country, _value)
-		);
+		));
 
 		/* hook point for NFTModule.checkTransferRange */
 		require(_callModules(
@@ -789,11 +789,11 @@ contract NFToken is TokenBase  {
 
 		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], _cust);
 		/* hook point for NFToken.transferTokenRange() */
-		_callModules(
+		require(_callModules(
 			0xead529f5,
 			rangeMap[_pointer].tag,
 			abi.encode(_addr, _id,  _rating, _country, _range)
-		);
+		));
 	}
 
 	/**

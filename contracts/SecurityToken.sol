@@ -136,11 +136,11 @@ contract SecurityToken is TokenBase {
 		}
 
 		/* bytes4 signature for token module checkTransfer() */
-		_callModules(
+		require(_callModules(
 			0x70aaf928,
 			0x00,
 			abi.encode(_addr, _authID, _id, _rating, _country, _value)
-		);
+		));
 		return _addr;
 	}
 
@@ -265,11 +265,11 @@ contract SecurityToken is TokenBase {
 		}
 
 		/* bytes4 signature for token module transferTokens() */
-		_callModules(
+		require(_callModules(
 			0x35a341da,
 			0x00,
 			abi.encode(_addr, _id, _rating, _country, _value)
-		);
+		));
 		emit Transfer(_addr[0], _addr[1], _value);
 	}
 
@@ -318,11 +318,11 @@ contract SecurityToken is TokenBase {
 		custBalances[_addr[0]][msg.sender] = custBalances[_addr[0]][msg.sender].sub(_value);
 		custBalances[_addr[1]][msg.sender] = custBalances[_addr[1]][msg.sender].add(_value);
 		/* bytes4 signature for token module transferTokensCustodian() */
-		_callModules(
+		require(_callModules(
 			0x8b5f1240,
 			0x00,
 			abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
-		);
+		));
 		return true;
 	}
 

@@ -370,11 +370,11 @@ contract IssuingEntity is Modular, MultiSig {
 			}
 		}
 		/* bytes4 signature for issuer module checkTransfer() */
-		_callModules(
+		require(_callModules(
 			0x9a5150fc,
 			0x00,
 			abi.encode(_token, _authID, _id, _rating, _country)
-		);
+		));
 	}
 
 	/**
@@ -656,11 +656,11 @@ contract IssuingEntity is Modular, MultiSig {
 			}
 		}
 		/* bytes4 signature for token module tokenTotalSupplyChanged() */
-		_callModules(
+		require(_callModules(
 			0xb446f3ca,
 			0x00,
 			abi.encode(msg.sender, _id, _rating, _country, _old, _new)
-		);
+		));
 		return (_id, _rating, _country);
 	}
 

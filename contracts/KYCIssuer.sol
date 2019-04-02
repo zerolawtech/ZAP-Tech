@@ -42,7 +42,7 @@ contract KYCIssuer is KYCBase {
 				_inv.id = _id;
 			/* In all other cases, revert */
 			} else {
-				revert();
+				revert("dev: known address");
 			}
 		}
 		emit RegisteredAddresses(_id, _addr, issuer.getID(msg.sender));
@@ -183,8 +183,8 @@ contract KYCIssuer is KYCBase {
 	{
 		if (!_onlyAuthority()) return false;
 		for (uint256 i; i < _addr.length; i++) {
-			require(idMap[_addr[i]].id == _id);
-			require(!idMap[_addr[i]].restricted);
+			require(idMap[_addr[i]].id == _id, "dev: wrong ID");
+			require(!idMap[_addr[i]].restricted, "dev: already restricted");
 			idMap[_addr[i]].restricted = true;
 		}
 		emit RestrictedAddresses(_id, _addr, issuer.getID(msg.sender));

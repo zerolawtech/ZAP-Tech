@@ -51,6 +51,49 @@ def setup():
     nft.mint(issuer, 100000, 0, "0x00", {'from': a[0]})
 
 
+def checkTransfer():
+    source = '''checkTransfer(
+		address[2] _addr,
+		bytes32 _authID,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint256 _value'''
+    _hook(nft, nft.checkTransfer, (a[0], a[1], 1000), source, "0x70aaf928")
+
+
+def checkTransferRange():
+    source = '''checkTransferRange(
+		address[2] _addr,
+		bytes32 _authID,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint48[2] _range'''
+    _hook(nft, nft.checkTransfer, (a[0], a[1], 1000), source, "0x2d79c6d7")
+
+
+def transferTokenRange(pending=True):
+    source = '''transferTokenRange(
+		address[2] _addr,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint48[2] _range'''
+    _hook(nft, nft.transfer, (a[1], 1000), source, "0xead529f5")
+
+
+def token_transferTokensCustodian(skip=True):
+    source = '''transferTokensCustodian(
+		address _custodian,
+		address[2] _addr,
+		bytes32[2] _id,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint256 _value'''
+    _hook(token, x, (), source, "0x8b5f1240")
+
+
 def modifyAuthorizedSupply():
     source = '''modifyAuthorizedSupply(
 		address _token,

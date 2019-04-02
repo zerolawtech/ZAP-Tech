@@ -212,11 +212,11 @@ contract TokenBase is Modular {
 		if (!_checkPermitted()) return false;
 		require(_value >= totalSupply, "dev: auth below total");
 		/* bytes4 signature for token module modifyAuthorizedSupply() */
-		_callModules(
+		require(_callModules(
 			0xb1a1a455,
 			0x00,
 			abi.encode(address(this), authorizedSupply, _value)
-		);
+		));
 		emit AuthorizedSupplyChanged(authorizedSupply, _value);
 		authorizedSupply = _value;
 		return true;
@@ -242,11 +242,11 @@ contract TokenBase is Modular {
 			uint16 _country
 		) = issuer.modifyTokenTotalSupply(_owner, _old, _new);
 		/* bytes4 signature for token module totalSupplyChanged() */
-		_callModules(
+		require(_callModules(
 			0x741b5078,
 			0x00,
 			abi.encode(_owner, _id, _rating, _country, _old, _new)
-		);
+		));
 		emit TotalSupplyChanged(_owner, _old, _new);
 		return true;
 	}

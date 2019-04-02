@@ -73,9 +73,9 @@ Investors must be identified by a registrar before they can send or receive toke
 
     Returns the registrar address associated with an investor ID. If the investor ID is not saved in the contract, this call will return 0x00.
 
-.. method:: IssuingEntity.setInvestorRestriction(bytes32 _id, bool _allowed)
+.. method:: IssuingEntity.setEntityRestriction(bytes32 _id, bool _allowed)
 
-    Retricts or permits an investor from transferring tokens, based on their ID.
+    Retricts or permits an investor or custodian from transferring tokens, based on their ID.
 
     This can only be used to block an investor that would otherwise be able to hold the tokens, it cannot be used to whitelist investors who are not listed in an associated registrar. When an investor is restricted, the issuer is still able to transfer tokens from their addresses.
 

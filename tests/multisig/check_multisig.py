@@ -40,8 +40,8 @@ def addCustodian():
 def addToken():
     _multisig(issuer.addToken, SecurityToken[1])
 
-def setInvestorRestriction():
-    _multisig(issuer.setInvestorRestriction, "0x11", False)
+def setEntityRestriction():
+    _multisig(issuer.setEntityRestriction, "0x11", False)
 
 def setTokenRestriction():
     _multisig(issuer.setTokenRestriction, token, True)

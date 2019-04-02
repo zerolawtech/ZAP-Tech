@@ -68,7 +68,7 @@ contract IssuingEntity is Modular, MultiSig {
 	event RegistrarSet(address indexed registrar, bool allowed);
 	event CustodianAdded(address indexed custodian);
 	event TokenAdded(address indexed token);
-	event InvestorRestriction(bytes32 indexed id, bool allowed);
+	event EntityRestriction(bytes32 indexed id, bool allowed);
 	event TokenRestriction(address indexed token, bool allowed);
 	event GlobalRestriction(bool allowed);
 
@@ -296,7 +296,8 @@ contract IssuingEntity is Modular, MultiSig {
 			require(!locked, "Transfers locked: Issuer");
 			require(!tokens[_token].restricted, "Transfers locked: Token");
 			require(!accounts[_id[0]].restricted, "Sender restricted: Issuer");
-			require(_allowed[0], "Sender restricted: Registrar");	
+			require(_allowed[0], "Sender restricted: Registrar");
+			require(!accounts[_authID].restricted, "Authority restricted");
 		}
 		/* Always check the receiver is not restricted. */
 		require(!accounts[_id[1]].restricted, "Receiver restricted: Issuer");
@@ -787,6 +788,10 @@ contract IssuingEntity is Modular, MultiSig {
 	function addCustodian(address _custodian) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		bytes32 _id = IBaseCustodian(_custodian).ownerID();
+		require(idMap[_custodian].id == 0);
+		require(accounts[_id].rating == 0);
+		require(authorityData[_id].addressCount == 0);
+		require(custodians[_id].addr == 0);
 		idMap[_custodian].id = _id;
 		custodians[_id].addr = _custodian;
 		emit CustodianAdded(_custodian);
@@ -810,15 +815,13 @@ contract IssuingEntity is Modular, MultiSig {
 	}
 
 	/**
-		@notice Set restriction on an investor ID
-		@dev
-			This is used for regular investors or custodians. Restrictions
-			on sub-authorities must be handled with MultiSig functions.
+		@notice Set restriction on an investor or custodian ID
+		@dev restrictions on sub-authorities are handled via MultiSig methods
 		@param _id investor ID
 		@param _allowed permission bool
 		@return bool success
 	 */
-	function setInvestorRestriction(
+	function setEntityRestriction(
 		bytes32 _id,
 		bool _allowed
 	)
@@ -828,7 +831,7 @@ contract IssuingEntity is Modular, MultiSig {
 		if (!_checkMultiSig()) return false;
 		require(authorityData[_id].addressCount == 0);
 		accounts[_id].restricted = !_allowed;
-		emit InvestorRestriction(_id, _allowed);
+		emit EntityRestriction(_id, _allowed);
 		return true;
 	}
 

@@ -45,13 +45,15 @@ contract TestModule {{
 
 def setup():
     main(SecurityToken)
-    global token, issuer
+    global token, issuer, cust
     token = SecurityToken[0]
     issuer = IssuingEntity[0]
+    cust = OwnedCustodian.deploy(a[0], [a[0]], 1)
+    issuer.addCustodian(cust, {'from': a[0]})
     token.mint(issuer, 100000, {'from': a[0]})
 
 
-def token_checkTransfer():
+def checkTransfer():
     source = '''checkTransfer(
         address[2] _addr,
         bytes32 _authID,
@@ -62,7 +64,7 @@ def token_checkTransfer():
     _hook(token, token.checkTransfer, (a[0], a[1], 1000), source, "0x70aaf928")
 
 
-def token_transferTokens():
+def transferTokens():
     source = '''transferTokens(
         address[2] _addr,
         bytes32[2] _id,
@@ -72,7 +74,7 @@ def token_transferTokens():
     _hook(token, token.transfer, (a[1], 1000), source, "0x35a341da")
 
 
-def token_transferTokensCustodian(skip=True):
+def transferTokensCustodian():
     source = '''transferTokensCustodian(
         address _custodian,
         address[2] _addr,
@@ -80,10 +82,12 @@ def token_transferTokensCustodian(skip=True):
         uint8[2] _rating,
         uint16[2] _country,
         uint256 _value'''
-    _hook(token, x, (), source, "0x8b5f1240")
+    token.transfer(a[2], 10000, {'from': a[0]})
+    token.transfer(cust, 5000, {'from': a[2]})
+    _hook(token, cust.transferInternal, (token, a[2], a[3], 100), source, "0x8b5f1240")
 
 
-def token_modifyAuthorizedSupply():
+def modifyAuthorizedSupply():
     source = '''modifyAuthorizedSupply(
         address _token,
         uint256 _oldSupply,
@@ -91,7 +95,7 @@ def token_modifyAuthorizedSupply():
     _hook(token, token.modifyAuthorizedSupply, (100000000,), source, "0xb1a1a455")
 
 
-def token_totalSupplyChanged():
+def totalSupplyChanged():
     source = '''totalSupplyChanged(
         address _addr,
         bytes32 _id,
@@ -112,6 +116,7 @@ def issuer_checkTransfer():
         uint16[2] _country'''
     _hook(issuer, token.checkTransfer, (a[0], a[1], 1000), source, "0x9a5150fc")
 
+
 def issuer_tokenTotalSupplyChanged():
     source = '''tokenTotalSupplyChanged(
         address _token,
@@ -123,29 +128,6 @@ def issuer_tokenTotalSupplyChanged():
     _hook(issuer, token.burn, (issuer, 1000), source, "0xb446f3ca")
     _hook(issuer, token.mint, (a[2], 1000), source, "0xb446f3ca")
 
-
-def custodian_sentTokens():
-    source = '''sentTokens(
-        address _token,
-        address _to,
-        uint256 _value'''
-    "0x31b45d35"
-
-def custodian_receivedTokens():
-    source = '''receivedTokens(
-        address _token,
-        address _from,
-        uint256 _value'''
-    "0xa0e7f751"
-
-
-def custodian_internalTransfer():
-    source = '''internalTransfer(
-        address _token,
-        address _from,
-        address _to,
-        uint256 _value'''
-    "0x7054b724"
 
 def _hook(contract, fn, args, source, sig):
     args = list(args)+[{'from': a[0]}]

@@ -6,10 +6,9 @@ from scripts.deployment import main
 
 def setup():
     main(SecurityToken)
-    global token, issuer, kyc
+    global token, issuer
     token = SecurityToken[0]
     issuer = IssuingEntity[0]
-    kyc = KYCRegistrar[0]
     token.mint(issuer, 1000000, {'from': a[0]})
 
 def zero_tokens():

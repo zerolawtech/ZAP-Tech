@@ -53,72 +53,72 @@ def setup():
 
 def checkTransfer():
     source = '''checkTransfer(
-		address[2] _addr,
-		bytes32 _authID,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value'''
+        address[2] _addr,
+        bytes32 _authID,
+        bytes32[2] _id,
+        uint8[2] _rating,
+        uint16[2] _country,
+        uint256 _value'''
     _hook(nft, nft.checkTransfer, (a[0], a[1], 1000), source, "0x70aaf928")
 
 
 def checkTransferRange():
     source = '''checkTransferRange(
-		address[2] _addr,
-		bytes32 _authID,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint48[2] _range'''
+        address[2] _addr,
+        bytes32 _authID,
+        bytes32[2] _id,
+        uint8[2] _rating,
+        uint16[2] _country,
+        uint48[2] _range'''
     _hook(nft, nft.checkTransfer, (a[0], a[1], 1000), source, "0x2d79c6d7")
 
 
 def transferTokenRange(pending=True):
     source = '''transferTokenRange(
-		address[2] _addr,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint48[2] _range'''
+        address[2] _addr,
+        bytes32[2] _id,
+        uint8[2] _rating,
+        uint16[2] _country,
+        uint48[2] _range'''
     _hook(nft, nft.transfer, (a[1], 1000), source, "0xead529f5")
 
 
 def token_transferTokensCustodian(skip=True):
     source = '''transferTokensCustodian(
-		address _custodian,
-		address[2] _addr,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value'''
+        address _custodian,
+        address[2] _addr,
+        bytes32[2] _id,
+        uint8[2] _rating,
+        uint16[2] _country,
+        uint256 _value'''
     _hook(token, x, (), source, "0x8b5f1240")
 
 
 def modifyAuthorizedSupply():
     source = '''modifyAuthorizedSupply(
-		address _token,
-		uint256 _oldSupply,
-		uint256 _newSupply'''
+        address _token,
+        uint256 _oldSupply,
+        uint256 _newSupply'''
     _hook(nft, nft.modifyAuthorizedSupply, (100000000,), source, "0xb1a1a455")
 
 def totalSupplyChanged_mint():
     source = '''totalSupplyChanged(
-		address _addr,
-		bytes32 _id,
-		uint8 _rating,
-		uint16 _country,
-		uint256 _old,
-		uint256 _new'''
+        address _addr,
+        bytes32 _id,
+        uint8 _rating,
+        uint16 _country,
+        uint256 _old,
+        uint256 _new'''
     _hook(nft, nft.mint, (a[2], 1000, 0, "0x00"), source, "0x741b5078")
 
 def totalSupplyChanged_burn():
     source = '''totalSupplyChanged(
-		address _addr,
-		bytes32 _id,
-		uint8 _rating,
-		uint16 _country,
-		uint256 _old,
-		uint256 _new'''
+        address _addr,
+        bytes32 _id,
+        uint8 _rating,
+        uint16 _country,
+        uint256 _old,
+        uint256 _new'''
     module = compile_source(module_source.format("0x741b5078", source))[0].deploy(a[0], nft)
     nft.burn(100, 200, {'from': a[0]})
     issuer.attachModule(nft, module, {'from': a[0]})

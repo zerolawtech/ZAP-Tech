@@ -120,32 +120,6 @@ contract KYCBase {
 	}
 
 	/**
-		@notice Fetch investor information using an ID
-		@dev
-			This call increases gas efficiency around token transfers
-			by minimizing the amount of calls to the registrar
-		@param _id investor ID
-		@return bool investor permission from isPermitted()
-		@return uint8 investor rating
-		@return uint16 investor country code
-	 */
-	function getInvestorByID(
-		bytes32 _id
-	)
-		external
-		view
-		returns (
-			bool _allowed,
-			uint8 _rating,
-			uint16 _country
-		)
-	{
-		Investor storage i = investorData[_id];
-		require(i.country != 0, "Address not registered");
-		return (isPermittedID(_id), i.rating, i.country);
-	}
-
-	/**
 		@notice Use addresses to fetch information on 2 investors
 		@dev
 			This call is increases gas efficiency around token transfers
@@ -177,40 +151,6 @@ contract KYCBase {
 		return (
 			[idMap[_from].id, idMap[_to].id],
 			[isPermitted(_from), isPermitted(_to)],
-			[f.rating,t.rating],
-			[f.country, t.country]
-		);
-	}
-
-	/**
-		@notice Use IDs to fetch information on 2 investors
-		@dev
-			This call is increases gas efficiency around token transfers
-			by minimizing the amount of calls to the registrar.
-		@param _fromID first ID to query
-		@param _toID second ID to query
-		@return bool array - Investor permission from isPermitted()
-		@return uint8 array of investor ratings
-		@return uint16 array of investor country codes
-	 */
-	function getInvestorsByID(
-		bytes32 _fromID,
-		bytes32 _toID
-	)
-		external
-		view
-		returns (
-			bool[2] _allowed,
-			uint8[2] _rating,
-			uint16[2] _country
-		)
-	{
-		Investor storage f = investorData[_fromID];
-		require(f.country != 0, "Sender not Registered");
-		Investor storage t = investorData[_toID];
-		require(t.country != 0, "Receiver not Registered");
-		return (
-			[isPermittedID(_fromID), isPermittedID(_toID)],
 			[f.rating,t.rating],
 			[f.country, t.country]
 		);

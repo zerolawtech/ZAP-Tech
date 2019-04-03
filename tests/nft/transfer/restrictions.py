@@ -5,12 +5,12 @@ from scripts.deployment import main
 
 
 def setup():
-    main(SecurityToken)
+    main(NFToken)
     global token, issuer, kyc
-    token = SecurityToken[0]
+    token = NFToken[0]
     issuer = IssuingEntity[0]
     kyc = KYCRegistrar[0]
-    token.mint(issuer, 1000000, {'from': a[0]})
+    token.mint(issuer, 1000000, 0, "0x00", {'from': a[0]})
 
 def sender_restricted():
     '''sender restricted - investor / investor'''

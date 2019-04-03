@@ -269,7 +269,7 @@ contract NFToken is TokenBase  {
 			Range storage r = rangeMap[_startRange[i]];
 			if (r.custodian !=_cust) continue;
 			/** hook point for NFToken.checkTransferRange() */
-			if (_callModules(0x5a5a8ad8, r.tag, abi.encode(
+			if (_callModules(0x2d79c6d7, r.tag, abi.encode(
 				_authID,
 				_id,
 				_addr,

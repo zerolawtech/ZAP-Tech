@@ -218,6 +218,7 @@ contract Modular {
 		for (uint256 i; i < _tagBase.length; i++) {
 			h.tagBools[uint256(_tagBase[i])] = 0;
 		}
+		return true;
 	}
 
 	/**

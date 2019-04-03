@@ -82,31 +82,7 @@ def setup():
 
 def checkTransferRange_transferRange():
     '''module.checkTransferRange, nft.transferRange - adjust tags'''
-    module.setHookTags("0x2d79c6d7", True, "0xff", ["0x01"], {'from': a[0]})
-    nft.transferRange(a[2], 301, 310, {'from': a[1]})
-    check.reverts(
-        nft.transferRange,
-        (a[2], 401, 410, {'from': a[1]})
-    )
-    nft.transferRange(a[2], 501, 510, {'from': a[1]})
-    module.setHookTags("0x2d79c6d7", True, "0xff", ["0x00"], {'from': a[0]})
-    nft.transferRange(a[2], 101, 110, {'from': a[1]})
-    check.reverts(
-        nft.transferRange,
-        (a[2], 311, 331, {'from': a[1]})
-    )
-    check.reverts(
-        nft.transferRange,
-        (a[2], 411, 421, {'from': a[1]})
-    )
-    check.reverts(
-        nft.transferRange,
-        (a[2], 511, 521, {'from': a[1]})
-    )
-    module.clearHookTags("0x2d79c6d7", ["0xff"], {'from': a[0]})
-    nft.transferRange(a[2], 321, 330, {'from': a[1]})
-    nft.transferRange(a[2], 421, 430, {'from': a[1]})
-    nft.transferRange(a[2], 521, 530, {'from': a[1]})
+    _transferRange("0x2d79c6d7")
 
 
 def checkTransferRange_transfer():
@@ -120,19 +96,77 @@ def checkTransferRange_transfer():
 
 
 def checkTransferRange_always():
-    '''module.checkTransferRange - toggle always'''
-    module.setHook("0x2d79c6d7", True, True, {'from': a[0]})
-    module.setHookTags("0x2d79c6d7", True, "0xff", ["0x01"], {'from': a[0]})
+    '''module.checkTransferRange - toggle always and permitted'''
+    _always("0x2d79c6d7")
+
+
+def transferTokenRange_transferRange():
+    '''module.checkTransferRange, nft.transferRange - adjust tags'''
+    _transferRange("0xead529f5")
+
+
+def transferTokenRange_transfer():
+    '''module.checkTransferRange, nft.transfer - adjust tags'''
+    module.setHookTags("0xead529f5", True, "0xff", ["0x01"], {'from': a[0]})
+    nft.transfer(a[2], 250, {'from': a[1]})
+    check.reverts(
+        nft.transfer,
+        (a[2], 250, {'from': a[1]})
+    )
+    module.setHookTags("0xead529f5", False, "0xff", ["0x01"], {'from': a[0]})
+    nft.transfer(a[2], 250, {'from': a[1]})
+
+
+
+def transferTokenRange_always():
+    '''module.checkTransferRange - toggle always and permitted'''
+    _always("0xead529f5")
+
+
+
+
+
+def _transferRange(sig):
+    module.setHookTags(sig, True, "0xff", ["0x01"], {'from': a[0]})
+    nft.transferRange(a[2], 301, 310, {'from': a[1]})
+    check.reverts(
+        nft.transferRange,
+        (a[2], 401, 410, {'from': a[1]})
+    )
+    nft.transferRange(a[2], 501, 510, {'from': a[1]})
+    module.setHookTags(sig, True, "0xff", ["0x00"], {'from': a[0]})
+    nft.transferRange(a[2], 101, 110, {'from': a[1]})
+    check.reverts(
+        nft.transferRange,
+        (a[2], 311, 331, {'from': a[1]})
+    )
+    check.reverts(
+        nft.transferRange,
+        (a[2], 411, 421, {'from': a[1]})
+    )
+    check.reverts(
+        nft.transferRange,
+        (a[2], 511, 521, {'from': a[1]})
+    )
+    module.clearHookTags(sig, ["0xff"], {'from': a[0]})
+    nft.transferRange(a[2], 321, 330, {'from': a[1]})
+    nft.transferRange(a[2], 421, 430, {'from': a[1]})
+    nft.transferRange(a[2], 521, 530, {'from': a[1]})
+
+
+def _always(sig):
+    module.setHook(sig, True, True, {'from': a[0]})
+    module.setHookTags(sig, True, "0xff", ["0x01"], {'from': a[0]})
     check.reverts(
         nft.transfer,
         (a[2], 1, {'from': a[1]})
     )
-    module.setHook("0x2d79c6d7", True, False, {'from': a[0]})
+    module.setHook(sig, True, False, {'from': a[0]})
     nft.transfer(a[2], 1, {'from': a[1]})
     check.reverts(
         nft.transferRange,
         (a[2], 401, 410, {'from': a[1]})
     )
-    module.setHook("0x2d79c6d7", False, False, {'from': a[0]})
+    module.setHook(sig, False, False, {'from': a[0]})
     nft.transfer(a[2], 1, {'from': a[1]})
     nft.transferRange(a[2], 401, 410, {'from': a[1]})

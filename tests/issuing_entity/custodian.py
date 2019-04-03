@@ -21,7 +21,6 @@ def setup():
     issuer = IssuingEntity[0]
     TestCustodian = compile_source(source)[0]
     cust = TestCustodian.deploy(a[0])
-    token.mint(issuer, 1000000, {'from': a[0]})
 
 
 def add():
@@ -42,7 +41,7 @@ def add_twice():
     check.reverts(
         issuer.addCustodian,
         (c, {'from': a[0]}),
-        "dev: custodian ID"
+        "dev: known ID"
     )
 
 
@@ -52,5 +51,38 @@ def add_zero_id():
     check.reverts(
         issuer.addCustodian,
         (cust, {'from': a[0]}),
-        "dev: zero id"
+        "dev: zero ID"
+    )
+
+
+def add_auth_id():
+    '''add custodian - authority id'''
+    cust.setID(issuer.ownerID(), {'from': a[0]})
+    check.reverts(
+        issuer.addCustodian,
+        (cust, {'from': a[0]}),
+        "dev: authority ID"
+    )
+
+
+def add_investor_id():
+    '''custodian / investor collision - investor seen first'''
+    token.mint(a[2], 100, {'from': a[0]})
+    id_ = issuer.getID.call(a[2])
+    cust.setID(id_, {'from': a[0]})
+    check.reverts(
+        issuer.addCustodian,
+        (cust, {'from': a[0]}),
+        "dev: known ID"
+    )
+
+def add_investor_id2():
+    '''custodian / investor collision - custodian seen first'''
+    token.mint(issuer, 100, {'from': a[0]})
+    id_ = issuer.getID.call(a[2])
+    cust.setID(id_, {'from': a[0]})
+    issuer.addCustodian(cust, {'from': a[0]})
+    check.reverts(
+        token.transfer,
+        (a[2], 100, {'from': a[0]})
     )

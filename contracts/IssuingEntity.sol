@@ -924,7 +924,7 @@ contract IssuingEntity is Modular, MultiSig {
 		public
 		returns (bool)
 	{
-		require(!accounts[keccak256(abi.encodePacked(_addr))].set);
+		require(!accounts[keccak256(abi.encodePacked(_addr))].set, "dev: known ID");
 		super.addAuthority(_addr, _signatures, _approvedUntil, _threshold);
 	}
 

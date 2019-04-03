@@ -55,16 +55,6 @@ def add_zero_id():
     )
 
 
-def add_auth_id():
-    '''add custodian - authority id'''
-    cust.setID(issuer.ownerID(), {'from': a[0]})
-    check.reverts(
-        issuer.addCustodian,
-        (cust, {'from': a[0]}),
-        "dev: authority ID"
-    )
-
-
 def add_investor_id():
     '''custodian / investor collision - investor seen first'''
     token.mint(a[2], 100, {'from': a[0]})
@@ -86,3 +76,24 @@ def add_investor_id2():
         token.transfer,
         (a[2], 100, {'from': a[0]})
     )
+
+def cust_auth_id():
+    '''custodian / authority collision'''
+    issuer.addAuthority([a[-1]], [], 2000000000, 1, {'from': a[0]})
+    id_ = issuer.getID(a[-1])
+    cust.setID(id_, {'from': a[0]})
+    check.reverts(
+        issuer.addCustodian,
+        (cust, {'from': a[0]}),
+        "dev: authority ID"
+    )
+    rpc.revert()
+    cust.setID(id_, {'from': a[0]})
+    issuer.addCustodian(cust, {'from': a[0]})
+    check.reverts(
+        issuer.addAuthority,
+        ([a[-1]], [], 2000000000, 1, {'from': a[0]}),
+        "dev: known ID"
+    )
+    
+    

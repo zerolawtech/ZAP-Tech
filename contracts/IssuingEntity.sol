@@ -29,7 +29,9 @@ contract IssuingEntity is Modular, MultiSig {
 		uint32 count;
 		uint8 rating;
 		uint8 regKey;
+		bool set;
 		bool restricted;
+		address custodian;
 	}
 
 	struct Token {
@@ -42,18 +44,12 @@ contract IssuingEntity is Modular, MultiSig {
 		bool restricted;
 	}
 
-	struct CustodianContract {
-		address addr;
-		bool restricted;
-	}
-
 	bool locked;
 	RegistrarContract[] registrars;
 	uint32[8] counts;
 	uint32[8] limits;
 	mapping (uint16 => Country) countries;
 	mapping (bytes32 => Account) accounts;
-	mapping (bytes32 => CustodianContract) custodians;
 	mapping (address => Token) tokens;
 	mapping (string => bytes32) documentHashes;
 
@@ -237,8 +233,8 @@ contract IssuingEntity is Modular, MultiSig {
 			[_addr, _to],
 			[accounts[idMap[_addr].id].regKey, accounts[_id[1]].regKey]
 		);
-		if (custodians[_authID].addr != 0) {
-			require(custodians[_id[1]].addr == 0, "Custodian to Custodian");
+		if (accounts[_authID].custodian != 0) {
+			require(accounts[_id[1]].custodian == 0, "Custodian to Custodian");
 		}
 		Account storage a = accounts[_id[0]];
 		_checkTransfer(
@@ -411,7 +407,7 @@ contract IssuingEntity is Modular, MultiSig {
 			(
 				accounts[_id].regKey > 0 &&
 				!registrars[accounts[_id].regKey].restricted
-			) || custodians[_id].addr != 0
+			) || accounts[_id].custodian != 0
 		) {
 			// IF SOMETHING BREAKS, UNCOMMENT ME!
 			//if (_addr != 0 && _map.id == 0) {
@@ -423,8 +419,16 @@ contract IssuingEntity is Modular, MultiSig {
 			for (uint256 i = 1; i < registrars.length; i++) {
 				if (!registrars[i].restricted) {
 					_id = registrars[i].addr.getID(_addr);
-					if (_id != 0) {
+					/* prevent investor / authority ID collisions */
+					if (_id != 0 && authorityData[_id].addressCount == 0) {
+						// TODO
 						idMap[_addr].id = _id;
+						if (!accounts[_id].set) {
+							accounts[_id].set = true;
+							accounts[_id].regKey = uint8(i);
+						} else {
+							require(accounts[_id].regKey == i);
+						}
 						accounts[_id].regKey = uint8(i);
 						return _id;
 					}
@@ -433,9 +437,7 @@ contract IssuingEntity is Modular, MultiSig {
 		} else {
 			for (i = 1; i < registrars.length; i++) {
 				if (registrars[i].restricted) continue;
-				if (_addr != 0) {
-					if (!registrars[i].addr.isRegistered(_id)) continue;
-				} else if (_id != registrars[i].addr.getID(_addr)) continue;
+				if (_id != registrars[i].addr.getID(_addr)) continue;
 				accounts[_id].regKey = uint8(i);
 				return _id;
 			}
@@ -479,22 +481,14 @@ contract IssuingEntity is Modular, MultiSig {
 		/* If both investors are in the same registry, call getInvestors */
 		KYCRegistrar r = registrars[_key[0]].addr;
 		if (_key[0] == _key[1] && _key[0] != 0) {
-			if (_addr[0] != 0) {
-				(
-					_id,
-					_allowed,
-					_rating,
-					_country
-				) = r.getInvestors(_addr[0], _addr[1]);
-			} else {
-				(
-					_allowed,
-					_rating,
-					_country
-				) = r.getInvestorsByID(_id[0], _id[1]);
-			}
+			(
+				_id,
+				_allowed,
+				_rating,
+				_country
+			) = r.getInvestors(_addr[0], _addr[1]);
 		/* Otherwise, call getInvestor at each registry */
-		} else if (_addr[0] != 0) {
+		} else {
 			if (_key[0] != 0) {
 				(
 					_id[0],
@@ -511,21 +505,6 @@ contract IssuingEntity is Modular, MultiSig {
 					_country[1]
 				) = registrars[_key[1]].addr.getInvestor(_addr[1]);
 			}	
-		} else {
-			if (_key[0] != 0) {
-				(
-					_allowed[0],
-					_rating[0],
-					_country[0]
-				) = r.getInvestorByID(_id[0]);
-			}
-			if (_key[1] != 0) {
-				(
-					_allowed[1],
-					_rating[1],
-					_country[1]
-				) = registrars[_key[1]].addr.getInvestorByID(_id[1]);
-			}
 		}
 		return (_allowed, _rating, _country);
 	}
@@ -788,13 +767,13 @@ contract IssuingEntity is Modular, MultiSig {
 	function addCustodian(address _custodian) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		bytes32 _id = IBaseCustodian(_custodian).ownerID();
-		require(_id != 0, "dev: zero id");
+		require(_id != 0, "dev: zero ID");
 		require(idMap[_custodian].id == 0, "dev: known address");
-		require(custodians[_id].addr == 0, "dev: custodian ID");
-		require(accounts[_id].rating == 0, "dev: investor ID");
+		require(!accounts[_id].set, "dev: known ID");
 		require(authorityData[_id].addressCount == 0, "dev: authority ID");
 		idMap[_custodian].id = _id;
-		custodians[_id].addr = _custodian;
+		accounts[_id].custodian = _custodian;
+		accounts[_id].set = true;
 		emit CustodianAdded(_custodian);
 		return true;
 	}
@@ -830,7 +809,6 @@ contract IssuingEntity is Modular, MultiSig {
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
-		require(authorityData[_id].addressCount == 0);
 		accounts[_id].restricted = !_allowed;
 		emit EntityRestriction(_id, _allowed);
 		return true;
@@ -927,6 +905,27 @@ contract IssuingEntity is Modular, MultiSig {
 			SecurityToken(_target).detachModule(_module);
 		}
 		return true;
+	}
+
+	/**
+		@notice Add a new authority
+		@param _addr Array of addressses to register as authority
+		@param _signatures Array of bytes4 sigs this authority may call
+		@param _approvedUntil Epoch time that authority is approved until
+		@param _threshold Minimum number of calls to a method for multisig
+		@return bool success
+	 */
+	function addAuthority(
+		address[] _addr,
+		bytes4[] _signatures,
+		uint32 _approvedUntil,
+		uint32 _threshold
+	)
+		public
+		returns (bool)
+	{
+		require(!accounts[keccak256(abi.encodePacked(_addr))].set);
+		super.addAuthority(_addr, _signatures, _approvedUntil, _threshold);
 	}
 
 }

@@ -295,7 +295,7 @@ contract MultiSig {
 		uint32 _approvedUntil,
 		uint32 _threshold
 	)
-		external
+		public
 		returns (bool)
 	{
 		_onlyOwner();

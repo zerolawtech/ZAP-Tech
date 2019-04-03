@@ -78,7 +78,7 @@ def add_investor_id2():
     )
 
 def cust_auth_id():
-    '''custodian / authority collision'''
+    '''custodian / authority collisions'''
     issuer.addAuthority([a[-1]], [], 2000000000, 1, {'from': a[0]})
     id_ = issuer.getID(a[-1])
     cust.setID(id_, {'from': a[0]})
@@ -95,5 +95,4 @@ def cust_auth_id():
         ([a[-1]], [], 2000000000, 1, {'from': a[0]}),
         "dev: known ID"
     )
-    
-    
+

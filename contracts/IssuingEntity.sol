@@ -426,8 +426,8 @@ contract IssuingEntity is Modular, MultiSig {
 						if (!accounts[_id].set) {
 							accounts[_id].set = true;
 							accounts[_id].regKey = uint8(i);
-						} else {
-							require(accounts[_id].regKey == i);
+						} else if (accounts[_id].regKey != i) {
+							continue;
 						}
 						accounts[_id].regKey = uint8(i);
 						return _id;

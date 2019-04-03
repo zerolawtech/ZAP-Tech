@@ -809,6 +809,7 @@ contract IssuingEntity is Modular, MultiSig {
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
+		require(authorityData[_id].addressCount == 0, "dev: authority");
 		accounts[_id].restricted = !_allowed;
 		emit EntityRestriction(_id, _allowed);
 		return true;

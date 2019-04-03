@@ -99,7 +99,7 @@ interface INFTModule {
 		view
 		returns (bool);
 
-	/* 0x2d79c6d7 */
+	/* 0x2d79c6d7 taggable */
 	function checkTransferRange(
 		address[2] _addr,
 		bytes32 _authID,
@@ -112,7 +112,7 @@ interface INFTModule {
 		view
 		returns (bool);
 
-	/* 0xead529f5 */
+	/* 0xead529f5 taggable */
 	function transferTokenRange(
 		address[2] _addr,
 		bytes32[2] _id,

@@ -19,6 +19,22 @@ def zero_tokens():
         "Cannot send 0 tokens"
     )
 
+def overflow():
+    '''cannot send >2**48 tokens'''
+    check.reverts(
+        token.transfer,
+        (a[1], 2**49, {'from':a[0]}),
+        "Value too large"
+    )
+
+def to_self():
+    '''cannot send to self'''
+    check.reverts(
+        token.transfer,
+        (a[0], 100, {'from':a[0]}),
+        "Cannot send to self"
+    )
+
 def insufficient_balance_investor():
     '''insufficient balance - investor to investor'''
     token.transfer(a[1], 1000, {'from':a[0]})

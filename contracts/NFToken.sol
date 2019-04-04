@@ -308,9 +308,9 @@ contract NFToken is TokenBase  {
 		/* msg.sig = 0x15077ec8 */
 		if (!_checkPermitted()) return false;
 		require(_value > 0, "dev: mint 0");
-		require(upperBound + _value > upperBound);
-		require(upperBound + _value <= 2**48 - 2);
-		require(_time == 0 || _time > now);
+		require(upperBound + _value > upperBound, "dev: overflow");
+		require(upperBound + _value <= 2**48 - 2, "dev: upper bound");
+		require(_time == 0 || _time > now, "dev: time");
 		issuer.checkTransfer(address(issuer), address(issuer), _owner, false);
 		uint48 _start = uint48(upperBound + 1);
 		uint48 _stop = _start + _value;

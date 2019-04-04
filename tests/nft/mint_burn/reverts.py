@@ -25,6 +25,30 @@ def mint_zero():
         "dev: mint 0"
     )
 
+def mint_time():
+    '''mint - lock time < now'''
+    check.reverts(
+        token.mint,
+        (issuer, 1000, 1, "0x00", {'from': a[0]}),
+        "dev: time"
+    )
+
+def mint_overflow():
+    '''mint - overflows'''
+    token.modifyAuthorizedSupply(2**49, {'from': a[0]})
+    token.mint(issuer, (2**48)-10, 0, "0x00", {'from': a[0]})
+    check.reverts(
+        token.mint,
+        (issuer, 1000, 1, "0x00", {'from': a[0]}),
+        "dev: overflow"
+    )
+    check.reverts(
+        token.mint,
+        (issuer, 9, 1, "0x00", {'from': a[0]}),
+        "dev: upper bound"
+    )
+
+
 def burn_zero():
     '''burn 0 tokens'''
     check.reverts(

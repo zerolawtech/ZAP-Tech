@@ -13,14 +13,6 @@ def setup():
     issuer.setInvestorLimits([1,0,0,0,0,0,0,0], {'from':a[0]})
     token.transfer(a[1], 1000, {'from': a[0]})
 
-def receiver_blocked_rating():
-    '''receiver blocked - rating'''
-    issuer.setCountry(1, True, 3, [0]*8, {'from':a[0]})
-    check.reverts(
-        token.transfer,
-        (a[1], 1000, {'from': a[0]}),
-        "Receiver blocked: Rating"
-    )
 
 def total_investor_limit_blocked_issuer_investor():
     '''total investor limit - blocked, issuer to investor'''

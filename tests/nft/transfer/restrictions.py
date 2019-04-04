@@ -101,3 +101,22 @@ def authority_permission():
         "Authority not permitted"
     )
     token.transfer(a[-1], 100, {'from': a[1]})
+
+
+def receiver_blocked_rating():
+    '''receiver blocked - rating'''
+    issuer.setCountry(1, True, 3, [0]*8, {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[0]}),
+        "Receiver blocked: Rating"
+    )
+
+def receiver_blocked_country():
+    '''receiver blocked - country'''
+    issuer.setCountry(1, False, 1, [0]*8, {'from':a[0]})
+    check.reverts(
+        token.transfer,
+        (a[1], 1000, {'from': a[0]}),
+        "Receiver blocked: Country"
+    )

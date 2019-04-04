@@ -725,11 +725,11 @@ contract NFToken is TokenBase  {
 	{
 		_checkBounds(_start);
 		_checkBounds(_stop-1);
-		require(_start < _stop);
+		require(_start < _stop, "dev: stop < start");
 		uint48 _pointer = _getPointer(_stop-1);
 		require(rangeMap[_pointer].custodian == 0x00);
-		require(_pointer <= _start);
-		require(_checkTime(_pointer));
+		require(_pointer <= _start, "dev: multiple ranges");
+		require(_checkTime(_pointer), "dev: time");
 
 		address[2] memory _addr = [msg.sender, _to];
 		uint48[2] memory _range = [_start, _stop];
@@ -759,11 +759,11 @@ contract NFToken is TokenBase  {
 			_addr[1] = address(issuer);
 		}
 
-		require(_addr[0] != _addr[1], "Cannot send to self");
 		require(
 			_addr[0] == rangeMap[_pointer].owner,
 			"Sender does not own range"
 		);
+		require(_addr[0] != _addr[1], "Cannot send to self");
 
 		/* hook point for NFTModule.checkTransfer() */
 		require(_callModules(

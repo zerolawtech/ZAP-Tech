@@ -77,8 +77,8 @@ def balance_issuer():
 
 def authority_permission():
     '''issuer subauthority balances'''
-    tx = issuer.addAuthority([a[-1]], ["0xa9059cbb"], 2000000000, 1, {'from':a[0]})
-    id_ = tx.events[2]['data'][0]['value']
+    issuer.addAuthority([a[-1]], ["0xa9059cbb"], 2000000000, 1, {'from':a[0]})
+    id_ = issuer.getID(a[-1])
     token.transfer(a[1], 1000, {'from': a[-1]})
     check.equal(token.balanceOf(a[0]), 0)
     check.equal(token.balanceOf(a[-1]), 0)

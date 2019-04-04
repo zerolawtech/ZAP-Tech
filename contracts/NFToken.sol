@@ -860,6 +860,7 @@ contract NFToken is TokenBase  {
 					rangeMap[_prev].stop = rangeMap[_stop].stop;
 					_setRangePointers(_prev, _start, 0);
 					_setRangePointers(_stop, rangeMap[_stop].stop, 0);
+					_setRangePointers(_prev, rangeMap[_prev].stop, _prev);
 				}
 				delete rangeMap[_stop];
 				return;

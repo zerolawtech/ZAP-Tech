@@ -5,12 +5,13 @@ from scripts.deployment import main
 def setup():
     config['test']['always_transact'] = False
     main(NFToken)
-    global token, issuer
+    global token, issuer, upper
     token = NFToken[0]
     issuer = IssuingEntity[0]
     token.mint(a[1], 10000, 0, "0x00", {'from': a[0]})
     token.mint(a[2], 10000, 0, "0x00", {'from': a[0]})
     token.mint(a[3], 10000, 0, "0x00", {'from': a[0]})
+    upper = token.totalSupply()+1
 
 
 def check_bounds():

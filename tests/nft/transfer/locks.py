@@ -9,7 +9,7 @@ def setup():
     global token, issuer
     token = NFToken[0]
     issuer = IssuingEntity[0]
-    token.mint(issuer, 1000000, 0, "0x00", {'from': a[0]})
+    token.mint(issuer, 100000, 0, "0x00", {'from': a[0]})
 
 
 def global_lock():
@@ -66,7 +66,7 @@ def token_lock_issuer():
 
 def time():
     '''Block transfers with range time lock'''
-    token.mint(a[1], 10000, rpc.time() + 20, "0x00")
+    token.mint(a[1], 10000, rpc.time() + 20, "0x00", {'from': a[0]})
     check.reverts(
         token.transfer,
         (a[2], 1000, {'from': a[1]})
@@ -77,17 +77,17 @@ def time():
 
 def time_partial():
     '''Partially block a transfer with range time lock'''
-    token.mint(a[1], 10000, 0, "0x00")
-    token.modifyRanges(2001, 6001, rpc.time() + 20, "0x00")
-    check.true(token.getRange(2001)['_stop'] == 6001)
+    token.mint(a[1], 10000, 0, "0x00", {'from': a[0]})
+    token.modifyRanges(102001, 106001, rpc.time() + 20, "0x00", {'from': a[0]})
+    check.true(token.getRange(102001)['_stop'] == 106001)
     token.transfer(a[2], 4000, {'from': a[1]})
     check.equal(
         token.rangesOf(a[1]),
-        ((8001, 10001), (2001, 6001))
+        ((108001, 110001), (102001, 106001))
     )
     rpc.sleep(25)
     token.transfer(a[2], 6000, {'from': a[1]})
     check.equal(
         token.rangesOf(a[2]),
-        ((1, 10001),)
+        ((100001, 110001),)
     )

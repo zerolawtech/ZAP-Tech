@@ -307,7 +307,7 @@ contract NFToken is TokenBase  {
 	{
 		/* msg.sig = 0x15077ec8 */
 		if (!_checkPermitted()) return false;
-		require(_value > 0);
+		require(_value > 0, "dev: mint 0");
 		require(upperBound + _value > upperBound);
 		require(upperBound + _value <= 2**48 - 2);
 		require(_time == 0 || _time > now);
@@ -327,10 +327,11 @@ contract NFToken is TokenBase  {
 		balances[_owner].balance += _value;
 		totalSupply += _value;
 		upperBound += _value;
-		_modifyTotalSupply(_owner, _old);
+		require(totalSupply <= authorizedSupply, "dev: exceed auth");
 		emit RangeSet(_tag, _start, _stop, _time);
 		emit Transfer(0x00, msg.sender, _value);
 		emit TransferRange(0x00, msg.sender, _start, _stop, _value);
+		_modifyTotalSupply(_owner, _old);
 		return true;
 	}
 
@@ -344,7 +345,7 @@ contract NFToken is TokenBase  {
 	function burn(uint48 _start, uint48 _stop) external returns (bool) {
 		/* msg.sig = 0x9a0d378b */
 		if (!_checkPermitted()) return false;
-		require(_stop > _start);
+		require(_stop > _start, "dev: burn 0");
 		uint48 _pointer = _getPointer(_stop-1);
 		require(_pointer <= _start);
 		address _owner = rangeMap[_pointer].owner;
@@ -360,9 +361,9 @@ contract NFToken is TokenBase  {
 		totalSupply -= _value;
 		uint48 _old = balances[_owner].balance;
 		balances[_owner].balance -= _value;
-		_modifyTotalSupply(_owner, _old);
 		emit Transfer(_owner, 0x00, _value);
 		emit TransferRange(_owner, 0x00, _start, _stop, _value);
+		_modifyTotalSupply(_owner, _old);
 		rangeMap[_start].owner = 0x00;
 		return true;
 	}
@@ -1061,6 +1062,7 @@ contract NFToken is TokenBase  {
 			if (tokens[i] != 0x00) return tokens[i];
 			if (i % (_increment * 16) == 0) {
 				_increment *= 16;
+				require(i <= upperBound, "dev: exceeds upper bound");
 			}
 			i += _increment;
 		}

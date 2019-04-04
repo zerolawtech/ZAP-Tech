@@ -11,6 +11,7 @@ def setup():
     issuer = IssuingEntity[0]
     token.mint(issuer, 1000000, 0, "0x00", {'from': a[0]})
 
+
 def global_lock():
     '''global lock - investor / investor'''
     token.transfer(a[1], 1000, {'from': a[0]})
@@ -22,6 +23,7 @@ def global_lock():
     )
     issuer.setGlobalRestriction(True, {'from': a[0]})
     token.transfer(a[2], 1000, {'from': a[1]})
+
 
 def global_lock_issuer():
     '''global lock - issuer / investor'''
@@ -35,6 +37,7 @@ def global_lock_issuer():
     issuer.setGlobalRestriction(True, {'from': a[0]})
     token.transfer(a[0], 1000, {'from': a[1]})
 
+
 def token_lock():
     '''token lock - investor / investor'''
     token.transfer(a[1], 1000, {'from': a[0]})
@@ -47,6 +50,7 @@ def token_lock():
     issuer.setTokenRestriction(token, True, {'from': a[0]})
     token.transfer(a[2], 1000, {'from': a[1]})
 
+
 def token_lock_issuer():
     '''token lock - issuer / investor'''
     issuer.setTokenRestriction(token, False, {'from': a[0]})
@@ -58,3 +62,32 @@ def token_lock_issuer():
     )
     issuer.setTokenRestriction(token, True, {'from': a[0]})
     token.transfer(a[0], 1000, {'from': a[1]})
+
+
+def time():
+    '''Block transfers with range time lock'''
+    token.mint(a[1], 10000, rpc.time() + 20, "0x00")
+    check.reverts(
+        token.transfer,
+        (a[2], 1000, {'from': a[1]})
+    )
+    rpc.sleep(21)
+    token.transfer(a[2], 1000, {'from': a[1]})
+
+
+def time_partial():
+    '''Partially block a transfer with range time lock'''
+    token.mint(a[1], 10000, 0, "0x00")
+    token.modifyRanges(2001, 6001, rpc.time() + 20, "0x00")
+    check.true(token.getRange(2001)['_stop'] == 6001)
+    token.transfer(a[2], 4000, {'from': a[1]})
+    check.equal(
+        token.rangesOf(a[1]),
+        ((8001, 10001), (2001, 6001))
+    )
+    rpc.sleep(25)
+    token.transfer(a[2], 6000, {'from': a[1]})
+    check.equal(
+        token.rangesOf(a[2]),
+        ((1, 10001),)
+    )

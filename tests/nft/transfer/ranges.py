@@ -18,30 +18,6 @@ def simple():
     _transfer(0, 1, 123456)
 
 
-def fail():
-    '''Failed transfers'''
-    check.reverts(
-        token.transfer,
-        (a[1], 0, {'from': a[0]}),
-        # "Cannot send 0 tokens"    # when sending from the issuer, this throws from a safeMath check instead of the expected revert
-    )
-    check.reverts(
-        token.transfer,
-        (a[1], 1000001, {'from': a[0]}),
-        "Insufficient Balance"
-    )
-    check.reverts(
-        token.transfer,
-        (a[0], 1000, {'from': a[0]}),
-        "Cannot send to self"
-    )
-    check.reverts(
-        token.transfer,
-        (a[3], 10000, {'from': a[2]}),
-        "Insufficient Balance"
-    )
-
-
 def no_intersect():
     '''No intersection'''
     _transfer(0, 1, 10)

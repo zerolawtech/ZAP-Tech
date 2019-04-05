@@ -7,9 +7,11 @@ from scripts.deployment import main
 def setup():
     config['test']['always_transact'] = False
     main(SecurityToken)
-    global token, issuer
+    global token, issuer, cust
     token = SecurityToken[0]
     issuer = IssuingEntity[0]
+    cust = OwnedCustodian.deploy(a[0], [a[0]], 1)
+    issuer.addCustodian(cust, {'from': a[0]})
 
 def mint_zero():
     '''mint 0 tokens'''
@@ -83,3 +85,23 @@ def burn_exceeds_balance():
     check.reverts(token.burn, (issuer, 1001, {'from': a[0]}))
     token.burn(issuer, 1000, {'from': a[0]})
     check.reverts(token.burn, (issuer, 100, {'from': a[0]}))
+
+
+def mint_to_custodian():
+    '''mint to custodian'''
+    check.reverts(
+        token.mint,
+        (cust, 6000, {'from': a[0]}),
+        "dev: custodian"
+    )
+
+
+def burn_from_custodian():
+    '''burn from custodian'''
+    token.mint(issuer, 10000, {'from': a[0]})
+    token.transfer(cust, 10000, {'from': a[0]})
+    check.reverts(
+        token.burn,
+        (cust, 5000, {'from': a[0]}),
+        "dev: custodian"
+    )

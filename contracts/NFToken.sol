@@ -347,9 +347,10 @@ contract NFToken is TokenBase  {
 		if (!_checkPermitted()) return false;
 		require(_stop > _start, "dev: burn 0");
 		uint48 _pointer = _getPointer(_stop-1);
-		require(_pointer <= _start);
+		require(_pointer <= _start, "dev: multiple ranges");
+		require(rangeMap[_pointer].custodian == 0, "dev: custodian");
 		address _owner = rangeMap[_pointer].owner;
-		require(_owner != 0x00);
+		require(_owner != 0x00, "dev: already burnt");
 		if (rangeMap[_pointer].stop > _stop) {
 			_splitRange(_stop);
 		}

@@ -612,6 +612,7 @@ contract IssuingEntity is Modular, MultiSig {
 		if (_owner == address(this)) {
 			_id = ownerID;
 		} else {
+			require(accounts[idMap[_owner].id].custodian == 0, "dev: custodian");
 			bool _allowed;
 			uint8 _key = accounts[idMap[_owner].id].regKey;
 			(

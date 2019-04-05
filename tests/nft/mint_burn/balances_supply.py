@@ -21,6 +21,7 @@ def mint_to_issuer():
     check.equal(token.totalSupply(), 3000)
     check.equal(token.balanceOf(issuer), 3000)
 
+
 def mint_to_investors():
     '''mint to investors'''
     token.mint(a[1], 1000, 0, "0x00", {'from': a[0]})
@@ -39,6 +40,7 @@ def mint_to_investors():
     check.equal(token.balanceOf(a[1]), 4000)
     check.equal(token.balanceOf(a[2]), 6000)
 
+
 def burn_from_issuer():
     '''burn from issuer'''
     token.mint(issuer, 10000, 0, "0x00", {'from': a[0]})
@@ -51,6 +53,7 @@ def burn_from_issuer():
     token.burn(5001, 10001, {'from': a[0]})
     check.equal(token.totalSupply(), 0)
     check.equal(token.balanceOf(issuer), 0)
+
 
 def burn_from_investors():
     '''burn from investors'''
@@ -73,6 +76,7 @@ def burn_from_investors():
     check.equal(token.balanceOf(a[1]), 0)
     check.equal(token.balanceOf(a[2]), 0)
 
+
 def authorized_supply():
     '''modify authorized supply'''
     token.modifyAuthorizedSupply(10000, {'from': a[0]})
@@ -87,3 +91,18 @@ def authorized_supply():
     token.modifyAuthorizedSupply(2400000000, {'from': a[0]})
     check.equal(token.authorizedSupply(), 2400000000)
     check.equal(token.totalSupply(), 0)
+
+
+def mint_zero():
+    '''mint, burn, mint'''
+    token.mint(issuer, 10000, 0, "0x00", {'from': a[0]})
+    check.equal(token.totalSupply(), 10000)
+    token.burn(1, 10001, {'from': a[0]})
+    check.equal(token.totalSupply(), 0)
+    token.mint(issuer, 10000, 0, "0x00", {'from': a[0]})
+    check.equal(token.totalSupply(), 10000)
+    check.equal(token.rangesOf(issuer), ((10001, 20001,),))
+    check.equal(
+        token.getRange(1)[0],
+        '0x0000000000000000000000000000000000000000'
+    )

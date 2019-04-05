@@ -29,6 +29,7 @@ def verify_initial():
         []
     )
 
+
 def inside_one():
     '''inside, one token'''
     token.transferRange(a[4], 12000, 12001, {'from': a[2]})
@@ -50,6 +51,7 @@ def one_left():
         [(10001, 10002)]
     )
 
+
 def one_left_abs():
     '''one token, touch left, absolute'''
     token.transferRange(a[4], 1, 2, {'from': a[1]})
@@ -59,6 +61,7 @@ def one_left_abs():
         [(20001, 30001)],
         [(1, 2)]
     )
+
 
 def one_left_merge():
     '''one token, touch left, merge'''
@@ -71,6 +74,7 @@ def one_left_merge():
         [(1, 5000)]
     )
 
+
 def one_left_merge_abs():
     '''one token, touch left, merge, absolute'''
     token.transferRange(a[1], 10001, 10002, {'from': a[2]})
@@ -81,6 +85,7 @@ def one_left_merge_abs():
         []
     )
 
+
 def one_right():
     '''one token, touch right'''
     token.transferRange(a[4], 20000, 20001, {'from': a[2]})
@@ -90,6 +95,7 @@ def one_right():
         [(20001, 30001)],
         [(20000, 20001)]
     )
+
 
 def one_right_abs():
     '''one token, touch right, absolute'''
@@ -113,6 +119,7 @@ def one_right_merge():
         [(25000, 30001)]
     )
 
+
 def one_right_merge_abs():
     '''one token, touch right, merge absolute'''
     token.transferRange(a[3], 20000, 20001, {'from': a[2]})
@@ -122,6 +129,52 @@ def one_right_merge_abs():
         [(20000, 30001)],
         []
     )
+
+
+def create_one_start():
+    '''create one token range at start'''
+    token.transferRange(a[4], 10002, 12001, {'from': a[2]})
+    _check(
+        [(1, 10001)],
+        [(10001, 10002), (12001, 20001)],
+        [(20001, 30001)],
+        [(10002, 12001)]
+    )
+
+
+def create_one_start_abs():
+    '''create one token range at start, absolute'''
+    token.transferRange(a[4], 2, 1000, {'from': a[1]})
+    _check(
+        [(1, 2), (1000, 10001)],
+        [(10001, 20001)],
+        [(20001, 30001)],
+        [(2, 1000)]
+    )
+
+
+def create_one_end():
+    '''create one token range at end'''
+    token.transferRange(a[4], 19000, 20000, {'from': a[2]})
+    _check(
+        [(1, 10001)],
+        [(10001, 19000), (20000, 20001)],
+        [(20001, 30001)],
+        [(19000, 20000)]
+    )
+
+
+def create_one_end_abs():
+    '''create one token range at end, absolute'''
+    token.transferRange(a[4], 29000, 30000, {'from': a[3]})
+    _check(
+        [(1, 10001)],
+        [(10001, 20001)],
+        [(20001, 29000), (30000, 30001)],
+        [(29000, 30000)]
+    )
+
+
 
 
 def _check(*expected_ranges):

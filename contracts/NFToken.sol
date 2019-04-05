@@ -482,14 +482,16 @@ contract NFToken is TokenBase  {
 		_checkBounds(_stop-1);
 		require(_start < _stop);
 		require(_time == 0 || _time > now);
-		uint48 _pointer = _getPointer(_stop);
-		if (_pointer != _stop) {
-			Range storage r = rangeMap[_pointer];
-			if (r.tag != _tag || r.time != _time) {
-				_splitRange(_stop);
-			} else {
-				/* merge with next */
-				_stop = r.stop;
+		if (_stop < upperBound + 1) {
+			uint48 _pointer = _getPointer(_stop);
+			if (_pointer != _stop) {
+				Range storage r = rangeMap[_pointer];
+				if (r.tag != _tag || r.time != _time) {
+					_splitRange(_stop);
+				} else {
+					/* merge with next */
+					_stop = r.stop;
+				}
 			}
 		}
 		_pointer = _getPointer(_start);
@@ -1005,7 +1007,7 @@ contract NFToken is TokenBase  {
 		@param _split Index to split the range at
 	 */
 	function _splitRange(uint48 _split) internal {
-		if (tokens[_split] != 0) return;
+		if (tokens[_split-1] != 0 && tokens[_split] > tokens[_split-1]) return;
 		uint48 _pointer = _getPointer(_split);
 		Range storage r = rangeMap[_pointer];
 		uint48 _stop = r.stop;

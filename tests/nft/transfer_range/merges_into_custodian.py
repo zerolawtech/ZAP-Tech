@@ -13,7 +13,6 @@ def setup():
     token.mint(a[1], 10000, 0, "0x00", {'from': a[0]})
     token.mint(a[2], 10000, 0, "0x00", {'from': a[0]})
     token.mint(a[3], 10000, 0, "0x00", {'from': a[0]})
-    #token.transfer(cust, 1000, {'from': a[2]})
     
     upper = token.totalSupply()+1
     
@@ -25,7 +24,6 @@ def verify_initial():
         ([(1, 10001)], []),
         ([(10001, 20001)], []),
         ([(20001, 30001)], []),
-        ([], [])
     )
 
 def inside():
@@ -35,7 +33,7 @@ def inside():
         ([(1, 10001)], []),
         ([(10001, 12000),(13000,20001)], [(12000, 13000)]),
         ([(20001, 30001)], []),
-        ([], [])
+
     )
 
 def start_partial_different():
@@ -44,33 +42,30 @@ def start_partial_different():
     _check(
         ([(1, 10001)], []),
         ([(11001, 20001)], [(10001, 11001)]),
-        ([(20001, 30001)], []),
-        ([], [])
+        ([(20001, 30001)], [])
     )
 
 def start_partial_same():
     '''partial, touch start, merge, absolute'''
     token.transferRange(cust, 1, 10001, {'from': a[1]})
-    token.transferRange(a[1], 10001, 11001, {'from': a[2]})
+    token.transferRange(a[1], 10001, 20001, {'from': a[2]})
     token.transferRange(cust, 10001, 11001, {'from': a[1]})
     
     _check(
-        ([], [(1, 11001)]),
-        ([(11001, 20001)], []),
-        ([(20001, 30001)], []),
-        ([], [])
+        ([(11001, 20001)], [(1, 11001)]),
+        ([], []),
+        ([(20001, 30001)], [])
     )
 
 def start_partial_same_abs():
     '''partial, touch start, merge'''
     token.transferRange(cust, 5000, 10001, {'from': a[1]})
-    token.transferRange(a[1], 10001, 11001, {'from': a[2]})
+    token.transferRange(a[1], 10001, 20001, {'from': a[2]})
     token.transferRange(cust, 10001, 11001, {'from': a[1]})
     _check(
-        ([(1, 5000)], [(5000, 11001)]),
-        ([(11001, 20001)], []),
-        ([(20001, 30001)], []),
-        ([], [])
+        ([(1, 5000), (11001, 20001)], [(5000, 11001)]),
+        ([], []),
+        ([(20001, 30001)], [])
     )
 
 def start_absolute():
@@ -79,51 +74,51 @@ def start_absolute():
     _check(
         ([(100, 10001)], [(1, 100)]),
         ([(10001, 20001)], []),
-        ([(20001, 30001)], []),
-        ([], [])
+        ([(20001, 30001)], [])
     )
 
-# def stop_partial_different():
-#     '''partial, touch stop, no merge'''
-#     token.transferRange(a[4], 19000, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 10001)],
-#         [(10001, 19000)],
-#         [(20001, 30001)],
-#         [(19000, 20001)]
-#     )
-    
+def stop_partial_different():
+    '''partial, touch stop, no merge'''
+    token.transferRange(cust, 19000, 20001, {'from': a[2]})
+    _check(
+        ([(1, 10001)], []),
+        ([(10001, 19000)], [(19000, 20001)]),
+        ([(20001, 30001)], [])
+    )
 
-# def stop_partial_same_abs():
-#     '''partial, touch stop, merge, absolute'''
-#     token.transferRange(a[3], 19000, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 10001)],
-#         [(10001, 19000)],
-#         [(19000, 30001)],
-#         []
-#     )
+def stop_partial_same_abs():
+    '''partial, touch stop, merge, absolute'''
+    token.transferRange(cust, 20001, 30001, {'from': a[3]})
+    token.transferRange(a[3], 10001, 20001, {'from': a[2]})
+    token.transferRange(cust, 19000, 20001, {'from': a[3]})
+    _check(
+        ([(1, 10001)], []),
+        ([], []),
+        ([(10001, 19000)], [(19000, 30001)])
+    )
 
-# def stop_partial_same():
-#     '''partial, touch stop, merge'''
-#     token.transferRange(a[1], 25000, 30001, {'from': a[3]})
-#     token.transferRange(a[3], 19000, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 10001),(25000, 30001)],
-#         [(10001, 19000)],
-#         [(19000, 25000)],
-#         []
-#     )
 
-# def stop_absolute():
-#     '''partial, touch stop, absolute'''
-#     token.transferRange(a[4], 29000, 30001, {'from': a[3]})
-#     _check(
-#         [(1, 10001)],
-#         [(10001, 20001)],
-#         [(20001, 29000)],
-#         [(29000, 30001)]
-#     )
+def stop_partial_same():
+    '''partial, touch stop, merge'''
+    token.transferRange(cust, 20001, 25000, {'from': a[3]})
+    token.transferRange(a[3], 10001, 20001, {'from': a[2]})
+    token.transferRange(cust, 19000, 20001, {'from': a[3]})
+    _check(
+        ([(1, 10001)], []),
+        ([], []),
+        ([(10001, 19000), (25000, 30001)], [(19000, 25000)])
+    )
+
+
+def stop_absolute():
+    '''partial, touch stop, absolute'''
+    token.transferRange(cust, 29000, 30001, {'from': a[3]})
+    _check(
+        ([(1, 10001)], []),
+        ([(10001, 20001)], []),
+        ([(20001, 29000)], [(29000, 30001)]),
+    )
+
 
 def whole_range_different():
     '''whole range, no merge'''
@@ -131,55 +126,61 @@ def whole_range_different():
     _check(
         ([(1, 10001)], []),
         ([], [(10001, 20001)]),
-        ([(20001, 30001)], []),
-        ([], [])
+        ([(20001, 30001)], [])
     )
 
 
-# def whole_range_same():
-#     '''whole range, merge both sides'''
-#     token.transferRange(a[3], 5000, 10001, {'from': a[1]})
-#     token.transferRange(a[1], 25001, 30001, {'from': a[3]})
-#     token.transferRange(a[3], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 5000), (25001, 30001)],
-#         [],
-#         [(5000, 25001)],
-#         []
-#     )
+def whole_range_same():
+    '''whole range, merge both sides'''
+    token.transferRange(a[2], 5000, 10001, {'from': a[1]})
+    token.transferRange(a[2], 20001, 25000, {'from': a[3]})
+    token.transferRange(cust, 5000, 10001, {'from': a[2]})
+    token.transferRange(cust, 20001, 25000, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    _check(
+        ([(1, 5000)], []),
+        ([], [(5000, 25000)]),
+        ([(25000, 30001)], [])
+    )
 
-# def whole_range_same_left():
-#     '''whole range, merge both sides, absolute left'''
-#     token.transferRange(a[1], 20001, 25000, {'from': a[3]})
-#     token.transferRange(a[1], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 25000)],
-#         [],
-#         [(25000, 30001)],
-#         []
-#     )
+def whole_range_same_left():
+    '''whole range, merge both sides, absolute left'''
+    token.transferRange(a[2], 1, 10001, {'from': a[1]})
+    token.transferRange(a[2], 20001, 25000, {'from': a[3]})
+    token.transferRange(cust, 1, 10001, {'from': a[2]})
+    token.transferRange(cust, 20001, 25000, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    _check(
+        ([], []),
+        ([], [(1, 25000)]),
+        ([(25000, 30001)], [])
+    )
 
-# def whole_range_same_right():
-#     '''whole range, merge both sides, absolute right'''
-#     token.transferRange(a[3], 5000, 10001, {'from': a[1]})
-#     token.transferRange(a[3], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 5000)],
-#         [],
-#         [(5000, 30001)],
-#         []
-#     )
+def whole_range_same_right():
+    '''whole range, merge both sides, absolute right'''
+    token.transferRange(a[2], 5000, 10001, {'from': a[1]})
+    token.transferRange(a[2], 20001, 30001, {'from': a[3]})
+    token.transferRange(cust, 5000, 10001, {'from': a[2]})
+    token.transferRange(cust, 20001, 30001, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    _check(
+        ([(1, 5000)], []),
+        ([], [(5000, 30001)]),
+        ([], [])
+    )
 
-# def whole_range_same_both():
-#     '''whole range, merge both sides, absolute both'''
-#     token.transferRange(a[3], 1, 10001, {'from': a[1]})
-#     token.transferRange(a[3], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [],
-#         [],
-#         [(1, 30001)],
-#         []
-#     )
+def whole_range_same_both():
+    '''whole range, merge both sides, absolute both'''
+    token.transferRange(a[2], 1, 10001, {'from': a[1]})
+    token.transferRange(a[2], 20001, 30001, {'from': a[3]})
+    token.transferRange(cust, 1, 10001, {'from': a[2]})
+    token.transferRange(cust, 20001, 30001, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    _check(
+        ([], []),
+        ([], [(1, 30001)]),
+        ([], [])
+    )
 
 
 def whole_range_left_abs():
@@ -190,8 +191,7 @@ def whole_range_left_abs():
     _check(
         ([], [(1, 20001)]),
         ([], []),
-        ([(20001, 30001)], []),
-        ([], [])
+        ([(20001, 30001)], [])
     )
 
 def whole_range_left():
@@ -202,30 +202,30 @@ def whole_range_left():
     _check(
         ([(1, 5000)], [(5000, 20001)]),
         ([], []),
-        ([(20001, 30001)], []),
+        ([(20001, 30001)], [])
+    )
+
+def whole_range_right_abs():
+    '''whole range, merge right, absolute'''
+    token.transferRange(a[2], 20001, 30001, {'from': a[3]})
+    token.transferRange(cust, 20001, 30001, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    _check(
+        ([(1, 10001)], []),
+        ([], [(10001, 30001)]),
         ([], [])
     )
 
-# def whole_range_right_abs():
-#     '''whole range, merge right, absolute'''
-#     token.transferRange(a[3], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 10001)],
-#         [],
-#         [(10001, 30001)],
-#         []
-#     )
-
-# def whole_range_right():
-#     '''whole range, merge right'''
-#     token.transferRange(a[1], 25001, 30001, {'from': a[3]})
-#     token.transferRange(a[3], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 10001), (25001, 30001)],
-#         [],
-#         [(10001, 25001)],
-#         []
-#     )
+def whole_range_right():
+    '''whole range, merge right'''
+    token.transferRange(a[2], 20001, 25000, {'from': a[3]})
+    token.transferRange(cust, 20001, 25000, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    _check(
+        ([(1, 10001)], []),
+        ([], [(10001, 25000)]),
+        ([(25000, 30001)], [])
+    )
 
 def _check(*expected_ranges):
     check.equal(

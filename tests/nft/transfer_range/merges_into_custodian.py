@@ -31,8 +31,6 @@ def verify_initial():
 def inside():
     '''inside'''
     token.transferRange(cust, 12000, 13000, {'from': a[2]})
-    print(token.balanceOf(a[2]))
-    print(token.custodianBalanceOf(a[2], cust))
     _check(
         ([(1, 10001)], []),
         ([(10001, 12000),(13000,20001)], [(12000, 13000)]),
@@ -40,15 +38,15 @@ def inside():
         ([], [])
     )
 
-# def start_partial_different():
-#     '''partial, touch start, no merge'''
-#     token.transferRange(a[4], 10001, 11001, {'from': a[2]})
-#     _check(
-#         [(1, 10001)],
-#         [(11001, 20001)],
-#         [(20001, 30001)],
-#         [(10001, 11001)]
-#     )
+def start_partial_different():
+    '''partial, touch start, no merge'''
+    token.transferRange(cust, 10001, 11001, {'from': a[2]})
+    _check(
+        ([(1, 10001)], []),
+        ([(11001, 20001)], [(10001, 11001)]),
+        ([(20001, 30001)], []),
+        ([], [])
+    )
 
 # def start_partial_same():
 #     '''partial, touch start, merge, absolute'''

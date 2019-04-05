@@ -859,9 +859,10 @@ contract NFToken is TokenBase  {
 	)
 		internal
 	{
-		uint48 _rangeStop = rangeMap[_pointer].stop;
+		Range storage r = rangeMap[_pointer];
+		uint48 _rangeStop = r.stop;
 		uint48 _prev = tokens[_start-1];
-		bytes2 _tag = rangeMap[_pointer].tag;
+		bytes2 _tag = r.tag;
 		emit TransferRange(_from, _to, _start, _stop, _stop-_start);
 
 		if (_pointer == _start) {
@@ -874,10 +875,10 @@ contract NFToken is TokenBase  {
 				if (!_left && !_right) {
 					_replaceInBalanceRange(_to, 0, _start);
 					if (_from != _to) {
-						rangeMap[_pointer].owner = _to;
+						r.owner = _to;
 					}
-					if (rangeMap[_pointer].custodian != _custodian) {
-						rangeMap[_pointer].custodian = _custodian;
+					if (r.custodian != _custodian) {
+						r.custodian = _custodian;
 					}
 					return;
 				}
@@ -907,9 +908,10 @@ contract NFToken is TokenBase  {
 			}
 
 			/* touches left */
-			delete rangeMap[_pointer];
 			_setRangePointers(_start, _rangeStop, 0);
+			_setRange(_stop, _from, _rangeStop, 0, _tag, r.custodian);
 			_replaceInBalanceRange(_from, _start, _stop);
+			delete rangeMap[_pointer];
 
 			/* same owner left */
 			if (_compareRanges(_prev, _to, 0, _tag, _custodian)) {
@@ -919,13 +921,12 @@ contract NFToken is TokenBase  {
 				_replaceInBalanceRange(_to, 0, _start);
 			}
 			_setRange(_start, _to, _stop, 0, _tag, _custodian);
-			_setRange(_stop, _from, _rangeStop, 0, _tag, _custodian);
 			return;
 		}
 
 		/* shared logic - touches right and touches nothing */
 		_setRangePointers(_pointer, _rangeStop, 0);
-		rangeMap[_pointer].stop = _start;
+		r.stop = _start;
 		_setRangePointers(_pointer, _start, _pointer);
 
 		/* touches right */
@@ -948,7 +949,7 @@ contract NFToken is TokenBase  {
 		_replaceInBalanceRange(_to, 0, _start);
 		_setRange(_start, _to, _stop, 0, _tag, _custodian);
 		_replaceInBalanceRange(_from, 0, _stop);
-		_setRange(_stop, _from, _rangeStop, 0, _tag, _custodian);
+		_setRange(_stop, _from, _rangeStop, 0, _tag, r.custodian);
 	}
 
 	/**

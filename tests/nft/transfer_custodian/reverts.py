@@ -49,3 +49,13 @@ def cust_to_cust():
 def mint():
     '''mint to custodian'''
     check.reverts(token.mint, (cust, 1000, 0, "0x00", {'from': a[0]}))
+
+
+def transfer_range():
+    '''transfer range - custodian'''
+    token.transferRange(cust, 100, 1000, {'from': a[0]})
+    check.reverts(
+        token.transferRange,
+        (a[0], 100, 1000, {'from': a[0]}),
+        "dev: custodian"
+    )

@@ -766,7 +766,7 @@ contract NFToken is TokenBase  {
 		_checkBounds(_stop-1);
 		require(_start < _stop, "dev: stop < start");
 		uint48 _pointer = _getPointer(_stop-1);
-		require(rangeMap[_pointer].custodian == 0x00);
+		require(rangeMap[_pointer].custodian == 0x00, "dev: custodian");
 		require(_pointer <= _start, "dev: multiple ranges");
 		require(_checkTime(_pointer), "dev: time");
 

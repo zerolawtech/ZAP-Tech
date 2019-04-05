@@ -25,6 +25,7 @@ def into_custodian():
     check.equal(token.custodianBalanceOf(a[1], cust), 4000)
     check.equal(token.balanceOf(a[2]), 0)
     check.equal(token.custodianBalanceOf(a[2], cust), 10000)
+    check.equal(token.balanceOf(cust), 14000)
 
 def cust_internal():
     '''Custodian transfer internal - investor to investor'''
@@ -35,6 +36,7 @@ def cust_internal():
     check.equal(token.custodianBalanceOf(a[1], cust), 0)
     check.equal(token.balanceOf(a[3]), 0)
     check.equal(token.custodianBalanceOf(a[3], cust), 5000)
+    check.equal(token.balanceOf(cust), 5000)
 
 
 def cust_out():
@@ -47,6 +49,7 @@ def cust_out():
     check.equal(token.custodianBalanceOf(a[1], cust), 0)
     check.equal(token.balanceOf(a[2]), 10000)
     check.equal(token.custodianBalanceOf(a[2], cust), 0)
+    check.equal(token.balanceOf(cust), 0)
 
 def issuer_cust_in():
     '''Transfers into custodian - issuer'''
@@ -55,11 +58,13 @@ def issuer_cust_in():
     check.equal(token.custodianBalanceOf(a[0], cust), 0)
     check.equal(token.balanceOf(issuer), 90000)
     check.equal(token.custodianBalanceOf(issuer, cust), 10000)
+    check.equal(token.balanceOf(cust), 10000)
     token.transfer(cust, 90000, {'from': a[0]})
     check.equal(token.balanceOf(a[0]), 0)
     check.equal(token.custodianBalanceOf(a[0], cust), 0)
     check.equal(token.balanceOf(issuer), 0)
     check.equal(token.custodianBalanceOf(issuer, cust), 100000)
+    check.equal(token.balanceOf(cust), 100000)
 
 def issuer_cust_internal():
     '''Custodian internal transfers - issuer / investor'''
@@ -71,6 +76,7 @@ def issuer_cust_internal():
     check.equal(token.custodianBalanceOf(issuer, cust), 0)
     check.equal(token.balanceOf(a[1]), 0)
     check.equal(token.custodianBalanceOf(a[1], cust), 10000)
+    check.equal(token.balanceOf(cust), 10000)
     cust.transferInternal(token, a[1], issuer, 5000, {'from': a[0]})
     check.equal(token.balanceOf(a[0]), 0)
     check.equal(token.custodianBalanceOf(a[0], cust), 0)
@@ -78,6 +84,7 @@ def issuer_cust_internal():
     check.equal(token.custodianBalanceOf(issuer, cust), 5000)
     check.equal(token.balanceOf(a[1]), 0)
     check.equal(token.custodianBalanceOf(a[1], cust), 5000)
+    check.equal(token.balanceOf(cust), 10000)
     cust.transferInternal(token, a[1], a[0], 5000, {'from': a[0]})
     check.equal(token.balanceOf(a[0]), 0)
     check.equal(token.custodianBalanceOf(a[0], cust), 0)
@@ -85,6 +92,7 @@ def issuer_cust_internal():
     check.equal(token.custodianBalanceOf(issuer, cust), 10000)
     check.equal(token.balanceOf(a[1]), 0)
     check.equal(token.custodianBalanceOf(a[1], cust), 0)
+    check.equal(token.balanceOf(cust), 10000)
 
 def issuer_cust_out():
     '''Transfers out of custodian - issuer'''
@@ -93,13 +101,16 @@ def issuer_cust_out():
     check.equal(token.custodianBalanceOf(a[0], cust), 0)
     check.equal(token.balanceOf(issuer), 90000)
     check.equal(token.custodianBalanceOf(issuer, cust), 10000)
+    check.equal(token.balanceOf(cust), 10000)
     cust.transfer(token, issuer, 3000, {'from': a[0]})
     check.equal(token.balanceOf(a[0]), 0)
     check.equal(token.custodianBalanceOf(a[0], cust), 0)
     check.equal(token.balanceOf(issuer), 93000)
     check.equal(token.custodianBalanceOf(issuer, cust), 7000)
+    check.equal(token.balanceOf(cust), 7000)
     cust.transfer(token, a[0], 7000, {'from': a[0]})
     check.equal(token.balanceOf(a[0]), 0)
     check.equal(token.custodianBalanceOf(a[0], cust), 0)
     check.equal(token.balanceOf(issuer), 100000)
     check.equal(token.custodianBalanceOf(issuer, cust), 0)
+    check.equal(token.balanceOf(cust), 0)

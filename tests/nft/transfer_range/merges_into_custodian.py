@@ -48,36 +48,40 @@ def start_partial_different():
         ([], [])
     )
 
-# def start_partial_same():
-#     '''partial, touch start, merge, absolute'''
-#     token.transferRange(a[1], 10001, 11001, {'from': a[2]})
-#     _check(
-#         [(1, 11001)],
-#         [(11001, 20001)],
-#         [(20001, 30001)],
-#         []
-#     )
+def start_partial_same():
+    '''partial, touch start, merge, absolute'''
+    token.transferRange(cust, 1, 10001, {'from': a[1]})
+    token.transferRange(a[1], 10001, 11001, {'from': a[2]})
+    token.transferRange(cust, 10001, 11001, {'from': a[1]})
+    
+    _check(
+        ([], [(1, 11001)]),
+        ([(11001, 20001)], []),
+        ([(20001, 30001)], []),
+        ([], [])
+    )
 
-# def start_partial_same_abs():
-#     '''partial, touch start, merge'''
-#     token.transferRange(a[3], 1, 5000, {'from': a[1]})
-#     token.transferRange(a[1], 10001, 11001, {'from': a[2]})
-#     _check(
-#         [(5000, 11001)],
-#         [(11001, 20001)],
-#         [(1, 5000), (20001, 30001)],
-#         []
-#     )
+def start_partial_same_abs():
+    '''partial, touch start, merge'''
+    token.transferRange(cust, 5000, 10001, {'from': a[1]})
+    token.transferRange(a[1], 10001, 11001, {'from': a[2]})
+    token.transferRange(cust, 10001, 11001, {'from': a[1]})
+    _check(
+        ([(1, 5000)], [(5000, 11001)]),
+        ([(11001, 20001)], []),
+        ([(20001, 30001)], []),
+        ([], [])
+    )
 
-# def start_absolute():
-#     '''touch start, absolute'''
-#     token.transferRange(a[4], 1, 100, {'from': a[1]})
-#     _check(
-#         [(100, 10001)],
-#         [(10001, 20001)],
-#         [(20001, 30001)],
-#         [(1,100)]
-#     )
+def start_absolute():
+    '''touch start, absolute'''
+    token.transferRange(cust, 1, 100, {'from': a[1]})
+    _check(
+        ([(100, 10001)], [(1, 100)]),
+        ([(10001, 20001)], []),
+        ([(20001, 30001)], []),
+        ([], [])
+    )
 
 # def stop_partial_different():
 #     '''partial, touch stop, no merge'''
@@ -121,15 +125,15 @@ def start_partial_different():
 #         [(29000, 30001)]
 #     )
 
-# def whole_range_different():
-#     '''whole range, no merge'''
-#     token.transferRange(a[4], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 10001)],
-#         [],
-#         [(20001, 30001)],
-#         [(10001, 20001)]
-#     )
+def whole_range_different():
+    '''whole range, no merge'''
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    _check(
+        ([(1, 10001)], []),
+        ([], [(10001, 20001)]),
+        ([(20001, 30001)], []),
+        ([], [])
+    )
 
 
 # def whole_range_same():
@@ -178,26 +182,29 @@ def start_partial_different():
 #     )
 
 
-# def whole_range_left_abs():
-#     '''whole range, merge left, absolute'''
-#     token.transferRange(a[1], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(1, 20001)],
-#         [],
-#         [(20001, 30001)],
-#         []
-#     )
+def whole_range_left_abs():
+    '''whole range, merge left, absolute'''
+    token.transferRange(cust, 1, 10001, {'from': a[1]})
+    token.transferRange(a[1], 10001, 20001, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[1]})
+    _check(
+        ([], [(1, 20001)]),
+        ([], []),
+        ([(20001, 30001)], []),
+        ([], [])
+    )
 
-# def whole_range_left():
-#     '''whole range, merge left'''
-#     token.transferRange(a[3], 1, 5001, {'from': a[1]})
-#     token.transferRange(a[1], 10001, 20001, {'from': a[2]})
-#     _check(
-#         [(5001, 20001)],
-#         [],
-#         [(1, 5001), (20001, 30001)],
-#         []
-#     )
+def whole_range_left():
+    '''whole range, merge left'''
+    token.transferRange(cust, 5000, 10001, {'from': a[1]})
+    token.transferRange(a[1], 10001, 20001, {'from': a[2]})
+    token.transferRange(cust, 10001, 20001, {'from': a[1]})
+    _check(
+        ([(1, 5000)], [(5000, 20001)]),
+        ([], []),
+        ([(20001, 30001)], []),
+        ([], [])
+    )
 
 # def whole_range_right_abs():
 #     '''whole range, merge right, absolute'''

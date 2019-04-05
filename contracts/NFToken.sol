@@ -127,7 +127,8 @@ contract NFToken is TokenBase  {
 		address _custodian
 	)
 		external
-		view returns
+		view
+		returns
 		(uint48[2][])
 	{
 		return _rangesOf(_owner, _custodian);
@@ -150,7 +151,9 @@ contract NFToken is TokenBase  {
 		Balance storage b = balances[_owner];
 		uint256 _count;
 		for (uint256 i; i < b.ranges.length; i++) {
-			if (b.ranges[i] != 0) _count++;
+			if (b.ranges[i] == 0) continue;
+			if (rangeMap[b.ranges[i]].custodian != _custodian) continue;
+			_count++;
 		}
 		uint48[2][] memory _ranges = new uint48[2][](_count);
 		_count = 0;
@@ -823,6 +826,7 @@ contract NFToken is TokenBase  {
 			_cust = _addr[1];
 			_addr[1] = _addr[0];
 			custBalances[_addr[0]][_cust] += _value;
+			balances[_cust].balance += _value;
 		} else {
 			balances[_addr[1]].balance += _value;
 		}

@@ -2,12 +2,12 @@
     "network_defaults":{
         "name": "development",
         "persist": false,
-        "gas_limit": 6700000,
+        "gas_limit": 8000000,
         "gas_price": false
     },
     "networks": {
         "development": {
-            "test-rpc": "ganache-cli -a 25 -m wallets",
+            "test-rpc": "ganache-cli -a 25 -m wallets --allowUnlimitedContractSize --gasLimit 8000000",
             "host": "http://127.0.0.1:8545"
         },
         "ropsten": {
@@ -17,7 +17,7 @@
     },
     "test":{
         "always_transact": true,
-        "gas_limit": 6700000,
+        "gas_limit": 8000000,
         "default_contract_owner": false
     },
     "solc":{

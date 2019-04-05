@@ -113,6 +113,40 @@ contract NFToken is TokenBase  {
 		@return Array of [(start, stop),..]
 	 */
 	function rangesOf(address _owner) external view returns (uint48[2][]) {
+		return _rangesOf(_owner, 0x00);
+	}
+
+	/**
+		@notice Fetch the token ranges owned by an address and held by a custodian
+		@param _owner Address to query
+		@param _custodian Address of custodian
+		@return Array of [(start, stop),..]
+	 */
+	function custodianRangesOf(
+		address _owner,
+		address _custodian
+	)
+		external
+		view returns
+		(uint48[2][])
+	{
+		return _rangesOf(_owner, _custodian);
+	}
+
+	/**
+		@notice Internal - shared logic for rangesOf and custodianRangesOf
+		@param _owner Address to query
+		@param _custodian Address of custodian
+		@return Array of [(start, stop),..]
+	 */
+	function _rangesOf(
+		address _owner,
+		address _custodian
+	)
+		internal
+		view
+		returns (uint48[2][])
+	{
 		Balance storage b = balances[_owner];
 		uint256 _count;
 		for (uint256 i; i < b.ranges.length; i++) {
@@ -122,6 +156,7 @@ contract NFToken is TokenBase  {
 		_count = 0;
 		for (i = 0; i < b.ranges.length; i++) {
 			if (b.ranges[i] == 0) continue;
+			if (rangeMap[b.ranges[i]].custodian != _custodian) continue;
 			_ranges[_count] = [b.ranges[i], rangeMap[b.ranges[i]].stop];
 			_count++;
 		}

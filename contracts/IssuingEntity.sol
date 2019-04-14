@@ -392,12 +392,7 @@ contract IssuingEntity is Modular, MultiSig {
 		@param _addr Investor address
 		@return bytes32 investor ID
 	 */
-	function _getID(
-		address _addr
-	)
-		internal
-		returns (bytes32 _id)
-	{
+	function _getID(address _addr) internal returns (bytes32 _id) {
 		_id = idMap[_addr].id;
 		if (authorityData[_id].addressCount > 0) {
 			require(!idMap[_addr].restricted, "Restricted Authority Address");
@@ -409,10 +404,6 @@ contract IssuingEntity is Modular, MultiSig {
 				!registrars[accounts[_id].regKey].restricted
 			) || accounts[_id].custodian != 0
 		) {
-			// IF SOMETHING BREAKS, UNCOMMENT ME!
-			//if (_addr != 0 && _map.id == 0) {
-			//	_map.id = _id;
-			//}
 			return _id;
 		}
 		if (_id == 0) {
@@ -421,7 +412,6 @@ contract IssuingEntity is Modular, MultiSig {
 					_id = registrars[i].addr.getID(_addr);
 					/* prevent investor / authority ID collisions */
 					if (_id != 0 && authorityData[_id].addressCount == 0) {
-						// TODO
 						idMap[_addr].id = _id;
 						if (!accounts[_id].set) {
 							accounts[_id].set = true;
@@ -449,8 +439,8 @@ contract IssuingEntity is Modular, MultiSig {
 	/**
 		@notice Internal function for fetching investor data from registrars
 		@dev Either _addr or _id may be given as an empty array
-		@param _addr array of investor addresses
 		@param _id Array of investor IDs
+		@param _addr array of investor addresses
 		@param _key array of registrar indexes
 		@return permissions, ratings, and countries of investors
 	 */

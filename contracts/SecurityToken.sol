@@ -26,7 +26,7 @@ contract SecurityToken is TokenBase {
 		@param _authorizedSupply Initial authorized token supply
 	 */
 	constructor(
-		address _issuer,
+		IssuingEntity _issuer,
 		string _name,
 		string _symbol,
 		uint256 _authorizedSupply
@@ -91,13 +91,13 @@ contract SecurityToken is TokenBase {
 		@dev
 			seperate from _checkTransferView so it can be called by transfer
 			related functions without the call to issuer.checkTransfer
-		@param _addr address array of investors 
 		@param _authID ID of caller
 		@param _id ID array of investor IDs
+		@param _cust Custodian address (0x00 if none)
+		@param _addr address array of investors
 		@param _rating array of investor ratings
 		@param _country array of investor countries
 		@param _value Amount being transferred
-		@param _cust Custodian address (0x00 if none)
 		@return array of investor addresses
 	 */
 	function _checkTransfer(

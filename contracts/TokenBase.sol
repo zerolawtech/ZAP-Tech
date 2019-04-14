@@ -24,7 +24,6 @@ contract TokenBase is Modular {
 
 	/* token holder, custodian contract */
 	mapping (address => mapping (address => uint256)) custBalances;
-
 	mapping (address => mapping (address => uint256)) allowed;
 
 	event Transfer(address indexed from, address indexed to, uint tokens);
@@ -49,15 +48,15 @@ contract TokenBase is Modular {
 		@param _authorizedSupply Initial authorized token supply
 	 */
 	constructor(
-		address _issuer,
+		IssuingEntity _issuer,
 		string _name,
 		string _symbol,
 		uint256 _authorizedSupply
 	)
 		public
 	{
-		issuer = IssuingEntity(_issuer);
-		ownerID = issuer.ownerID();
+		issuer = _issuer;
+		ownerID = _issuer.ownerID();
 		name = _name;
 		symbol = _symbol;
 		authorizedSupply = _authorizedSupply;
@@ -80,6 +79,9 @@ contract TokenBase is Modular {
 		return balanceOf(address(issuer));
 	}
 
+	/**
+		@dev Implemented in inheriting contracts
+	 */
 	function balanceOf(address) public view returns (uint256);
 
 	/**
@@ -133,7 +135,6 @@ contract TokenBase is Modular {
 		view
 		returns (bool)
 	{
-
 		_checkTransferView(0x00, _from, _to, _value, _value == balanceOf(_from));
 		return true;
 	}

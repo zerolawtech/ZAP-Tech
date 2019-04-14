@@ -234,6 +234,7 @@ contract KYCBase {
 
 	/**
 		@notice Check if an an investor is permitted based on ID
+		@dev Implemented in inheritted contracts
 		@param _id Investor ID to query
 		@return bool permission
 	 */

@@ -51,7 +51,7 @@ contract NFToken is TokenBase  {
 		@param _authorizedSupply Initial authorized token supply
 	 */
 	constructor(
-		address _issuer,
+		IssuingEntity _issuer,
 		string _name,
 		string _symbol,
 		uint256 _authorizedSupply
@@ -279,8 +279,8 @@ contract NFToken is TokenBase  {
 		@notice Find ranges that are permitted to transfer
 		@param _authID ID of calling authority
 		@param _id Array of investor IDs
-		@param _addr Investor address array
 		@param _cust Custodian address
+		@param _addr Investor address array
 		@param _rating Investor rating array
 		@param _country Investor country array
 		@param _value Value of transfer

@@ -12,6 +12,7 @@ contract ModuleBase {
 	bytes32 public ownerID;
 	address owner;
 
+	/** @dev Check that call originates from approved authority, allows multisig */
 	function _onlyAuthority() internal returns (bool) {
 		return MultiSig(owner).checkMultiSigExternal(
 			msg.sender,
@@ -39,7 +40,10 @@ contract ModuleBase {
 
 }
 
-/** @title SecurityToken Module Base Contract */
+/**
+	@title Token Module Base Contract
+	@dev Inherited contract for all SecurityToken or NFToken modules
+ */
 contract STModuleBase is ModuleBase {
 
 	SecurityToken public token;

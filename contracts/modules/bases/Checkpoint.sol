@@ -4,6 +4,10 @@ import "../../open-zeppelin/SafeMath.sol";
 import "./Module.sol";
 import "../../interfaces/IBaseCustodian.sol";
 
+/**
+	@title Checkpoint Module Base Contract
+	@dev Inherited contract for token modules requiring a balance checkpoint
+*/
 contract CheckpointModuleBase is STModuleBase {
 
 	using SafeMath for uint256;
@@ -18,6 +22,12 @@ contract CheckpointModuleBase is STModuleBase {
 	mapping (address => mapping(address => uint256)) custBalances;
 	mapping (address => mapping(address => bool)) custZeroBalances;
 
+	/**
+		@notice Base constructor
+		@param _token SecurityToken contract address
+		@param _issuer IssuingEntity contract address
+		@param _time Epoch time of balance checkpoint
+	 */
 	constructor(
 		address _token,
 		address _issuer,
@@ -61,12 +71,25 @@ contract CheckpointModuleBase is STModuleBase {
 		return (hooks, permissions, uint256(-1));
 	}
 
+	/**
+		@notice Internal getter for inherited contract to query checkpoint balance
+		@dev Should only be called when now > time
+		@param _owner Address of balance to query
+		@return uint256 balance
+	 */
 	function _getBalance(address _owner) internal view returns (uint256) {
 		if (balances[_owner] > 0) return balances[_owner];
 		if (zeroBalances[_owner]) return 0;
 		return token.balanceOf(_owner);
 	}
 
+	/**
+		@notice Getter, Inherited contract query custodied checkpoint balance
+		@dev Should only be called when now > time
+		@param _owner Address of balance to query
+		@param _cust Custodian address
+		@return uint256 balance
+	 */
 	function _getCustodianBalance(
 		address _owner,
 		address _cust
@@ -80,10 +103,20 @@ contract CheckpointModuleBase is STModuleBase {
 		return token.custodianBalanceOf(_owner, _cust);
 	}
 
+	/**
+		@notice Check if a checkpoint balance has been stored
+		@param _owner Address to check
+		@return bool
+	 */
 	function _isBalanceSet(address _owner) private view returns (bool) {
 		return (balances[_owner] > 0 || zeroBalances[_owner]);
 	}
 
+	/**
+		@notice Store a checkpoint balance
+		@param _owner Address to set
+		@param _value Balance at address
+	 */
 	function _setBalance(address _owner, uint256 _value) private {
 		if (_value == 0) {
 			zeroBalances[_owner] = true;
@@ -93,7 +126,10 @@ contract CheckpointModuleBase is STModuleBase {
 	}
 
 	/**
-		@notice Custodied tokens were sent
+		@notice Store custodian checkpoint balance after tokens are sent
+		@param _owner Address of owner
+		@param _cust Address of custodian
+		@param _value Amount transferred
 	 */
 	function _custodianSent(
 		address _owner,
@@ -111,7 +147,10 @@ contract CheckpointModuleBase is STModuleBase {
 	}
 
 	/**
-		@notice Custodied tokens were received
+		@notice Store custodian checkpoint balance after tokens are received
+		@param _owner Address of owner
+		@param _cust Address of custodian
+		@param _value Amount transferred
 	 */
 	function _custodianReceived(
 		address _owner,
@@ -132,6 +171,14 @@ contract CheckpointModuleBase is STModuleBase {
 		}
 	}
 
+	/**
+		@notice Hook method, record checkpoint value after a transfer
+		@param _addr Sender/receiver address
+		@param _id Sender/receiver investor ID
+		@param _rating Sender/receiver rating
+		@param _value Amount transferred
+		@return bool
+	 */
 	function transferTokens(
 		address[2] _addr,
 		bytes32[2] _id,
@@ -157,6 +204,13 @@ contract CheckpointModuleBase is STModuleBase {
 		return true;
 	}
 
+	/**
+		@notice Hook method, record checkpoint value after a custodial transfer
+		@param _cust Custodian address
+		@param _addr Sender/Receiver address
+		@param _value Amount transferred
+		@return bool
+	 */
 	function transferTokensCustodian(
 		address _cust,
 		address[2] _addr,
@@ -175,6 +229,13 @@ contract CheckpointModuleBase is STModuleBase {
 		return true;
 	}
 
+	/**
+		@notice Hook method, record checkpoint value after mint/burn
+		@param _addr Investor address
+		@param _old Old balance
+		@param _new New balance
+		@return bool
+	 */
 	function totalSupplyChanged(
 		address _addr,
 		bytes32,

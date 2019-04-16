@@ -1,8 +1,10 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 /**
-	Common interface for all modules - these are the minimum required methods
-	that must be included to attach the contract
+	@notice Common interface for all modules
+	@dev
+		these are the minimum required methods that MUST be included to
+		attach the module to the parent contract
 */
 interface IBaseModule {
 	function getPermissions()
@@ -18,7 +20,10 @@ interface IBaseModule {
 	function name() external view returns (string);
 }
 
-/** SecurityToken module interface */
+/**
+	@notice SecurityToken module interface
+	@dev These are all the possible hook point methods for token modules
+*/
 interface ISTModule {
 	
 	function token() external returns (address);
@@ -81,7 +86,10 @@ interface ISTModule {
 		returns (bool);
 }
 
-/** NFToken module interface */
+/**
+	@notice NFToken module interface
+	@dev These are all the possible hook point methods for NF-token modules
+*/
 interface INFTModule {
 
 	function token() external returns (address);
@@ -157,7 +165,10 @@ interface INFTModule {
 		returns (bool);
 }
 
-/** IssuingEntity module interface */
+/**
+	@notice IssuingEntity module interface
+	@dev These are all the possible hook point methods for issuer modules
+*/
 interface IIssuerModule {
 
 	/* 0x9a5150fc */
@@ -185,7 +196,10 @@ interface IIssuerModule {
 		returns (bool);
 }
 
-/** Custodian module interface */
+/**
+	@notice Custodian module interface
+	@dev These are all the possible hook point methods for custodian modules
+*/
 interface ICustodianModule {
 
 	/**

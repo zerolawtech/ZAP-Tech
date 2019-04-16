@@ -122,7 +122,7 @@ contract DividendModule is CheckpointModuleBase {
 
 	/**
 		@notice Trigger many dividend payments on custodied balances
-		@param _beneficiary Array of addresses to send dividends to
+		@param _beneficiaries Array of addresses to send dividends to
 		@param _custodian Address of custodian
 		@return bool
 	 */

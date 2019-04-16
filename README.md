@@ -16,11 +16,17 @@ The SFT Protocol is still under active development and has not yet undergone a t
 
 Unit testing and deployment of this project is performed with [Brownie](https://github.com/HyperLink-Technology/brownie).
 
+To run the tests:
+
+```bash
+$ brownie test
+```
+
 ## Getting Started
 
 See the [Getting Started](https://sft-protocol.readthedocs.io/en/latest/getting-started.html) page for in-depth details on how to deploy the contracts so you can interact with them.
 
-To setup a brownie test environment:
+To setup an interactive brownie test environment:
 
 ```bash
 $ brownie console

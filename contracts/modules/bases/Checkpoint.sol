@@ -1,10 +1,10 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "../../open-zeppelin/SafeMath.sol";
-import "../ModuleBase.sol";
+import "./Module.sol";
 import "../../interfaces/IBaseCustodian.sol";
 
-contract CheckpointModule is STModuleBase {
+contract CheckpointModuleBase is STModuleBase {
 
 	using SafeMath for uint256;
 

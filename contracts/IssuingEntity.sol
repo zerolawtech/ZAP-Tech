@@ -86,8 +86,19 @@ contract IssuingEntity is Modular, MultiSig {
 	}
 
 	/**
+		@notice Check if an address belongs to a registered investor
+		@dev Retrurns false for custodian or issuer addresses
+		@param _addr address to check
+		@return bytes32 investor ID
+	 */
+	function isRegisteredInvestor(address _addr) external view returns (bool) {
+		bytes32 _id = _getID(_addr);
+		return accounts[_id].rating > 0;
+	}
+
+	/**
 		@notice External view to fetch an investor ID from an address
-		@param _addr address of token being transferred
+		@param _addr address to check
 		@return bytes32 investor ID
 	 */
 	function getID(address _addr) external view returns (bytes32 _id) {

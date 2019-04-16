@@ -1,9 +1,9 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "../../open-zeppelin/SafeMath.sol";
-import "./BaseCheckpoint.sol";
+import "../open-zeppelin/SafeMath.sol";
+import "./bases/Checkpoint.sol";
 
-contract DividendModule is CheckpointModule {
+contract DividendModule is CheckpointModuleBase {
 
 	using SafeMath for uint256;
 
@@ -29,10 +29,10 @@ contract DividendModule is CheckpointModule {
 		address _issuer,
 		uint256 _time
 	)
-		CheckpointModule(_token, _issuer, _time)
+		CheckpointModuleBase(_token, _issuer, _time)
 		public
 	{
-
+		return;
 	}
 
 	function issueDividend(uint256 _claimPeriod) external payable returns (bool) {
@@ -47,45 +47,66 @@ contract DividendModule is CheckpointModule {
 		return true;
 	}
 
-	function claimDividend(address _beneficiary) public {
+	function claimDividend(address _beneficiary) external returns (bool) {
 		require (address(this).balance > 0);
-		if (_beneficiary == 0) {
-			_beneficiary = msg.sender;
+		_claim(_beneficiary == 0 ? msg.sender : _beneficiary);
+		return true;
+	}
+
+	function claimMany(address[] _beneficiaries) external returns (bool) {
+		require (address(this).balance > 0);
+		for (uint256 i; i < _beneficiaries.length; i++) {
+			_claim(_beneficiaries[i]);
 		}
-		require (issuer.getID(_beneficiary) != ownerID);
+		return true;
+	}
+
+	function _claim(address _beneficiary) internal {
+		require(issuer.isRegisteredInvestor(_beneficiary));
 		require (!claimed[_beneficiary]);
-		uint256 _value = (
-			_getBalance(_beneficiary).mul(dividendAmount).div(totalSupply)
-		);
+		uint256 _value = _getBalance(
+			_beneficiary
+		).mul(dividendAmount).div(totalSupply);
 		claimed[_beneficiary] = true;
 		_beneficiary.transfer(_value);
 		emit DividendClaimed(_beneficiary, _value);
 	}
 
-	function claimMany(address[] _beneficiaries) public {
-		for (uint256 i = 0; i < _beneficiaries.length; i++) {
-			claimDividend(_beneficiaries[i]);
-		}
-	}
-
 	function claimCustodianDividend(
-		address _custodian,
-		address _beneficiary
+		address _beneficiary,
+		address _custodian
 	)
-		public
+		external
+		returns (bool)
 	{
 		require (address(this).balance > 0);
-		if (_beneficiary == 0) {
-			_beneficiary = msg.sender;
+		_claimCustodian(_beneficiary, _custodian);
+		return true;
+	}
+
+	function claimManyCustodian(
+		address[] _beneficiaries,
+		address _custodian
+	)
+		external
+		returns (bool)
+	{
+		require (address(this).balance > 0);
+		for (uint256 i; i < _beneficiaries.length; i++) {
+			_claimCustodian(_beneficiaries[i], _custodian);
 		}
-		require (issuer.getID(_beneficiary) != ownerID);
-		require (!claimedCustodian[_custodian][_beneficiary]);
+		return true;
+	}
+
+	function _claimCustodian(address _beneficiary, address _custodian) internal {
+		require(issuer.isRegisteredInvestor(_beneficiary));
+		require (!claimedCustodian[_beneficiary][_custodian]);
 		uint256 _value = _getCustodianBalance(
-			_custodian,
-			_beneficiary
+			_beneficiary,
+			_custodian
 		).mul(dividendAmount).div(totalSupply);
-		claimedCustodian[_custodian][_beneficiary] = true;
-		msg.sender.transfer(_value);
+		claimedCustodian[_beneficiary][_custodian] = true;
+		_beneficiary.transfer(_value);
 		emit CustodianDividendClaimed(
 			_custodian,
 			_beneficiary,

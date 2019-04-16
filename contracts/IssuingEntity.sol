@@ -229,7 +229,6 @@ contract IssuingEntity is Modular, MultiSig {
 		bool[2] memory _allowed;
 
 		(_allowed, _rating, _country) = _getInvestors(
-			_id,
 			[_addr, _to],
 			[accounts[idMap[_addr].id].regKey, accounts[_id[1]].regKey]
 		);
@@ -439,13 +438,11 @@ contract IssuingEntity is Modular, MultiSig {
 	/**
 		@notice Internal function for fetching investor data from registrars
 		@dev Either _addr or _id may be given as an empty array
-		@param _id Array of investor IDs
 		@param _addr array of investor addresses
 		@param _key array of registrar indexes
 		@return permissions, ratings, and countries of investors
 	 */
 	function _getInvestors(
-		bytes32[2] _id,
 		address[2] _addr,
 		uint8[2] _key
 	)
@@ -457,44 +454,24 @@ contract IssuingEntity is Modular, MultiSig {
 			uint16[2] _country
 		)
 	{
-		/* If key == 0 the address belongs to the issuer or a custodian. */
-		if (_key[0] == 0) {
-			_allowed[0] = true;
-			_rating[0] = 0;
-			_country[0] = 0;
-		}
-		if (_key[1] == 0) {
-			_allowed[1] = true;
-			_rating[1] = 0;
-			_country[1] = 0;
-		}
 		/* If both investors are in the same registry, call getInvestors */
 		KYCRegistrar r = registrars[_key[0]].addr;
-		if (_key[0] == _key[1] && _key[0] != 0) {
-			(
-				_id,
-				_allowed,
-				_rating,
-				_country
-			) = r.getInvestors(_addr[0], _addr[1]);
+		if (_key[0] > 0 && _key[0] == _key[1]) {
+			(, _allowed, _rating, _country) = r.getInvestors(_addr[0], _addr[1]);
+			return (_allowed, _rating, _country);
+		}
 		/* Otherwise, call getInvestor at each registry */
+		if (_key[0] != 0) {
+			(, _allowed[0], _rating[0], _country[0]) = r.getInvestor(_addr[0]);
 		} else {
-			if (_key[0] != 0) {
-				(
-					_id[0],
-					_allowed[0],
-					_rating[0],
-					_country[0]
-				) = r.getInvestor(_addr[0]);
-			}
-			if (_key[1] != 0) {
-				(
-					_id[1],
-					_allowed[1],
-					_rating[1],
-					_country[1]
-				) = registrars[_key[1]].addr.getInvestor(_addr[1]);
-			}	
+			/* If key == 0 the address belongs to the issuer or a custodian. */
+			_allowed[0] = true;
+		}
+		if (_key[1] != 0) {
+			r = registrars[_key[1]].addr;
+			(, _allowed[1], _rating[1], _country[1]) = r.getInvestor(_addr[1]);
+		} else {
+			_allowed[1] = true;
 		}
 		return (_allowed, _rating, _country);
 	}
@@ -603,14 +580,8 @@ contract IssuingEntity is Modular, MultiSig {
 			_id = ownerID;
 		} else {
 			require(accounts[idMap[_owner].id].custodian == 0, "dev: custodian");
-			bool _allowed;
 			uint8 _key = accounts[idMap[_owner].id].regKey;
-			(
-				_id,
-				_allowed,
-				_rating,
-				_country
-			) = registrars[_key].addr.getInvestor(_owner);
+			(_id, , _rating, _country) = registrars[_key].addr.getInvestor(_owner);
 		}
 		Account storage a = accounts[_id];
 		if (_id != ownerID) {

@@ -4,8 +4,8 @@ import "./open-zeppelin/SafeMath.sol";
 import "./KYCRegistrar.sol";
 import "./SecurityToken.sol";
 import "./interfaces/IBaseCustodian.sol";
-import "./components/Modular.sol";
-import "./components/MultiSig.sol";
+import "./bases/Modular.sol";
+import "./bases/MultiSig.sol";
 
 /** @title Issuing Entity */
 contract IssuingEntity is Modular, MultiSig {

@@ -1,7 +1,7 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./components/MultiSig.sol";
-import "./KYCBase.sol";
+import "./bases/KYC.sol";
+import "./bases/MultiSig.sol";
 
 /** @title Simplified KYC Contract for Single Issuer */
 contract KYCIssuer is KYCBase {

@@ -1,8 +1,8 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./IssuingEntity.sol";
-import "./components/Modular.sol";
-import "./interfaces/IBaseCustodian.sol";
+import "./Modular.sol";
+import "../IssuingEntity.sol";
+import "../interfaces/IBaseCustodian.sol";
 
 /**
 	@title Security Token Base

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "../SecurityToken.sol";
-import "../components/MultiSig.sol";
+import "../bases/MultiSig.sol";
 
 /**
 	@title Module Base Contract

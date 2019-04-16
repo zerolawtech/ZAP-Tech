@@ -1,8 +1,8 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "../SecurityToken.sol";
-import "../components/Modular.sol";
-import "../components/MultiSig.sol";
+import "../bases/Modular.sol";
+import "../bases/MultiSig.sol";
 
 /** @title Owned Custodian Contract */
 contract OwnedCustodian is Modular, MultiSig {

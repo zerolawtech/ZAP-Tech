@@ -1,6 +1,6 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./KYCBase.sol";
+import "./bases/KYC.sol";
 
 /** @title KYC Registrar */
 contract KYCRegistrar is KYCBase {

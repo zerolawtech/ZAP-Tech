@@ -1,6 +1,6 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "./TokenBase.sol";
+import "./bases/Token.sol";
 
 /**
 	@title Non-Fungible SecurityToken 

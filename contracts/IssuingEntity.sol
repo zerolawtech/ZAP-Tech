@@ -86,6 +86,28 @@ contract IssuingEntity is Modular, MultiSig {
 	}
 
 	/**
+		@notice External view to fetch an investor ID from an address
+		@param _addr address of token being transferred
+		@return bytes32 investor ID
+	 */
+	function getID(address _addr) external view returns (bytes32 _id) {
+		_id = _getID(_addr);
+		if (_id == ownerID) {
+			return idMap[_addr].id;
+		}
+		return _id;
+	}
+
+	/**
+		@notice Get address of the registrar an investor is associated with
+		@param _id Investor ID
+		@return registrar address
+	 */
+	function getInvestorRegistrar(bytes32 _id) external view returns (address) {
+		return registrars[accounts[_id].regKey].addr;
+	}
+
+	/**
 		@notice Fetch total investor counts and limits
 		@return counts, limits
 	 */
@@ -219,9 +241,11 @@ contract IssuingEntity is Modular, MultiSig {
 		
 		if (_authID == ownerID && idMap[_auth].id != ownerID) {
 			/* This enforces sub-authority permissioning around transfers */
-			_checkAuth(
-				_auth,
-				_authID == _id[0] ? bytes4(0xa9059cbb) : bytes4(0x23b872dd)
+			Authority storage a = authorityData[idMap[_auth].id];
+			require(
+				a.approvedUntil >= now &&
+				a.signatures[_authID == _id[0] ? bytes4(0xa9059cbb) : bytes4(0x23b872dd)],
+				"Authority not permitted"
 			);
 		}
 
@@ -235,155 +259,13 @@ contract IssuingEntity is Modular, MultiSig {
 		if (accounts[_authID].custodian != 0) {
 			require(accounts[_id[1]].custodian == 0, "Custodian to Custodian");
 		}
-		Account storage a = accounts[_id[0]];
-		_checkTransfer(
-			msg.sender,
-			_authID,
-			_id,
-			_allowed,
-			_rating,
-			_country,
-			/* must be allowed to underflow in case of issuer zero balance */
-			_zero ? a.count - 1 : a.count
-			);
+
+		/* must be allowed to underflow in case of issuer zero balance */
+		uint32 _count = accounts[_id[0]].count;
+		if (_zero) _count -= 1;
+
+		_checkTransfer(_authID, _id, _allowed, _rating, _country, _count);
 		return (_authID, _id, _rating, _country);
-	}	
-
-	/**
-		@notice Internal to check sub-authority permissioning around transfers
-		@dev This is a seperate function to avoid stack-depth errors
-		@param _auth Address of the authority
-		@param _sig bytes4 signature of the call (transfer or transferFrom)
-	 */
-	function _checkAuth(address _auth, bytes4 _sig) internal view {
-		Authority storage a = authorityData[idMap[_auth].id];
-		require(
-			a.approvedUntil >= now &&
-			a.signatures[_sig],
-			"Authority not permitted"
-		);
-	}
-
-	/**
-		@notice internal check if transfer is permitted
-		@param _token address of token being transferred
-		@param _authID id hash of caller
-		@param _id addresses of sender and receiver
-		@param _allowed array of permission bools from registrar
-		@param _rating array of investor ratings
-		@param _country array of investor countries
-		@param _tokenCount sender accounts.count value after transfer
-	 */
-	function _checkTransfer(
-		address _token,
-		bytes32 _authID,
-		bytes32[2] _id,
-		bool[2] _allowed,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint32 _tokenCount
-	)
-		internal
-	{	
-		require(tokens[_token].set);
-		/* If issuer is not the authority, check the sender is not restricted */
-		if (_authID != ownerID) {
-			require(!locked, "Transfers locked: Issuer");
-			require(!tokens[_token].restricted, "Transfers locked: Token");
-			require(!accounts[_id[0]].restricted, "Sender restricted: Issuer");
-			require(_allowed[0], "Sender restricted: Registrar");
-			require(!accounts[_authID].restricted, "Authority restricted");
-		}
-		/* Always check the receiver is not restricted. */
-		require(!accounts[_id[1]].restricted, "Receiver restricted: Issuer");
-		require(_allowed[1], "Receiver restricted: Registrar");
-		if (_id[0] != _id[1]) {
-			/*
-				A rating of 0 implies the receiver is the issuer or a
-				custodian, no further checks are needed.
-			*/
-			if (_rating[1] != 0) {
-				Country storage c = countries[_country[1]];
-				require(c.allowed, "Receiver blocked: Country");
-				require(_rating[1] >= c.minRating, "Receiver blocked: Rating");
-				/*  
-					If the receiving investor currently has 0 balance and no
-					custodians, make sure a slot is available for allocation.
-				*/ 
-				if (accounts[_id[1]].count == 0) {
-					/* create a bool to prevent repeated comparisons */
-					bool _check = (_rating[0] == 0 || _tokenCount > 0);
-					/*
-						If the sender is an investor and still retains a balance,
-						a new slot must be available.
-					*/
-					if (_check) {
-						require(
-							limits[0] == 0 ||
-							counts[0] < limits[0],
-							"Total Investor Limit"
-						);
-					}
-					/*
-						If the investors are from different countries, make sure
-						a slot is available in the overall country limit.
-					*/
-					if (_check || _country[0] != _country[1]) {
-						require(
-							c.limits[0] == 0 ||
-							c.counts[0] < c.limits[0],
-							"Country Investor Limit"
-						);
-					}
-					if (!_check) {
-						_check = _rating[0] != _rating[1];
-					}
-					/*
-						If the investors are of different ratings, make sure a
-						slot is available in the receiver's rating in the overall
-						count.
-					*/
-					if (_check) {
-						require(
-							limits[_rating[1]] == 0 ||
-							counts[_rating[1]] < limits[_rating[1]],
-							"Total Investor Limit: Rating"
-						);
-					}
-					/*
-						If the investors don't match in country or rating, make
-						sure a slot is available in both the specific country
-						and rating for the receiver.
-					*/
-					if (_check || _country[0] != _country[1]) {
-						require(
-							c.limits[_rating[1]] == 0 ||
-							c.counts[_rating[1]] < c.limits[_rating[1]],
-							"Country Investor Limit: Rating"
-						);
-					}
-				}
-			}
-		}
-		/* bytes4 signature for issuer module checkTransfer() */
-		require(_callModules(
-			0x9a5150fc,
-			0x00,
-			abi.encode(_token, _authID, _id, _rating, _country)
-		));
-	}
-
-	/**
-		@notice External view to fetch an investor ID from an address
-		@param _addr address of token being transferred
-		@return bytes32 investor ID
-	 */
-	function getID(address _addr) external view returns (bytes32 _id) {
-		_id = _getID(_addr);
-		if (_id == ownerID) {
-			return idMap[_addr].id;
-		}
-		return _id;
 	}
 
 	/**
@@ -474,6 +356,113 @@ contract IssuingEntity is Modular, MultiSig {
 			_allowed[1] = true;
 		}
 		return (_allowed, _rating, _country);
+	}
+
+	/**
+		@notice internal check if transfer is permitted
+		@param _authID id hash of caller
+		@param _id addresses of sender and receiver
+		@param _allowed array of permission bools from registrar
+		@param _rating array of investor ratings
+		@param _country array of investor countries
+		@param _tokenCount sender accounts.count value after transfer
+	 */
+	function _checkTransfer(
+		bytes32 _authID,
+		bytes32[2] _id,
+		bool[2] _allowed,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint32 _tokenCount
+	)
+		internal
+	{	
+		require(tokens[msg.sender].set);
+		/* If issuer is not the authority, check the sender is not restricted */
+		if (_authID != ownerID) {
+			require(!locked, "Transfers locked: Issuer");
+			require(!tokens[msg.sender].restricted, "Transfers locked: Token");
+			require(!accounts[_id[0]].restricted, "Sender restricted: Issuer");
+			require(_allowed[0], "Sender restricted: Registrar");
+			require(!accounts[_authID].restricted, "Authority restricted");
+		}
+		/* Always check the receiver is not restricted. */
+		require(!accounts[_id[1]].restricted, "Receiver restricted: Issuer");
+		require(_allowed[1], "Receiver restricted: Registrar");
+		if (_id[0] != _id[1]) {
+			/*
+				A rating of 0 implies the receiver is the issuer or a
+				custodian, no further checks are needed.
+			*/
+			if (_rating[1] != 0) {
+				Country storage c = countries[_country[1]];
+				require(c.allowed, "Receiver blocked: Country");
+				require(_rating[1] >= c.minRating, "Receiver blocked: Rating");
+				/*  
+					If the receiving investor currently has 0 balance and no
+					custodians, make sure a slot is available for allocation.
+				*/ 
+				if (accounts[_id[1]].count == 0) {
+					/* create a bool to prevent repeated comparisons */
+					bool _check = (_rating[0] == 0 || _tokenCount > 0);
+					/*
+						If the sender is an investor and still retains a balance,
+						a new slot must be available.
+					*/
+					if (_check) {
+						require(
+							limits[0] == 0 ||
+							counts[0] < limits[0],
+							"Total Investor Limit"
+						);
+					}
+					/*
+						If the investors are from different countries, make sure
+						a slot is available in the overall country limit.
+					*/
+					if (_check || _country[0] != _country[1]) {
+						require(
+							c.limits[0] == 0 ||
+							c.counts[0] < c.limits[0],
+							"Country Investor Limit"
+						);
+					}
+					if (!_check) {
+						_check = _rating[0] != _rating[1];
+					}
+					/*
+						If the investors are of different ratings, make sure a
+						slot is available in the receiver's rating in the overall
+						count.
+					*/
+					if (_check) {
+						require(
+							limits[_rating[1]] == 0 ||
+							counts[_rating[1]] < limits[_rating[1]],
+							"Total Investor Limit: Rating"
+						);
+					}
+					/*
+						If the investors don't match in country or rating, make
+						sure a slot is available in both the specific country
+						and rating for the receiver.
+					*/
+					if (_check || _country[0] != _country[1]) {
+						require(
+							c.limits[_rating[1]] == 0 ||
+							c.counts[_rating[1]] < c.limits[_rating[1]],
+							"Country Investor Limit: Rating"
+						);
+					}
+				}
+			}
+		}
+		/* bytes4 signature for issuer module checkTransfer() */
+		require(_callModules(
+			0x9a5150fc,
+			0x00,
+			abi.encode(msg.sender, _authID, _id, _rating, _country)
+		));
 	}
 
 	/**
@@ -706,15 +695,6 @@ contract IssuingEntity is Modular, MultiSig {
 			return true;
 		}
 		revert();		
-	}
-
-	/**
-		@notice Get address of the registrar an investor is associated with
-		@param _id Investor ID
-		@return registrar address
-	 */
-	function getInvestorRegistrar(bytes32 _id) external view returns (address) {
-		return registrars[accounts[_id].regKey].addr;
 	}
 
 	/**

@@ -46,9 +46,8 @@ contract STModuleBase is ModuleBase {
 	IssuingEntity public issuer;
 
 	/** @dev Check that call originates from issuer or token contract */
-	modifier onlyOwner() {
-		require (msg.sender == address(token) || msg.sender == address(owner));
-		_;
+	function _onlyOwner() internal view {
+		require(msg.sender == address(token) || msg.sender == address(owner));
 	}
 
 	/**

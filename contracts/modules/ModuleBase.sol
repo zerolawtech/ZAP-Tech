@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity >=0.4.24 <0.5.0;
 
 import "../SecurityToken.sol";
 import "../bases/MultiSig.sol";

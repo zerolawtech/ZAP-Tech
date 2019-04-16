@@ -136,6 +136,125 @@ contract IssuingEntity is Modular, MultiSig {
 	}
 
 	/**
+		@notice Fetch document hash
+		@param _documentID Document ID to fetch
+		@return document hash
+	 */
+	function getDocumentHash(string _documentID) external view returns (bytes32) {
+		return documentHashes[_documentID];
+	}
+
+	/**
+		@notice Set document hash
+		@param _documentID Document ID being hashed
+		@param _hash Hash of the document
+		@return bool success
+	 */
+	function setDocumentHash(
+		string _documentID,
+		bytes32 _hash
+	)
+		external
+		returns (bool)
+	{
+		if (!_checkMultiSig()) return false;
+		require(documentHashes[_documentID] == 0);
+		documentHashes[_documentID] = _hash;
+		emit NewDocumentHash(_documentID, _hash);
+		return true;
+	}
+
+	/**
+		@notice Add a new security token contract
+		@param _token Token contract address
+		@return bool success
+	 */
+	function addToken(address _token) external returns (bool) {
+		if (!_checkMultiSig()) return false;
+		SecurityToken token = SecurityToken(_token);
+		require(!tokens[_token].set);
+		require(token.ownerID() == ownerID);
+		require(token.circulatingSupply() == 0);
+		tokens[_token].set = true;
+		emit TokenAdded(_token);
+		return true;
+	}
+
+	/**
+		@notice Add a new authority
+		@param _addr Array of addressses to register as authority
+		@param _signatures Array of bytes4 sigs this authority may call
+		@param _approvedUntil Epoch time that authority is approved until
+		@param _threshold Minimum number of calls to a method for multisig
+		@return bool success
+	 */
+	function addAuthority(
+		address[] _addr,
+		bytes4[] _signatures,
+		uint32 _approvedUntil,
+		uint32 _threshold
+	)
+		public
+		returns (bool)
+	{
+		require(!accounts[keccak256(abi.encodePacked(_addr))].set, "dev: known ID");
+		super.addAuthority(_addr, _signatures, _approvedUntil, _threshold);
+		return true;
+	}
+
+	/**
+		@notice Add a custodian
+		@dev
+			Custodians are entities such as broker or exchanges that are approved
+			to hold tokens for 1 or more beneficial owners.
+			https://sft-protocol.readthedocs.io/en/latest/custodian.html
+		@param _custodian address of custodian contract
+		@return bool success
+	 */
+	function addCustodian(address _custodian) external returns (bool) {
+		if (!_checkMultiSig()) return false;
+		bytes32 _id = IBaseCustodian(_custodian).ownerID();
+		require(_id != 0, "dev: zero ID");
+		require(idMap[_custodian].id == 0, "dev: known address");
+		require(!accounts[_id].set, "dev: known ID");
+		require(authorityData[_id].addressCount == 0, "dev: authority ID");
+		idMap[_custodian].id = _id;
+		accounts[_id].custodian = _custodian;
+		accounts[_id].set = true;
+		emit CustodianAdded(_custodian);
+		return true;
+	}
+
+	/**
+		@notice Attach or remove a KYCRegistrar contract
+		@param _registrar address of registrar
+		@param _allowed registrar permission
+		@return bool success
+	 */
+	function setRegistrar(
+		KYCRegistrar _registrar,
+		bool _allowed
+	)
+		external
+		returns (bool)
+	{
+		if (!_checkMultiSig()) return false;
+		for (uint256 i = 1; i < registrars.length; i++) {
+			if (registrars[i].addr == _registrar) {
+				registrars[i].restricted = !_allowed;
+				emit RegistrarSet(_registrar, _allowed);
+				return true;
+			}
+		}
+		if (_allowed) {
+			registrars.push(RegistrarContract(_registrar, false));
+			emit RegistrarSet(_registrar, _allowed);
+			return true;
+		}
+		revert();
+	}
+
+	/**
 		@notice Set all information about a country
 		@param _country Country to modify
 		@param _allowed Is country approved
@@ -189,8 +308,8 @@ contract IssuingEntity is Modular, MultiSig {
 			c.minRating = _minRating[i];
 			c.limits[0] = _limit[i];
 			emit CountryModified(_country[i], true, _minRating[i], c.limits);
-
 		}
+		return true;
 	}
 
 	/**
@@ -206,6 +325,63 @@ contract IssuingEntity is Modular, MultiSig {
 		if (!_checkMultiSig()) return false;
 		limits = _limits;
 		emit InvestorLimitSet(0, _limits);
+		return true;
+	}
+
+	/**
+		@notice Set restriction on an investor or custodian ID
+		@dev restrictions on sub-authorities are handled via MultiSig methods
+		@param _id investor ID
+		@param _allowed permission bool
+		@return bool success
+	 */
+	function setEntityRestriction(
+		bytes32 _id,
+		bool _allowed
+	)
+		external
+		returns (bool)
+	{
+		if (!_checkMultiSig()) return false;
+		require(authorityData[_id].addressCount == 0, "dev: authority");
+		accounts[_id].restricted = !_allowed;
+		emit EntityRestriction(_id, _allowed);
+		return true;
+	}
+
+	/**
+		@notice Set restriction on a token
+		@dev
+			Only the issuer can transfer restricted tokens. Useful in dealing
+			with a security breach or a token migration.
+		@param _token Address of the token
+		@param _allowed permission bool
+		@return bool success
+	 */
+	function setTokenRestriction(
+		address _token,
+		bool _allowed
+	)
+		external
+		returns (bool)
+	{
+		if (!_checkMultiSig()) return false;
+		require(tokens[_token].set);
+		tokens[_token].restricted = !_allowed;
+		emit TokenRestriction(_token, _allowed);
+		return true;
+	}
+
+	/**
+		@notice Set restriction on all tokens for this issuer
+		@dev Only the issuer can transfer restricted tokens.
+		@param _allowed permission bool
+		@return bool success
+	 */
+	function setGlobalRestriction(bool _allowed) external returns (bool) {
+		if (!_checkMultiSig()) return false;
+		locked = !_allowed;
+		emit GlobalRestriction(_allowed);
 		return true;
 	}
 
@@ -244,7 +420,7 @@ contract IssuingEntity is Modular, MultiSig {
 			Authority storage a = authorityData[idMap[_auth].id];
 			require(
 				a.approvedUntil >= now &&
-				a.signatures[_authID == _id[0] ? bytes4(0xa9059cbb) : bytes4(0x23b872dd)],
+				a.signatures[bytes4(_authID == _id[0] ? 0xa9059cbb : 0x23b872dd)],
 				"Authority not permitted"
 			);
 		}
@@ -478,7 +654,6 @@ contract IssuingEntity is Modular, MultiSig {
 			Was receiver custodial balance zero?
 		@return authority ID, IDs/ratings/countries for sender/receiver
 	 */
-
 	function transferTokens(
 		address _auth,
 		address _from,
@@ -640,160 +815,6 @@ contract IssuingEntity is Modular, MultiSig {
 	}
 
 	/**
-		@notice Set document hash
-		@param _documentID Document ID being hashed
-		@param _hash Hash of the document
-		@return bool success
-	 */
-	function setDocumentHash(
-		string _documentID,
-		bytes32 _hash
-	)
-		external
-		returns (bool)
-	{
-		if (!_checkMultiSig()) return false;
-		require(documentHashes[_documentID] == 0);
-		documentHashes[_documentID] = _hash;
-		emit NewDocumentHash(_documentID, _hash);
-		return true;
-	}
-
-	/**
-		@notice Fetch document hash
-		@param _documentID Document ID to fetch
-		@return document hash
-	 */
-	function getDocumentHash(string _documentID) external view returns (bytes32) {
-		return documentHashes[_documentID];
-	}
-
-	/**
-		@notice Attach or remove a KYCRegistrar contract
-		@param _registrar address of registrar
-		@param _allowed registrar permission
-		@return bool success
-	 */
-	function setRegistrar(
-		KYCRegistrar _registrar,
-		bool _allowed
-	)
-		external
-		returns (bool)
-	{
-		if (!_checkMultiSig()) return false;
-		for (uint256 i = 1; i < registrars.length; i++) {
-			if (registrars[i].addr == _registrar) {
-				registrars[i].restricted = !_allowed;
-				emit RegistrarSet(_registrar, _allowed);
-				return true;
-			}
-		}
-		if (_allowed) {
-			registrars.push(RegistrarContract(_registrar, false));
-			emit RegistrarSet(_registrar, _allowed);
-			return true;
-		}
-		revert();		
-	}
-
-	/**
-		@notice Add a custodian
-		@dev
-			Custodians are entities such as broker or exchanges that are approved
-			to hold tokens for 1 or more beneficial owners.
-			https://sft-protocol.readthedocs.io/en/latest/custodian.html
-		@param _custodian address of custodian contract
-		@return bool success
-	 */
-	function addCustodian(address _custodian) external returns (bool) {
-		if (!_checkMultiSig()) return false;
-		bytes32 _id = IBaseCustodian(_custodian).ownerID();
-		require(_id != 0, "dev: zero ID");
-		require(idMap[_custodian].id == 0, "dev: known address");
-		require(!accounts[_id].set, "dev: known ID");
-		require(authorityData[_id].addressCount == 0, "dev: authority ID");
-		idMap[_custodian].id = _id;
-		accounts[_id].custodian = _custodian;
-		accounts[_id].set = true;
-		emit CustodianAdded(_custodian);
-		return true;
-	}
-
-	/**
-		@notice Add a new security token contract
-		@param _token Token contract address
-		@return bool success
-	 */
-	function addToken(address _token) external returns (bool) {
-		if (!_checkMultiSig()) return false;
-		SecurityToken token = SecurityToken(_token);
-		require(!tokens[_token].set);
-		require(token.ownerID() == ownerID);
-		require(token.circulatingSupply() == 0);
-		tokens[_token].set = true;
-		emit TokenAdded(_token);
-		return true;
-	}
-
-	/**
-		@notice Set restriction on an investor or custodian ID
-		@dev restrictions on sub-authorities are handled via MultiSig methods
-		@param _id investor ID
-		@param _allowed permission bool
-		@return bool success
-	 */
-	function setEntityRestriction(
-		bytes32 _id,
-		bool _allowed
-	)
-		external
-		returns (bool)
-	{
-		if (!_checkMultiSig()) return false;
-		require(authorityData[_id].addressCount == 0, "dev: authority");
-		accounts[_id].restricted = !_allowed;
-		emit EntityRestriction(_id, _allowed);
-		return true;
-	}
-
-	/**
-		@notice Set restriction on a token
-		@dev
-			Only the issuer can transfer restricted tokens. Useful in dealing
-			with a security breach or a token migration.
-		@param _token Address of the token
-		@param _allowed permission bool
-		@return bool success
-	 */
-	function setTokenRestriction(
-		address _token,
-		bool _allowed
-	)
-		external
-		returns (bool)
-	{
-		if (!_checkMultiSig()) return false;
-		require(tokens[_token].set);
-		tokens[_token].restricted = !_allowed;
-		emit TokenRestriction(_token, _allowed);
-		return true;
-	}
-
-	/**
-		@notice Set restriction on all tokens for this issuer
-		@dev Only the issuer can transfer restricted tokens.
-		@param _allowed permission bool
-		@return bool success
-	 */
-	function setGlobalRestriction(bool _allowed) external returns (bool) {
-		if (!_checkMultiSig()) return false;
-		locked = !_allowed;
-		emit GlobalRestriction(_allowed);
-		return true;
-	}
-
-	/**
 		@notice Attach a module to IssuingEntity or SecurityToken
 		@dev
 			Modules have a lot of permission and flexibility in what they
@@ -848,27 +869,6 @@ contract IssuingEntity is Modular, MultiSig {
 			SecurityToken(_target).detachModule(_module);
 		}
 		return true;
-	}
-
-	/**
-		@notice Add a new authority
-		@param _addr Array of addressses to register as authority
-		@param _signatures Array of bytes4 sigs this authority may call
-		@param _approvedUntil Epoch time that authority is approved until
-		@param _threshold Minimum number of calls to a method for multisig
-		@return bool success
-	 */
-	function addAuthority(
-		address[] _addr,
-		bytes4[] _signatures,
-		uint32 _approvedUntil,
-		uint32 _threshold
-	)
-		public
-		returns (bool)
-	{
-		require(!accounts[keccak256(abi.encodePacked(_addr))].set, "dev: known ID");
-		super.addAuthority(_addr, _signatures, _approvedUntil, _threshold);
 	}
 
 }

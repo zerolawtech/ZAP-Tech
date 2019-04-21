@@ -2,7 +2,7 @@
 SFT Protocol
 ############
 
-The Secured Financial Transaction Protocol (SFT) is a set of compliance-oriented smart contracts, written in `Solidity <https://solidity.readthedocs.io/en/v0.5.0/>`__ for the Ethereum blockchain, that allow for the tokenization of debt and equity based securities. It provides a robust, flexible framework allowing issuers and investors to retain regulatory compliance throughout primary issuance and multi-jurisdictional secondary trading.
+The Secured Financial Transaction Protocol (SFT) is a set of smart contracts, written in `Solidity <https://solidity.readthedocs.io/en/v0.5.0/>`__ for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. SFT favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
 
 The SFT Protocol was developed by `HyperLink Technology <https://hyperlink.technology>`__.
 
@@ -11,54 +11,49 @@ How it Works
 
 SFT is designed to maximize interoperability between different network participants. Broadly speaking, these participants may be split into four categories:
 
-* **Investors** are entities that have passed KYC/AML checks and are are able to hold or transfer security tokens.
 * **Issuers** are entities that create and sell security tokens to fund their business operations.
+* **Investors** are entities that have passed KYC/AML checks and are are able to hold or transfer security tokens.
 * **Registrars** are trusted entities that provide KYC/AML services for network participants.
-* **Custodians** are trusted entities that may hold tokens on behalf of multiple investors and facilitate secondary trading of tokens.
+* **Custodians** hold tokens on behalf of investors without taking direct ownership. They may provide services such as escrow or custody, or facilitate secondary trading of tokens.
 
 The protocol is built with two central concepts in mind: **identification** and **permission**. Each investor has their identity verified by a registrar and a unique ID hash is associated to their wallet addresses. Based on this identity information, issuers and custodians apply a series of rules to determine how the investor may interact with them.
 
 Issuers, registrars and custodians each exist on the blockchain with their own smart contracts that define the way they interact with one another. These contracts allow different entities to provide services to each other within the ecosystem.
 
-Security tokens in the protocol are built upon the ERC20 token standard. Tokens are transferred via the ``transfer`` and ``transferFrom`` methods, however the transfer will only succeed if it passes a series of on-chain compliance requirements. A call to ``checkTransfer`` returns true if the transfer is possible. The base configuration includes investor identification, tracking investor counts and limits, and restrictions on countries and accredited status. By implementing other modules a variety of additional functionality is possible so as to allow compliance to laws in the countries of the issuer and investors.
+Security tokens in the protocol are built upon the ERC20 token standard. Tokens are transferred via the ``transfer`` and ``transferFrom`` methods, however the transfer will only succeed if it passes a series of on-chain permissioning checks. A call to ``checkTransfer`` returns true if the transfer is possible. The base configuration includes investor identification, tracking investor counts and limits, and restrictions on countries and accredited status. By implementing other modules a variety of additional functionality is possible so as to meet the needs of each individual issuer.
 
 Components
 ==========
 
-The SFT protocol is comprised of four core contracts:
+The SFT protocol is comprised of four core components:
 
 1. :ref:`security-token`
 
     * ERC20 compliant token contract
-    * Intended to represent a claim to ownership of securities
-    * Permissioning logic to enforce compliance in all token transfers
+    * Intended to represent a corporate shareholder registry in book entry or certificated form
+    * Permissioning logic to enforce enforce legal and contractural restrictions around token transfers
     * Modular design allows for optional added functionality
 
 2. :ref:`issuing-entity`
 
-    * Owner contract for tokens created by the same issuer
-    * Handles common compliance logic for all the issuer's tokens
+    * Common owner contract for multiples classes of tokens created by the same issuer
+    * Detailed on-chain cap table with granular permissioning capabilities
     * Modular design allows for optional added functionality
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
 
 3. :ref:`kyc-registrar`
 
     * Whitelists that provide identity, region, and accreditation information of investors based on off-chain KYC/AML verification
-    * May be maintained by a single entity or a federation across multiple jurisdictions
+    * May be maintained by a single entity for a single token issuance, or a federation across multiple jurisdictions providing identity data for many issuers
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
 
 4. :ref:`custodian`
 
     * Contracts that represent an entity approved to hold tokens on behalf of multiple investors
-    * Interacts with IssuingEntity to provide accurate on-chain investor counts
-    * Intended to be used by broker/dealers and exchanges
+    * Deep integration with IssuingEntity to provide accurate on-chain investor counts
+    * Multiple implementations allow for a wide range of functionality including escrow services, custody, and secondary trading of tokens
     * Modular design allows for optional added functionality
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
-
-Yellow Paper
-============
-
-The `Yellow Paper <https://github.com/SFT-Protocol/security-token/blob/master/docs/SFT-Protocol-Yellowpaper.pdf>`__ provides a more detailed overview of how the protocol is structrued.
 
 Source Code
 ===========

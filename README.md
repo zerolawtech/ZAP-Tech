@@ -77,8 +77,7 @@ To setup an interactive brownie test environment:
 
 ```bash
 $ brownie console
->>> from scripts.deployment import main
->>> main()
+>>> run('deployment')
 ```
 
 This runs the `main` function in [scripts/deployment.py](scripts/deployment.py) which:

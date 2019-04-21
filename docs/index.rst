@@ -6,6 +6,10 @@ The Secured Financial Transaction Protocol (SFT) is a set of smart contracts, wr
 
 The SFT Protocol was developed by `HyperLink Technology <https://hyperlink.technology>`__.
 
+.. note::
+
+    Code starting with ``$`` is meant to be run in your terminal. Code starting with ``>>>`` is meant to run inside the `Brownie <https://github.com/iamdefinitelyahuman/brownie>`__ console.
+
 How it Works
 ============
 

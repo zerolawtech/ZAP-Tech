@@ -33,28 +33,26 @@ The constructor declares the owner as per standard :ref:`multisig`.
         IssuingEntity deployed at: 0xa79269260195879dBA8CEFF2767B7F2B5F2a54D8
         <IssuingEntity Contract object '0xa79269260195879dBA8CEFF2767B7F2B5F2a54D8'>
 
-Constants
-=========
 
-The following public variables cannot be changed after contract deployment.
+Tokens, Registrars and Custodians
+=================================
 
-.. method:: IssuingEntity.ownerID
+The ``IssuingEntity`` contract is a center point through which other contracts are linked. Each contract must be associated to it before it will function properly.
 
-    The bytes32 ID hash of the issuer.
+* :ref:`security-token` contracts must be associated before tokens can be transferred, so that the issuer contract can accurately track investor counts.
+* :ref:`kyc-registrar` contracts must be associated to provide KYC data on investors before they can receive or send tokens.
+* :ref:`custodian` contracts must be approved in order to send or receive tokens from investors.
 
-    .. code-block:: python
-
-        >>> issuer.ownerID()
-        0xce1e12589ad8fb3eed11af5b9ef8788c25b574d4073d23c871e003021400c429
-
-Adding and Restricting Tokens
-=============================
-
-Tokens must be associated with the IssuingEntity contract before they can be transfered.
+Associating Contracts
+---------------------
 
 .. method:: IssuingEntity.addToken(address _token)
 
-    Associates a :ref:`security-token` contract with the IssuingEntity.
+    Associates a :ref:`security-token` contract with the issuer contract.
+
+    Once added, the token can be restricted with ``IssuingEntity.setTokenRestriction``.
+
+    Emits the ``TokenAdded`` event.
 
     .. code-block:: python
 
@@ -64,45 +62,17 @@ Tokens must be associated with the IssuingEntity contract before they can be tra
         IssuingEntity.addToken confirmed - block: 5   gas used: 61630 (0.77%)
         <Transaction object '0x8e93cd6b85d1e993755e9fe31eb14ce600706eaf98d606156447d8e431db5db9'>
 
-.. method:: IssuingEntity.setTokenRestriction(address _token, bool _allowed)
-
-    Restricts or unrestricts transfers of a token.  When a token is restricted, only the issuer may perform transfers.
-
-    .. code-block:: python
-
-        >>> issuer.setTokenRestriction(SecurityToken[0], False, {'from': accounts[0]})
-
-        Transaction sent: 0xfe60d18d0315278bdd1cfd0896a040cdadb63ada255685737908672c0cd10cee
-        IssuingEntity.setTokenRestriction confirmed - block: 13   gas used: 40369 (0.50%)
-        <Transaction object '0xfe60d18d0315278bdd1cfd0896a040cdadb63ada255685737908672c0cd10cee'>
-
-
-.. method:: IssuingEntity.setGlobalRestriction(bool _allowed)
-
-    Restricts or unrestricts transfers of all associated tokens. Modifying the global restriction does not affect individual token restrictions.
-
-    .. code-block:: python
-
-        >>> issuer.setGlobalRestriction(False, {'from': accounts[0]})
-
-        Transaction sent: 0xc03ac4c6d36e971f980297e365f30752ac5097e391213c59fd52544829a87479
-        IssuingEntity.setGlobalRestriction confirmed - block: 14   gas used: 53384 (0.67%)
-        <Transaction object '0xc03ac4c6d36e971f980297e365f30752ac5097e391213c59fd52544829a87479'>
-
-Identifying Investors
-=====================
-
-Investors must be identified by a registrar before they can send or receive tokens. This identity data is then used to apply further checks against investor limits and accreditation requirements.
-
 .. method:: IssuingEntity.setRegistrar(address _registrar, bool _allowed)
 
-    Associates or removes a :ref:`kyc-registrar`.
+    Associates or removes a :ref:`kyc-registrar` contract.
 
     Before a transfer is completed, each associated registrar is called to check which IDs are associated to the transfer addresses.
 
     The address => ID association is stored within IssuingEntity. If a registrar is later removed it is impossible for another registrar to return a different ID for the address.
 
     When a registrar is removed, any investors that were identified through it will be unable to send or receive tokens until they are identified through another associated registrar. Transfer attempts will revert with the message "Registrar restricted".
+
+    Emits the ``RegistrarSet`` event.
 
     .. code-block:: python
 
@@ -112,35 +82,34 @@ Investors must be identified by a registrar before they can send or receive toke
         IssuingEntity.setRegistrar confirmed - block: 3   gas used: 61246 (0.77%)
         <Transaction object '0x606326c8b2b8f1541c333ef5a5cd44592efb50530c6326e260e728095b3ec2bd'>
 
-.. method:: IssuingEntity.getID(address _addr)
+.. method:: IssuingEntity.addCustodian(address _custodian)
 
-    Returns the investor ID associated with an address. If the address is not saved in the contract, this call will query associated registrars.
+    Approves a :ref:`custodian` contract to send and receive tokens associated with the issuer.
 
-    .. code-block:: python
+    Once a custodian has been added, they can be restricted with ``IssuingEntity.setEntityRestriction``.
 
-        >>> issuer.getID(accounts[1])
-        0x8be1198d7f1848ebeddb3f807146ce7d26e63d3b6715f27697428ddb52db9b63
-        >>> issuer.getID(accounts[9])
-        File "contract.py", line 277, in call
-          raise VirtualMachineError(e)
-        VirtualMachineError: VM Exception while processing transaction: revert Address not registered
-
-.. method:: IssuingEntity.getInvestorRegistrar(bytes32 _id)
-
-    Returns the registrar address associated with an investor ID. If the investor ID is not saved in the contract, this call will return 0x00.
+    Emits the ``CustodianAdded`` event.
 
     .. code-block:: python
 
-        >>> id_ = issuer.getID(accounts[1])
-        0x8be1198d7f1848ebeddb3f807146ce7d26e63d3b6715f27697428ddb52db9b63
-        >>> issuer.getInvestorRegistrar(id_)
-        0xa79269260195879dBA8CEFF2767B7F2B5F2a54D8
+        >>> issuer.addCustodian(OwnedCustodian[0])
+
+        Transaction sent: 0xbae451ce98691dc37dad6a67d8daf410a3eeebf34b59ab60eaeef7c3f3a2654c
+        IssuingEntity.addCustodian confirmed - block: 25   gas used: 78510 (0.98%)
+        <Transaction object '0xbae451ce98691dc37dad6a67d8daf410a3eeebf34b59ab60eaeef7c3f3a2654c'>
+
+Setting Restrictions
+--------------------
+
+Transfer restrictions can be applied at varying levels.
 
 .. method:: IssuingEntity.setEntityRestriction(bytes32 _id, bool _allowed)
 
     Retricts or permits an investor or custodian from transferring tokens, based on their ID.
 
-    This can only be used to block an investor that would otherwise be able to hold the tokens, it cannot be used to whitelist investors who are not listed in an associated registrar. When an investor is restricted, the issuer is still able to transfer tokens from their addresses.
+    This can only be used to block an investor that would otherwise be able to hold the tokens. It cannot be used to whitelist investors who are not listed in an associated registrar. When an investor is restricted, the issuer is still able to transfer tokens from their addresses.
+
+    Emits the ``EntityRestriction`` event.
 
     .. code-block:: python
 
@@ -157,34 +126,83 @@ Investors must be identified by a registrar before they can send or receive toke
           raise VirtualMachineError(e)
         VirtualMachineError: VM Exception while processing transaction: revert Sender restricted: Issuer
 
-Custodians
-==========
+.. method:: IssuingEntity.setTokenRestriction(address _token, bool _allowed)
 
-**Custodian** are entities that are approved to hold tokens on behalf of multiple investors. Common examples of custodians include broker/dealers, escrow agents and secondary markets. Each custodian must be individually approved by an issuer before they can receive tokens.
+    Restricts or permits transfers of a token. When a token is restricted, only the issuer may perform transfers.
 
-Custodians interact with an issuer's investor counts differently from regular investors. When an investor transfers a balance into a custodian it does not increase the overall investor count, instead the investor is now included in the list of beneficial owners represented by the custodian. Even if the investor now has a balance of 0, they will be still be included in the issuer's investor count.
-
-Each time a beneficial owner is added or removed from a custodian, the ``BeneficialOwnerSet`` event will fire. Filtering for this event can be used to keep an up-to-date record of which investors have tokens held by a custodian.
-
-See the :ref:`custodian` documentation for more information on how custodians interact with the IssuingEntity contract.
-
-.. method:: IssuingEntity.addCustodian(address _custodian)
-
-    Approves a custodian contract to send and receive tokens associated with the issuer.
-
-    Once a custodian is approved, they can be restricted with ``IssuingEntity.setEntityRestriction``.
+    Emits the ``TokenRestriction`` event.
 
     .. code-block:: python
 
-        >>> issuer.addCustodian(OwnedCustodian[0])
+        >>> issuer.setTokenRestriction(SecurityToken[0], False, {'from': accounts[0]})
 
-        Transaction sent: 0xbae451ce98691dc37dad6a67d8daf410a3eeebf34b59ab60eaeef7c3f3a2654c
-        IssuingEntity.addCustodian confirmed - block: 25   gas used: 78510 (0.98%)
-        <Transaction object '0xbae451ce98691dc37dad6a67d8daf410a3eeebf34b59ab60eaeef7c3f3a2654c'>
+        Transaction sent: 0xfe60d18d0315278bdd1cfd0896a040cdadb63ada255685737908672c0cd10cee
+        IssuingEntity.setTokenRestriction confirmed - block: 13   gas used: 40369 (0.50%)
+        <Transaction object '0xfe60d18d0315278bdd1cfd0896a040cdadb63ada255685737908672c0cd10cee'>
 
+.. method:: IssuingEntity.setGlobalRestriction(bool _allowed)
 
-Setting Investor Limits
-=======================
+    Restricts or permits transfers of all associated tokens. Modifying the global restriction does not affect individual token restrictions - i.e. you cannot call this method to remove restrictions that were set with ``IssuingEntity.setTokenRestriction``.
+
+    Emits the ``GlobalRestriction`` event.
+
+    .. code-block:: python
+
+        >>> issuer.setGlobalRestriction(False, {'from': accounts[0]})
+
+        Transaction sent: 0xc03ac4c6d36e971f980297e365f30752ac5097e391213c59fd52544829a87479
+        IssuingEntity.setGlobalRestriction confirmed - block: 14   gas used: 53384 (0.67%)
+        <Transaction object '0xc03ac4c6d36e971f980297e365f30752ac5097e391213c59fd52544829a87479'>
+
+Investors
+=========
+
+Investors must be identified by a :ref:`kyc-registrar` before they can send or receive tokens. This identity data is then used to apply further checks against investor limits and accreditation requirements.
+
+Getters
+-------
+
+The ``IssuingEntity`` contract contains several public getter methods for querying information relating to investors.
+
+.. method:: IssuingEntity.isRegisteredInvestor(address _addr)
+
+    Check if an address belongs to a registered investor and return a bool. Returns ``false`` if the address is not registered.
+
+    .. code-block:: python
+
+        >>> issuer.isRegisteredInvestor(accoounts[2])
+        True
+        >>> issuer.isRegisteredInvestor(accoounts[9])
+        False
+
+.. method:: IssuingEntity.getID(address _addr)
+
+    Returns the investor ID associated with an address. If the address is not saved in the contract, this call will query associated registrars. If the ID cannot be found the call will revert.
+
+    .. code-block:: python
+
+        >>> issuer.getID(accounts[1])
+        0x8be1198d7f1848ebeddb3f807146ce7d26e63d3b6715f27697428ddb52db9b63
+        >>> issuer.getID(accounts[9])
+        File "contract.py", line 277, in call
+          raise VirtualMachineError(e)
+        VirtualMachineError: VM Exception while processing transaction: revert Address not registered
+
+.. method:: IssuingEntity.getInvestorRegistrar(bytes32 _id)
+
+    Returns the registrar address associated with an investor ID. If the investor ID is not saved in the ``IssuingEntity`` contract storage, this call will return ``0x00``.
+
+    Note that an investor's ID is only saved in the contract after a successful token transfer. Even if the investor's ID is known via an associated registrar, if they have never received tokens the call to ``getInvestorRegistrar`` will return an empty value.
+
+    .. code-block:: python
+
+        >>> id_ = issuer.getID(accounts[1])
+        0x8be1198d7f1848ebeddb3f807146ce7d26e63d3b6715f27697428ddb52db9b63
+        >>> issuer.getInvestorRegistrar(id_)
+        0xa79269260195879dBA8CEFF2767B7F2B5F2a54D8
+
+Investor Limits
+===============
 
 Issuers can define investor limits globally, by country, by investor rating, or by a combination thereof. These limits are shared across all tokens associated to the issuer.
 
@@ -194,6 +212,9 @@ The issuer must explicitely approve each country from which investors are allowe
 
 It is possible for an issuer to set a limit that is lower than the current investor count. When a limit is met or exceeded existing investors are still able to receive tokens, but new investors are blocked.
 
+Setters
+-------
+
 .. method:: IssuingEntity.setCountry(uint16 _country, bool _allowed, uint8 _minRating, uint32[8] _limits)
 
     Approve or restrict a country, and/or modify it's minimum investor rating and investor limits.
@@ -202,6 +223,8 @@ It is possible for an issuer to set a limit that is lower than the current inves
     * ``_allowed``: Permission bool
     * ``_minRating``: The minimum rating required for an investor in this country to hold tokens. Cannot be zero.
     * ``_limits``: A uint32[8] array of investor limits for this country.
+
+    Emits the ``CountryModified`` event.
 
     .. code-block:: python
 
@@ -224,6 +247,8 @@ It is possible for an issuer to set a limit that is lower than the current inves
 
     This method is useful when approving many countries that do not require specific limits based on investor ratings. When you require specific limits for each rating, use ``IssuingEntity.setCountry``.
 
+    Emits the ``CountryModified`` event once for each country that is modified.
+
     .. code-block:: python
 
         >>> issuer.setCountries([784],[1],[0], {'from': accounts[0]})
@@ -236,6 +261,8 @@ It is possible for an issuer to set a limit that is lower than the current inves
 
     Sets total investor limits, irrespective of country.
 
+    Emits the ``InvestorLimitsSet`` event.
+
     .. code-block:: python
 
         >>> issuer.setInvestorLimits([2000, 500, 2000, 0, 0, 0, 0, 0], {'from': accounts[0]})
@@ -243,6 +270,9 @@ It is possible for an issuer to set a limit that is lower than the current inves
         Transaction sent: 0xbeda494b5fb741ae659b866b9f5eca26b9add249ae75dc651a7944281e2ae4eb
         IssuingEntity.setInvestorLimits confirmed - block: 27   gas used: 94926 (1.19%)
         <Transaction object '0xbeda494b5fb741ae659b866b9f5eca26b9add249ae75dc651a7944281e2ae4eb'>
+
+Getters
+-------
 
 .. method:: IssuingEntity.getInvestorCounts()
 
@@ -256,10 +286,9 @@ It is possible for an issuer to set a limit that is lower than the current inves
             '_limits': (2000, 500, 2000, 0, 0, 0, 0, 0))
         }
 
-
 .. method:: IssuingEntity.getCountry(uint16 _country)
 
-    Returns the minimum rating, investor counts and investor limits for a given country.
+    Returns the minimum rating, investor counts and investor limits for a given country. Countries that have not been set will return all zero values. The easiest way to verify if a country has been set is to check if ``_minRating > 0``.
 
     .. code-block:: python
 
@@ -274,11 +303,26 @@ It is possible for an issuer to set a limit that is lower than the current inves
 Document Verification
 =====================
 
+.. method:: IssuingEntity.getDocumentHash(string _documentID)
+
+    Returns a recorded document hash. If no hash is recorded, it will return ``0x00``.
+
+    See `Document Verification`_.
+
+    .. code-block:: python
+
+        >>> issuer.getDocumentHash("Shareholder Agreement")
+        "0xbeda494b5fb741ae659b866b9f5eca26b9add249ae75dc651a7944281e2ae4eb"
+        >>> issuer..getDocumentHash("Unknown Document")
+        0x0000000000000000000000000000000000000000000000000000000000000000
+
 .. method:: IssuingEntity.setDocumentHash(string _documentID, bytes32 _hash)
 
     Creates an on-chain record of the hash of a legal document.
 
     Once a hash is recorded, the issuer can distrubute the document electronically and investors can verify the authenticity by generating the hash themselves and comparing it to the blockchain record.
+
+    Emits the ``NewDocumentHash`` event.
 
     .. code-block:: python
 
@@ -288,14 +332,7 @@ Document Verification
         IssuingEntity.setDocumentHash confirmed - block: 6   gas used: 72379 (0.90%)
         <Transaction object '0x7299b96013acb4661f4b7f05016c0de6726d2337032740aa29f5407cdabde0c3'>
 
-.. method:: IssuingEntity.getDocumentHash(string _documentID)
 
-    Returns a recorded document hash.
-
-    .. code-block:: python
-
-        >>> issuer.getDocumentHash("Shareholder Agreement")
-        "0xbeda494b5fb741ae659b866b9f5eca26b9add249ae75dc651a7944281e2ae4eb"
 
 .. _issuing-entity-modules:
 
@@ -304,7 +341,10 @@ Modules
 
 The issuer may use these methods to attach or detach modules to this contract or any associated token contract.
 
-See the :ref:`modules` documentation for information module funtionality and development.
+See the :ref:`modules` documentation for information module functionality and development.
+
+Attaching and Detaching
+-----------------------
 
 .. method:: IssuingEntity.attachModule(address _target, address _module)
 
@@ -340,11 +380,73 @@ See the :ref:`modules` documentation for information module funtionality and dev
         IssuingEntity.detachModule confirmed - block: 15   gas used: 28323 (0.35%)
         <Transaction object '0xe1539492053b91ffb05dec6da6f73a02f0b3e44fcec707acf911d37922b65699'>
 
+Getters
+-------
+
 .. method:: IssuingEntity.isActiveModule(address _module)
 
-    Returns true if a module is currently active on the contract. Modules that are active on a token will return false.
+    Returns true if a module is currently active on the contract. Modules that are not active, or that are active on a token will return ``false``.
+
+    See `Modules`_.
 
     .. code-block:: python
 
         >>> issuer.isActiveModule(module)
+        True
+        >>> issuer.isActiveModule(token_module)
         False
+
+Public Constants
+================
+
+The following public variables cannot be changed after contract deployment.
+
+.. method:: IssuingEntity.ownerID()
+
+    The bytes32 ID hash of the issuer.
+
+    .. code-block:: python
+
+        >>> issuer.ownerID()
+        0xce1e12589ad8fb3eed11af5b9ef8788c25b574d4073d23c871e003021400c429
+
+Events
+======
+
+The ``IssuingEntity`` contract includes the following events.
+
+.. method:: IssuingEntity.TokenAdded(address indexed token)
+
+    Emitted after a new token contract has been associated via ``IssuingEntity.addToken``.
+
+.. method:: IssuingEntity.RegistrarSet(address indexed registrar, bool allowed)
+
+    Emitted by ``IssuingEntity.setRegistrar`` when a new KYC registrar contract is added, or an existing registrar is restricted or permitted.
+
+.. method:: IssuingEntity.CustodianAdded(address indexed custodian)
+
+    Emitted when a new custodian contract is approved via ``IssuingEntity.addCustodian``.
+
+.. method:: IssuingEntity.EntityRestriction(bytes32 indexed id, bool allowed)
+
+    Emitted whenever an investor or custodian has a restriction set or removed with ``IssuingEntity.setEntityRestriction``.
+
+.. method:: IssuingEntity.TokenRestriction(address indexed token, bool allowed)
+
+    Emitted when a token restriction is set or removed via ``IssuingEntity.setTokenRestriction``.
+
+.. method:: IssuingEntity.GlobalRestriction(bool allowed)
+
+    Emitted when a global restriction is set with ``IssuingEntity.setGlobalRestriction``.
+
+.. method:: IssuingEntity.InvestorLimitsSet(uint32[8] limits)
+
+    Emitted when global investor limits are modified via ``IssuingEntity.setInvestorLimits``.
+
+.. method:: IssuingEntity.CountryModified(uint16 indexed country, bool allowed, uint8 minrating, uint32[8] limits)
+
+    Emitted whenever country specific limits are set via ``IssuingEntity.setCountry`` or ``IssuingEntity.SetCountries``.
+
+.. method:: IssuingEntity.NewDocumentHash(string indexed document, bytes32 documentHash)
+
+    Emitted when a new document hash is saved with ``IssuingEntity.setDocumentHash``.

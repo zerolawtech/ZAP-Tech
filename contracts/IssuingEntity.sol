@@ -122,7 +122,14 @@ contract IssuingEntity is Modular, MultiSig {
 		@notice Fetch total investor counts and limits
 		@return counts, limits
 	 */
-	function getInvestorCounts() external view returns (uint32[8], uint32[8]) {
+	function getInvestorCounts()
+	external
+	view
+	returns (
+		uint32[8] _counts,
+		uint32[8] _limits
+	)
+	{
 		return (counts, limits);
 	}
 

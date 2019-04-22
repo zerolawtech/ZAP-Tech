@@ -1,10 +1,16 @@
 .. _kyc-registrar:
 
+.. todo
+    events
+    examples
+    getters
+    review text
+
 ############
 KYCRegistrar
 ############
 
-KYCRegistrar contracts are registries that hold information on the identity, region, and rating of investors.
+KYCRegistrar contracts are registries that hold information on the identity, region, and rating of investors. This contract may be associated with multiple :ref:`issuing-entity` contracts to provide investor KYC data to them.
 
 Registries may be maintained by a single entity, or a federation of entities where each are approved to provide identification services for their specific jurisdiction. The contract owner can authorize other entities to add investors within specified countries.
 
@@ -12,7 +18,7 @@ Contract authorities associate addresses to ID hashes that denote the identity o
 
 Registry contracts implement a variation of the standard :ref:`multisig` functionality used in other contracts within the protocol. This document assumes familiarity with the standard multi-sig implementation, and will only highlight the differences.
 
-It may be useful to also view the `KYCRegistrar.sol <https://github.com/SFT-Protocol/security-token/tree/master/contracts/KYCRegistrar.sol>`__ source code while reading this document.
+It may be useful to also view the `KYCRegistrar.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/KYCRegistrar.sol>`__ source code while reading this document.
 
 Deployment
 ==========
@@ -62,6 +68,13 @@ Only the owner may add, modify or restrict other authorities.
     If an authority has been compromised or found to be acting in bad faith, the owner may apply a broad restriction upon them with this method. This will also restrict every investor that was approved by the authority.
 
     A list of investors that were approved by the restricted authority can be obtained by looking at ``NewInvestor`` and ``UpdatedInvestor`` events. Once the KYC/AML of these investors has been re-verified, the restriction upon them may be removed by calling either ``KYCRegistrar.updateInvestor`` or ``KYCRegistrar.setInvestorAuthority`` to change which authority they are associated with.
+
+Getters
+-------
+
+.. method:: KYCRegistrar.isApprovedAuthority(address _addr, uint16 _country)
+
+.. method:: KYCRegistrar.getAuthorityID(address _addr)
 
 Working with Investors
 ======================
@@ -126,78 +139,11 @@ In situations of a lost or compromised private key the address may instead be fl
 
     When restricing addresses associated to an authority, you cannot reduce the number of addresses such that the total remaining is lower than the multi-sig threshold value for that authority.
 
-Getting Investor Info
-=====================
+Events
+======
 
-There are a variey of getter methods available for issuers and custodians to query information about investors. In some cases these calls will revert if no investor data is found.
+The following events are specific to KYCRegistrar:
 
-The following calls will not revert, instead returning ``false`` or an empty result:
+.. method:: KYCRegistrar.NewAuthority(bytes32 indexed id)
 
-.. method:: KYCRegistrar.isRegistered(bytes32 _id)
-
-    Returns a boolean to indicate if an ID is known to the registrar contract. No permissioning checks are applied.
-
-.. method:: KYCRegistrar.getID(address _addr)
-
-    Given an address, returns the investor or authority ID associated to it. If there is no association it will return an empty bytes32.
-
-.. method:: KYCRegistrar.isPermitted(address _addr)
-
-    Given an address, returns a boolean to indicate if this address is permitted to transfer based on the following conditions:
-
-    * Is the registring authority restricted?
-    * Is the investor ID restricted?
-    * Is the address restricted?
-    * Has the investor's rating expired?
-
-.. method:: KYCRegistrar.isPermittedID(bytes32 _id)
-
-    Returns a transfer permission boolean similar to ``KYCRegistrar.isPermitted``, without a check on a specific address.
-
-The remaining calls **will revert under some conditions**:
-
-.. method:: KYCRegistrar.getInvestor(address _addr)
-
-    Returns the investor ID, permission status (based on the input address), rating, and country code for an investor.
-
-    Reverts if the address is not registered.
-
-    .. note:: This function is designed to maximize gas efficiency when calling for information prior to performing a token transfer.
-
-.. method:: KYCRegistrar.getInvestorByID(bytes32 _id)
-
-    Returns the permission status, rating, and country code for an investor ID. Used by Custodians to check permission for an investor where there is no specific address associated to the action.
-
-    Reverts if the ID is not registered.
-
-.. method:: KYCRegistrar.getInvestors(address _from, address _to)
-
-    The two investor version of ``KYCRegistrar.getInvestor``. Also used to maximize gas efficiency.
-
-.. method:: KYCRegistrar.getInvestorsByID(bytes32 _fromID, bytes32 _toID)
-
-    The two investor version of ``KYCRegistrar.getInvestorByID``.
-
-.. method:: KYCRegistrar.getRating(bytes32 _id)
-
-    Returns the investor rating number for a given ID.
-
-    Reverts if the ID is not registered.
-
-.. method:: KYCRegistrar.getRegion(bytes32 _id)
-
-    Returns the investor region code for a given ID.
-
-    Reverts if the ID is not registered.
-
-.. method:: KYCRegistrar.getCountry(bytes32 _id)
-
-    Returns the investor country code for a given ID.
-
-    Reverts if the ID is not registered.
-
-.. method:: KYCRegistrar.getExpires(bytes32 _id)
-
-    Returns the investor rating expiration date (in epoch time) for a given ID.
-
-    Reverts if the ID is not registered or the rating has expired.
+.. method:: KYCRegistrar.AuthorityRestriction(bytes32 indexed id, bool permitted)

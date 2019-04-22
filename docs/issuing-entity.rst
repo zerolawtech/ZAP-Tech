@@ -40,7 +40,7 @@ Tokens, Registrars and Custodians
 The ``IssuingEntity`` contract is a center point through which other contracts are linked. Each contract must be associated to it before it will function properly.
 
 * :ref:`security-token` contracts must be associated before tokens can be transferred, so that the issuer contract can accurately track investor counts.
-* :ref:`kyc-registrar` contracts must be associated to provide KYC data on investors before they can receive or send tokens.
+* :ref:`kyc-base` contracts must be associated to provide KYC data on investors before they can receive or send tokens.
 * :ref:`custodian` contracts must be approved in order to send or receive tokens from investors.
 
 Associating Contracts
@@ -64,7 +64,7 @@ Associating Contracts
 
 .. method:: IssuingEntity.setRegistrar(address _registrar, bool _allowed)
 
-    Associates or removes a :ref:`kyc-registrar` contract.
+    Associates or removes a :ref:`kyc-base` contract.
 
     Before a transfer is completed, each associated registrar is called to check which IDs are associated to the transfer addresses.
 
@@ -157,7 +157,7 @@ Transfer restrictions can be applied at varying levels.
 Investors
 =========
 
-Investors must be identified by a :ref:`kyc-registrar` before they can send or receive tokens. This identity data is then used to apply further checks against investor limits and accreditation requirements.
+Investors must be identified by a :ref:`kyc-base` before they can send or receive tokens. This identity data is then used to apply further checks against investor limits and accreditation requirements.
 
 Getters
 -------

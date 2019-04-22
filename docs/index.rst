@@ -87,7 +87,7 @@ Contents
     getting-started.rst
     security-token.rst
     issuing-entity.rst
-    kyc-registrar.rst
+    kyc-base.rst
     custodian.rst
     security-considerations.rst
     multisig.rst

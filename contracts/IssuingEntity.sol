@@ -59,7 +59,7 @@ contract IssuingEntity is Modular, MultiSig {
 		uint8 minrating,
 		uint32[8] limits
 	);
-	event InvestorLimitSet(uint16 indexed country, uint32[8] limits);
+	event InvestorLimitsSet(uint32[8] limits);
 	event NewDocumentHash(string indexed document, bytes32 documentHash);
 	event RegistrarSet(address indexed registrar, bool allowed);
 	event CustodianAdded(address indexed custodian);
@@ -342,7 +342,7 @@ contract IssuingEntity is Modular, MultiSig {
 	function setInvestorLimits(uint32[8] _limits) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		limits = _limits;
-		emit InvestorLimitSet(0, _limits);
+		emit InvestorLimitsSet(_limits);
 		return true;
 	}
 

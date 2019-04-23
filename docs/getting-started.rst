@@ -68,7 +68,7 @@ Owner addresses are able to add investors to the registrar whitelist using ``KYC
     <Transaction object '0x47581e5b276298427f6a520353622b96cdecb29dff7269f03d7c957435398ebd'>
 
 
-See the :ref:`kyc-registrar` page for a detailed explanation of how to use this contract.
+See the :ref:`kyc-base` page for a detailed explanation of how to use registry contracts.
 
 Issuing Tokens
 ==============

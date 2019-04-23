@@ -343,7 +343,7 @@ contract KYCRegistrar is KYCBase {
 		_authorityCheck(investorData[_id].country);
 		if (!_checkMultiSig(false)) return false;
 		investorData[_id].restricted = !_permitted;
-		emit InvestorRestriction(_id, !_permitted, idMap[msg.sender].id);
+		emit InvestorRestriction(_id, _permitted, idMap[msg.sender].id);
 		return true;
 	}
 

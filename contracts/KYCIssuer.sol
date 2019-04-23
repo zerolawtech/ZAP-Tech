@@ -142,7 +142,7 @@ contract KYCIssuer is KYCBase {
 		if (!_onlyAuthority()) return false;
 		require(investorData[_id].country != 0);
 		investorData[_id].restricted = !_permitted;
-		emit InvestorRestriction(_id, !_permitted, issuer.getID(msg.sender));
+		emit InvestorRestriction(_id, _permitted, issuer.getID(msg.sender));
 		return true;
 	}
 

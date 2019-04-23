@@ -62,7 +62,7 @@ Associating Contracts
         IssuingEntity.addToken confirmed - block: 5   gas used: 61630 (0.77%)
         <Transaction object '0x8e93cd6b85d1e993755e9fe31eb14ce600706eaf98d606156447d8e431db5db9'>
 
-.. method:: IssuingEntity.setRegistrar(address _registrar, bool _allowed)
+.. method:: IssuingEntity.setRegistrar(address _registrar, bool _permitted)
 
     Associates or removes a :ref:`kyc-base` contract.
 
@@ -103,7 +103,7 @@ Setting Restrictions
 
 Transfer restrictions can be applied at varying levels.
 
-.. method:: IssuingEntity.setEntityRestriction(bytes32 _id, bool _allowed)
+.. method:: IssuingEntity.setEntityRestriction(bytes32 _id, bool _permitted)
 
     Retricts or permits an investor or custodian from transferring tokens, based on their ID.
 
@@ -126,7 +126,7 @@ Transfer restrictions can be applied at varying levels.
           raise VirtualMachineError(e)
         VirtualMachineError: VM Exception while processing transaction: revert Sender restricted: Issuer
 
-.. method:: IssuingEntity.setTokenRestriction(address _token, bool _allowed)
+.. method:: IssuingEntity.setTokenRestriction(address _token, bool _permitted)
 
     Restricts or permits transfers of a token. When a token is restricted, only the issuer may perform transfers.
 
@@ -140,7 +140,7 @@ Transfer restrictions can be applied at varying levels.
         IssuingEntity.setTokenRestriction confirmed - block: 13   gas used: 40369 (0.50%)
         <Transaction object '0xfe60d18d0315278bdd1cfd0896a040cdadb63ada255685737908672c0cd10cee'>
 
-.. method:: IssuingEntity.setGlobalRestriction(bool _allowed)
+.. method:: IssuingEntity.setGlobalRestriction(bool _permitted)
 
     Restricts or permits transfers of all associated tokens. Modifying the global restriction does not affect individual token restrictions - i.e. you cannot call this method to remove restrictions that were set with ``IssuingEntity.setTokenRestriction``.
 
@@ -215,12 +215,12 @@ It is possible for an issuer to set a limit that is lower than the current inves
 Setters
 -------
 
-.. method:: IssuingEntity.setCountry(uint16 _country, bool _allowed, uint8 _minRating, uint32[8] _limits)
+.. method:: IssuingEntity.setCountry(uint16 _country, bool _permitted, uint8 _minRating, uint32[8] _limits)
 
     Approve or restrict a country, and/or modify it's minimum investor rating and investor limits.
 
     * ``_country``: The code of the country to modify
-    * ``_allowed``: Permission bool
+    * ``_permitted``: Permission bool
     * ``_minRating``: The minimum rating required for an investor in this country to hold tokens. Cannot be zero.
     * ``_limits``: A uint32[8] array of investor limits for this country.
 
@@ -234,12 +234,12 @@ Setters
         IssuingEntity.setCountry confirmed - block: 26   gas used: 116709 (1.46%)
         <Transaction object '0x96f9a7e12e898fbd2fb6c7593a7ae82c4eea087c508929e616f86e98ae9b0db6'>
 
-.. method:: IssuingEntity.setCountries(uint16[] _country, bool _allowed, uint8[] _minRating, uint32[] _limit)
+.. method:: IssuingEntity.setCountries(uint16[] _country, bool _permitted, uint8[] _minRating, uint32[] _limit)
 
     Approve or restrict many countries at once.
 
     * ``_countries``: An array of country codes to modify
-    * ``_allowed``: Permission bool
+    * ``_permitted``: Permission bool
     * ``_minRating``: Array of minimum investor ratings for each country.
     * ``_limits``: Array of total investor limits for each country.
 
@@ -419,7 +419,7 @@ The ``IssuingEntity`` contract includes the following events.
 
     Emitted after a new token contract has been associated via ``IssuingEntity.addToken``.
 
-.. method:: IssuingEntity.RegistrarSet(address indexed registrar, bool allowed)
+.. method:: IssuingEntity.RegistrarSet(address indexed registrar, bool permitted)
 
     Emitted by ``IssuingEntity.setRegistrar`` when a new KYC registrar contract is added, or an existing registrar is restricted or permitted.
 
@@ -427,15 +427,15 @@ The ``IssuingEntity`` contract includes the following events.
 
     Emitted when a new custodian contract is approved via ``IssuingEntity.addCustodian``.
 
-.. method:: IssuingEntity.EntityRestriction(bytes32 indexed id, bool allowed)
+.. method:: IssuingEntity.EntityRestriction(bytes32 indexed id, bool permitted)
 
     Emitted whenever an investor or custodian has a restriction set or removed with ``IssuingEntity.setEntityRestriction``.
 
-.. method:: IssuingEntity.TokenRestriction(address indexed token, bool allowed)
+.. method:: IssuingEntity.TokenRestriction(address indexed token, bool permitted)
 
     Emitted when a token restriction is set or removed via ``IssuingEntity.setTokenRestriction``.
 
-.. method:: IssuingEntity.GlobalRestriction(bool allowed)
+.. method:: IssuingEntity.GlobalRestriction(bool permitted)
 
     Emitted when a global restriction is set with ``IssuingEntity.setGlobalRestriction``.
 
@@ -443,7 +443,7 @@ The ``IssuingEntity`` contract includes the following events.
 
     Emitted when global investor limits are modified via ``IssuingEntity.setInvestorLimits``.
 
-.. method:: IssuingEntity.CountryModified(uint16 indexed country, bool allowed, uint8 minrating, uint32[8] limits)
+.. method:: IssuingEntity.CountryModified(uint16 indexed country, bool permitted, uint8 minrating, uint32[8] limits)
 
     Emitted whenever country specific limits are set via ``IssuingEntity.setCountry`` or ``IssuingEntity.SetCountries``.
 

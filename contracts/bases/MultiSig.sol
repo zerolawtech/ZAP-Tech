@@ -342,13 +342,13 @@ contract MultiSig {
 		@notice Modify an authority's permitted function calls
 		@param _id Authority ID
 		@param _signatures Array of bytes4 sigs
-		@param _allowed bool permission for calling the signatures
+		@param _permitted bool permission for calling the signatures
 		@return bool success
 	 */
 	function setAuthoritySignatures(
 		bytes32 _id,
 		bytes4[] _signatures,
-		bool _allowed
+		bool _permitted
 	)
 		external
 		returns (bool)
@@ -358,9 +358,9 @@ contract MultiSig {
 		Authority storage a = authorityData[_id];
 		require(a.addressCount > 0);
 		for (uint256 i; i < _signatures.length; i++) {
-			a.signatures[_signatures[i]] = _allowed;
+			a.signatures[_signatures[i]] = _permitted;
 		}
-		if (_allowed) {
+		if (_permitted) {
 			emit NewAuthorityPermissions(_id, _signatures);
 		} else {
 			emit RemovedAuthorityPermissions(_id, _signatures);

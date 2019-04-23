@@ -38,7 +38,7 @@ contract KYCBase {
 	);
 	event InvestorRestriction(
 		bytes32 indexed id,
-		bool restricted,
+		bool permitted,
 		bytes32 indexed authority
 	);
 	event RegisteredAddresses(
@@ -108,7 +108,7 @@ contract KYCBase {
 		view
 		returns (
 			bytes32 _id,
-			bool _allowed,
+			bool _permitted,
 			uint8 _rating,
 			uint16 _country
 		)
@@ -139,7 +139,7 @@ contract KYCBase {
 		view
 		returns (
 			bytes32[2] _id,
-			bool[2] _allowed,
+			bool[2] _permitted,
 			uint8[2] _rating,
 			uint16[2] _country
 		)

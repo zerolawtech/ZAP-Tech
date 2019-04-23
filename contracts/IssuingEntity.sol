@@ -21,7 +21,7 @@ contract IssuingEntity is Modular, MultiSig {
 	struct Country {
 		uint32[8] counts;
 		uint32[8] limits;
-		bool allowed;
+		bool permitted;
 		uint8 minRating;
 	}
 
@@ -55,18 +55,18 @@ contract IssuingEntity is Modular, MultiSig {
 
 	event CountryModified(
 		uint16 indexed country,
-		bool allowed,
+		bool permitted,
 		uint8 minrating,
 		uint32[8] limits
 	);
 	event InvestorLimitsSet(uint32[8] limits);
 	event NewDocumentHash(string indexed document, bytes32 documentHash);
-	event RegistrarSet(address indexed registrar, bool allowed);
+	event RegistrarSet(address indexed registrar, bool permitted);
 	event CustodianAdded(address indexed custodian);
 	event TokenAdded(address indexed token);
-	event EntityRestriction(bytes32 indexed id, bool allowed);
-	event TokenRestriction(address indexed token, bool allowed);
-	event GlobalRestriction(bool allowed);
+	event EntityRestriction(bytes32 indexed id, bool permitted);
+	event TokenRestriction(address indexed token, bool permitted);
+	event GlobalRestriction(bool permitted);
 
 	/**
 		@notice Issuing entity constructor
@@ -246,12 +246,12 @@ contract IssuingEntity is Modular, MultiSig {
 	/**
 		@notice Attach or remove a KYCRegistrar contract
 		@param _registrar address of registrar
-		@param _allowed registrar permission
+		@param _permitted registrar permission
 		@return bool success
 	 */
 	function setRegistrar(
 		KYCRegistrar _registrar,
-		bool _allowed
+		bool _permitted
 	)
 		external
 		returns (bool)
@@ -259,14 +259,14 @@ contract IssuingEntity is Modular, MultiSig {
 		if (!_checkMultiSig()) return false;
 		for (uint256 i = 1; i < registrars.length; i++) {
 			if (registrars[i].addr == _registrar) {
-				registrars[i].restricted = !_allowed;
-				emit RegistrarSet(_registrar, _allowed);
+				registrars[i].restricted = !_permitted;
+				emit RegistrarSet(_registrar, _permitted);
 				return true;
 			}
 		}
-		if (_allowed) {
+		if (_permitted) {
 			registrars.push(RegistrarContract(_registrar, false));
-			emit RegistrarSet(_registrar, _allowed);
+			emit RegistrarSet(_registrar, _permitted);
 			return true;
 		}
 		revert();
@@ -275,14 +275,14 @@ contract IssuingEntity is Modular, MultiSig {
 	/**
 		@notice Set all information about a country
 		@param _country Country to modify
-		@param _allowed Is country approved
+		@param _permitted Is country approved
 		@param _minRating minimum investor rating
 		@param _limits array of investor limits
 		@return bool success
 	 */
 	function setCountry(
 		uint16 _country,
-		bool _allowed,
+		bool _permitted,
 		uint8 _minRating,
 		uint32[8] _limits
 	)
@@ -293,8 +293,8 @@ contract IssuingEntity is Modular, MultiSig {
 		Country storage c = countries[_country];
 		c.limits = _limits;
 		c.minRating = _minRating;
-		c.allowed = _allowed;
-		emit CountryModified(_country, _allowed, _minRating, _limits);
+		c.permitted = _permitted;
+		emit CountryModified(_country, _permitted, _minRating, _limits);
 		return true;
 	}
 
@@ -322,7 +322,7 @@ contract IssuingEntity is Modular, MultiSig {
 		for (uint256 i; i < _country.length; i++) {
 			require(_minRating[i] != 0);
 			Country storage c = countries[_country[i]];
-			c.allowed = true;
+			c.permitted = true;
 			c.minRating = _minRating[i];
 			c.limits[0] = _limit[i];
 			emit CountryModified(_country[i], true, _minRating[i], c.limits);
@@ -350,20 +350,20 @@ contract IssuingEntity is Modular, MultiSig {
 		@notice Set restriction on an investor or custodian ID
 		@dev restrictions on sub-authorities are handled via MultiSig methods
 		@param _id investor ID
-		@param _allowed permission bool
+		@param _permitted permission bool
 		@return bool success
 	 */
 	function setEntityRestriction(
 		bytes32 _id,
-		bool _allowed
+		bool _permitted
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
 		require(authorityData[_id].addressCount == 0, "dev: authority");
-		accounts[_id].restricted = !_allowed;
-		emit EntityRestriction(_id, _allowed);
+		accounts[_id].restricted = !_permitted;
+		emit EntityRestriction(_id, _permitted);
 		return true;
 	}
 
@@ -373,33 +373,33 @@ contract IssuingEntity is Modular, MultiSig {
 			Only the issuer can transfer restricted tokens. Useful in dealing
 			with a security breach or a token migration.
 		@param _token Address of the token
-		@param _allowed permission bool
+		@param _permitted permission bool
 		@return bool success
 	 */
 	function setTokenRestriction(
 		address _token,
-		bool _allowed
+		bool _permitted
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
 		require(tokens[_token].set);
-		tokens[_token].restricted = !_allowed;
-		emit TokenRestriction(_token, _allowed);
+		tokens[_token].restricted = !_permitted;
+		emit TokenRestriction(_token, _permitted);
 		return true;
 	}
 
 	/**
 		@notice Set restriction on all tokens for this issuer
 		@dev Only the issuer can transfer restricted tokens.
-		@param _allowed permission bool
+		@param _permitted permission bool
 		@return bool success
 	 */
-	function setGlobalRestriction(bool _allowed) external returns (bool) {
+	function setGlobalRestriction(bool _permitted) external returns (bool) {
 		if (!_checkMultiSig()) return false;
-		locked = !_allowed;
-		emit GlobalRestriction(_allowed);
+		locked = !_permitted;
+		emit GlobalRestriction(_permitted);
 		return true;
 	}
 
@@ -444,9 +444,9 @@ contract IssuingEntity is Modular, MultiSig {
 		}
 
 		address _addr = (_authID == _id[0] ? _auth : _from);
-		bool[2] memory _allowed;
+		bool[2] memory _permitted;
 
-		(_allowed, _rating, _country) = _getInvestors(
+		(_permitted, _rating, _country) = _getInvestors(
 			[_addr, _to],
 			[accounts[idMap[_addr].id].regKey, accounts[_id[1]].regKey]
 		);
@@ -458,7 +458,7 @@ contract IssuingEntity is Modular, MultiSig {
 		uint32 _count = accounts[_id[0]].count;
 		if (_zero) _count -= 1;
 
-		_checkTransfer(_authID, _id, _allowed, _rating, _country, _count);
+		_checkTransfer(_authID, _id, _permitted, _rating, _country, _count);
 		return (_authID, _id, _rating, _country);
 	}
 
@@ -525,7 +525,7 @@ contract IssuingEntity is Modular, MultiSig {
 		internal
 		view
 		returns (
-			bool[2] _allowed,
+			bool[2] _permitted,
 			uint8[2] _rating,
 			uint16[2] _country
 		)
@@ -533,30 +533,30 @@ contract IssuingEntity is Modular, MultiSig {
 		/* If both investors are in the same registry, call getInvestors */
 		KYCRegistrar r = registrars[_key[0]].addr;
 		if (_key[0] > 0 && _key[0] == _key[1]) {
-			(, _allowed, _rating, _country) = r.getInvestors(_addr[0], _addr[1]);
-			return (_allowed, _rating, _country);
+			(, _permitted, _rating, _country) = r.getInvestors(_addr[0], _addr[1]);
+			return (_permitted, _rating, _country);
 		}
 		/* Otherwise, call getInvestor at each registry */
 		if (_key[0] != 0) {
-			(, _allowed[0], _rating[0], _country[0]) = r.getInvestor(_addr[0]);
+			(, _permitted[0], _rating[0], _country[0]) = r.getInvestor(_addr[0]);
 		} else {
 			/* If key == 0 the address belongs to the issuer or a custodian. */
-			_allowed[0] = true;
+			_permitted[0] = true;
 		}
 		if (_key[1] != 0) {
 			r = registrars[_key[1]].addr;
-			(, _allowed[1], _rating[1], _country[1]) = r.getInvestor(_addr[1]);
+			(, _permitted[1], _rating[1], _country[1]) = r.getInvestor(_addr[1]);
 		} else {
-			_allowed[1] = true;
+			_permitted[1] = true;
 		}
-		return (_allowed, _rating, _country);
+		return (_permitted, _rating, _country);
 	}
 
 	/**
 		@notice internal check if transfer is permitted
 		@param _authID id hash of caller
 		@param _id addresses of sender and receiver
-		@param _allowed array of permission bools from registrar
+		@param _permitted array of permission bools from registrar
 		@param _rating array of investor ratings
 		@param _country array of investor countries
 		@param _tokenCount sender accounts.count value after transfer
@@ -564,7 +564,7 @@ contract IssuingEntity is Modular, MultiSig {
 	function _checkTransfer(
 		bytes32 _authID,
 		bytes32[2] _id,
-		bool[2] _allowed,
+		bool[2] _permitted,
 		uint8[2] _rating,
 		uint16[2] _country,
 		uint32 _tokenCount
@@ -577,12 +577,12 @@ contract IssuingEntity is Modular, MultiSig {
 			require(!locked, "Transfers locked: Issuer");
 			require(!tokens[msg.sender].restricted, "Transfers locked: Token");
 			require(!accounts[_id[0]].restricted, "Sender restricted: Issuer");
-			require(_allowed[0], "Sender restricted: Registrar");
+			require(_permitted[0], "Sender restricted: Registrar");
 			require(!accounts[_authID].restricted, "Authority restricted");
 		}
 		/* Always check the receiver is not restricted. */
 		require(!accounts[_id[1]].restricted, "Receiver restricted: Issuer");
-		require(_allowed[1], "Receiver restricted: Registrar");
+		require(_permitted[1], "Receiver restricted: Registrar");
 		if (_id[0] != _id[1]) {
 			/*
 				A rating of 0 implies the receiver is the issuer or a
@@ -590,7 +590,7 @@ contract IssuingEntity is Modular, MultiSig {
 			*/
 			if (_rating[1] != 0) {
 				Country storage c = countries[_country[1]];
-				require(c.allowed, "Receiver blocked: Country");
+				require(c.permitted, "Receiver blocked: Country");
 				require(_rating[1] >= c.minRating, "Receiver blocked: Rating");
 				/*  
 					If the receiving investor currently has 0 balance and no

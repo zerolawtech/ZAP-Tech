@@ -26,11 +26,11 @@ contract TokenBase is Modular {
 	mapping (address => mapping (address => uint256)) custBalances;
 	mapping (address => mapping (address => uint256)) allowed;
 
-	event Transfer(address indexed from, address indexed to, uint tokens);
+	event Transfer(address indexed from, address indexed to, uint256 tokens);
 	event Approval(
 		address indexed tokenOwner,
 		address indexed spender,
-		uint tokens
+		uint256 tokens
 	);
 	event AuthorizedSupplyChanged(uint256 oldAuthorized, uint256 newAuthorized);
 	event TotalSupplyChanged(

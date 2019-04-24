@@ -70,6 +70,8 @@ KYCIssuer
 
 See the :ref:`multisig` documentation for information on this aspect of the contract's functionality.
 
+.. _kyc-registrar:
+
 KYCRegistrar
 ------------
 
@@ -91,6 +93,8 @@ Adding Authorities
     * ``_threshold``: The number of calls required for the authority to perform a multi-sig action. Cannot exceed the length of ``_owners``
 
     Once an authority has been designated they may use ``KYCRegistrar.registerAddresses`` or ``KYCRegistrar.restrictAddresses`` to modify their associated addresses.
+
+    Emits the ``NewAuthority`` event.
 
     .. code-block:: python
 
@@ -148,6 +152,8 @@ Modifying Authorities
     If an authority has been compromised or found to be acting in bad faith, the owner may apply a broad restriction upon them with this method. This will also restrict every investor that was approved by the authority.
 
     A list of investors that were approved by the restricted authority can be obtained by looking at ``NewInvestor`` and ``UpdatedInvestor`` events. Once the KYC/AML of these investors has been re-verified, the restriction upon them may be removed by calling either ``KYCRegistrar.updateInvestor`` or ``KYCRegistrar.setInvestorAuthority`` to change which authority they are associated with.
+
+    Emits the ``AuthorityRestriction`` event.
 
     .. code-block:: python
 
@@ -223,6 +229,8 @@ Adding Investors
 
     Similar to authorities, addresses associated with investors can be modified by calls to ``KYCRegistrar.registerAddresses`` or ``KYCRegistrar.restrictAddresses``.
 
+    Emits the ``NewInvestor`` event.
+
     .. code-block:: python
 
         >>> kyc.addInvestor(id_, 784, "0x465500", 1, 9999999999, (accounts[3],), {'from': accounts[0]})
@@ -240,6 +248,8 @@ Modifying Investors
 
     Due to the way that the investor ID is generated, it is not possible to modify the country that an investor is associated with. An investor who changes their legal country of residence will have to resubmit KYC, be assigned a new ID, and transfer their tokens to a different address.
 
+    Emits the ``UpdatedInvestor`` event.
+
     .. code-block:: python
 
         >>> kyc.updateInvestor(id_, "0x465500", 2, 1600000000, {'from': accounts[0]})
@@ -251,6 +261,8 @@ Modifying Investors
 .. method:: KYCBase.setInvestorRestriction(bytes32 _id, bool _permitted)
 
     Modifies the restricted status of an investor.  An investor who is restricted will be unable to send or receive tokens.
+
+    Emits the ``InvestorRestriction`` event.
 
     .. code-block:: python
 
@@ -294,6 +306,8 @@ In situations of a lost or compromised private key the address may instead be fl
 
     In ``KYCRegistrar``: If the ID belongs to an authority, this method may only be called by the owner. If the ID is an investor, it may be called by any authority permitted to work in that investor's country.
 
+    Emits the ``RegisteredAddresses`` event.
+
     .. code-block:: python
 
         >>> kyc.registerAddresses(id_, [accounts[4], accounts[5]], {'from': accounts[0]})
@@ -309,6 +323,8 @@ In situations of a lost or compromised private key the address may instead be fl
     In ``KYCRegistrar``: If the ID belongs to an authority, this method may only be called by the owner. If the ID is an investor, it may be called by any authority permitted to work in that investor's country.
 
     When restricing addresses associated to an authority, you cannot reduce the number of addresses such that the total remaining is lower than the multi-sig threshold value for that authority.
+
+    Emits the ``RestrictedAddresses`` event.
 
     .. code-block:: python
 
@@ -491,23 +507,23 @@ The ``authority`` value in each event is the ID hash of the authority that calle
 
 .. method:: KYCBase.NewInvestor(bytes32 indexed id, uint16 indexed country, bytes3 region, uint8 rating, uint40 expires, bytes32 indexed authority)
 
-    Emitted when a new investor is added to the registry.
+    Emitted when a new investor is added to the registry with ``KYCBase.addInvestor``.
 
 .. method:: KYCBase.UpdatedInvestor(bytes32 indexed id, bytes3 region, uint8 rating, uint40 expires, bytes32 indexed authority)
 
-    Emitted when data about an existing investor is modified.
+    Emitted when data about an existing investor is modified with ``KYCBase.updateInvestor``.
 
 .. method:: KYCBase.InvestorRestriction(bytes32 indexed id, bool permitted, bytes32 indexed authority)
 
-    Emitted when a restriction upon an investor is set or removed.
+    Emitted when a restriction upon an investor is set or removed with ``KYCBase.setInvestorRestriction``.
 
 .. method:: KYCBase.RegisteredAddresses(bytes32 indexed id, address[] addr, bytes32 indexed authority)
 
-    Emitted when new addresses are associated with an investor ID, or a existing addresses have a restriction removed.
+    Emitted by ``KYCBase.registerAddresses`` when new addresses are associated with an investor ID, or existing addresses have a restriction removed.
 
 .. method:: KYCBase.RestrictedAddresses(bytes32 indexed id, address[] addr, bytes32 indexed authority)
 
-    Emitted when a restriction is set upon addresses associated with an investor ID.
+    Emitted when a restriction is set upon addresses associated with an investor ID with ``KYCBase.restrictAddresses``.
 
 KYCRegistrar
 ------------

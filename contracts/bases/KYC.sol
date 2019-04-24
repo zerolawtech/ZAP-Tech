@@ -1,8 +1,25 @@
 pragma solidity >=0.4.24 <0.5.0;
 
+/**
+	@title KYC Abstract Base Contract 
+	@dev Methods in this ABC are defined in contracts that inherit KYCBase
+*/
+contract KYCBaseABC {
 
-/** @title KYC Issuer */
-contract KYCBase {
+	function addInvestor(bytes32, uint16, bytes3, uint8, uint40, address[]) external returns (bool);
+	function updateInvestor(bytes32, bytes3, uint8, uint40) external returns (bool);
+	function setInvestorRestriction(bytes32, bool) external returns (bool);
+	function registerAddresses(bytes32, address[]) external returns (bool);
+	function restrictAddresses(bytes32, address[]) external returns (bool);
+	function isPermittedID(bytes32) public view returns (bool);
+
+}
+
+/**
+	@title KYC Base 
+	@dev Shared methods for KYCIssuer and KYCRegistrar
+*/
+contract KYCBase is KYCBaseABC {
 
 	struct Address {
 		bytes32 id;
@@ -231,14 +248,6 @@ contract KYCBase {
 		if (idMap[_addr].restricted) return false;
 		return isPermittedID(idMap[_addr].id);
 	}
-
-	/**
-		@notice Check if an an investor is permitted based on ID
-		@dev Implemented in inheritted contracts
-		@param _id Investor ID to query
-		@return bool permission
-	 */
-	function isPermittedID(bytes32 _id) public view returns (bool);
 
 	/**
 		@notice Generate a unique investor ID

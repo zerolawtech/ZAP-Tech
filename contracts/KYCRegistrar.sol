@@ -19,7 +19,7 @@ contract KYCRegistrar is KYCBase {
 
 	event NewAuthority(bytes32 indexed id);
 	event AuthorityRestriction(bytes32 indexed id, bool permitted);
-	event MultiSigCall (
+	event MultiSigCall(
 		bytes32 indexed id,
 		bytes4 indexed callSignature,
 		bytes32 indexed callHash,
@@ -27,7 +27,7 @@ contract KYCRegistrar is KYCBase {
 		uint256 callCount,
 		uint256 threshold
 	);
-	event MultiSigCallApproved (
+	event MultiSigCallApproved(
 		bytes32 indexed id,
 		bytes4 indexed callSignature,
 		bytes32 indexed callHash,
@@ -136,19 +136,19 @@ contract KYCRegistrar is KYCBase {
 		@notice Internal function set authority country booleans
 		@param _countries Storage pointer to authority country bit field
 		@param _toSet Array of country codes
-		@param _value Boolean to set countries to
+		@param _permitted Boolean to set countries to
 	 */
 	function _setCountries(
 		uint256[8] storage _countries,
 		uint16[] memory _toSet,
-		bool _value
+		bool _permitted
 	)
 		internal
 	{
 		uint256[8] memory _bitfield = _countries;
 		for (uint256 i; i < _toSet.length; i++) {
 			uint256 _idx = _toSet[i] / 256;
-			if (_value) {
+			if (_permitted) {
 				_bitfield[_idx] = (
 					_bitfield[_idx] | uint256(1) <<
 					(_toSet[i] - _idx*256)
@@ -222,13 +222,13 @@ contract KYCRegistrar is KYCBase {
 		@notice Sets approval of an authority to register entities in a country
 		@param _id Authority ID
 		@param _countries Array of country IDs
-		@param _auth boolean to set or restrict countries
+		@param _permitted boolean to set or restrict countries
 		@return bool succcess
 	 */
 	function setAuthorityCountries(
 		bytes32 _id,
 		uint16[] _countries,
-		bool _auth
+		bool _permitted
 	)
 		external
 		returns (bool)
@@ -236,7 +236,7 @@ contract KYCRegistrar is KYCBase {
 		if (!_checkMultiSig(true)) return false;
 		Authority storage a = authorityData[_id];
 		require(a.addressCount > 0, "dev: not authority");
-		_setCountries(a.countries, _countries, _auth);
+		_setCountries(a.countries, _countries, _permitted);
 		return true;
 	}
 
@@ -260,7 +260,7 @@ contract KYCRegistrar is KYCBase {
 		require(_id != ownerID, "dev: owner");
 		require(authorityData[_id].addressCount > 0, "dev: not authority");
 		authorityData[_id].restricted = !_permitted;
-		emit AuthorityRestriction(_id, !_permitted);
+		emit AuthorityRestriction(_id, _permitted);
 		return true;
 	}
 

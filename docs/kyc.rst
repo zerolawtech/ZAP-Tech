@@ -396,7 +396,7 @@ The following calls will not revert, instead returning ``false`` or an empty res
 Calls that Revert
 -----------------
 
-The remaining calls **will revert under some conditions**:
+The remaining calls will revert under some conditions:
 
 .. method:: KYCBase.getInvestor(address _addr)
 

@@ -54,14 +54,14 @@ Owner addresses are able to add investors to the registrar whitelist using ``KYC
 
 .. code-block:: python
 
-    >>> kyc = accounts[0].deploy(KYCRegistrar, (a[0],), 1)
+    >>> kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
 
     Transaction sent: 0xd10264c1445aad4e9dc84e04615936624e0b96596fec2097bebc83f9d3e69664
     KYCRegistrar.constructor confirmed - block: 2   gas used: 2853810 (35.67%)
     KYCRegistrar deployed at: 0x40b49Ad1B8D6A8Df6cEdB56081D51b69e6569e06
     <KYCRegistrar Contract object '0x40b49Ad1B8D6A8Df6cEdB56081D51b69e6569e06'>
     >>>
-    >>> kyc.addInvestor('0x1234', 784, '0x465500', 2, 9999999999, (accounts[3],), {'from': accounts[0]})
+    >>> kyc.addInvestor("0x1234", 784, "0x465500", 2, 9999999999, (accounts[3],), {'from': accounts[0]})
 
     Transaction sent: 0x47581e5b276298427f6a520353622b96cdecb29dff7269f03d7c957435398ebd
     KYCRegistrar.addInvestor confirmed - block: 3   gas used: 120707 (1.51%)
@@ -79,7 +79,7 @@ Issuing tokens and being able to transfer them requires the following steps:
 
     .. code-block:: python
 
-        >>> issuer = accounts[0].deploy(IssuingEntity, (accounts[0],), 1)
+        >>> issuer = accounts[0].deploy(IssuingEntity, [accounts[0]], 1)
 
         Transaction sent: 0xb37d8d16b266796e64fde6a4e9813ae0673dddaeb63022d91c706612ee741972
         IssuingEntity.constructor confirmed - block: 2   gas used: 6473451 (80.92%)
@@ -180,7 +180,7 @@ Once a custodian contract is deployed you must attach it to an IssuingEntity wit
 
 .. code-block:: python
 
-    >>> cust = accounts[0].deploy(OwnedCustodian, (accounts[0],), 1)
+    >>> cust = accounts[0].deploy(OwnedCustodian, [accounts[0]], 1)
 
     Transaction sent: 0x11540767a467504e3ddd03c8c2423840a69bd82a6f28db33ea869570b87486f0
     OwnedCustodian.constructor confirmed - block: 13   gas used: 3326386 (41.58%)

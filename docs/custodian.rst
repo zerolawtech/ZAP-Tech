@@ -4,7 +4,7 @@
 Custodian
 #########
 
-Custodian contracts allow approved entities to hold tokens on behalf of multiple investors. Each custodian must be individually approved by an issuer before they can receive tokens.
+Custodian contracts are approved to hold tokens on behalf of multiple investors. Each custodian must be individually approved by an issuer before they can receive tokens.
 
 There are two broad categories of custodians:
 
@@ -13,11 +13,11 @@ There are two broad categories of custodians:
 
 It may be useful to view source code for the following contracts while reading this document:
 
-* `IMiniCustodian.sol <https://github.com/SFT-Protocol/security-token/blob/master/contracts/interfaces/IMiniCustodian.sol>`__: The minimum contract interface required for a Custodian contract to interact with an IssuingEntity contract.
-* `Owned.sol <https://github.com/SFT-Protocol/security-token/blob/master/contracts/custodians/Owned.sol>`__: Standard owned custodian contract with Multisig and Modular functionality.
-* `Escrow.sol <https://github.com/SFT-Protocol/security-token/blob/master/contracts/custodians/Escrow.sol>`__: An example autonomous custodian implementation, providing on-chain enforceable escrow.
+* `IMiniCustodian.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/interfaces/IMiniCustodian.sol>`__: The minimum contract interface required for a custodian to interact with an ``IssuingEntity`` contract.
+* `OwnedCustodian.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/custodians/OwnedCustodian.sol>`__: Standard owned custodian contract with ``Multisig`` and ``Modular`` functionality.
+* `Escrow.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/custodians/Escrow.sol>`__: An example autonomous custodian implementation, providing on-chain enforceable escrow.
 
-.. warning:: An issuer should not approve a Custodian contract if it's source code cannot be verified, or it is using a non-standard implementation that has not undergone a thorough audit. Inaccurate balance reporting could enable a range of exploits. The SFT protocol includes a standard owned Custodian contract that allows for modular customization without introducing security concerns.
+.. warning:: An issuer should not approve a Custodian if the contract source code cannot be verified, or it is using a non-standard implementation that has not undergone a thorough audit. The SFT protocol includes a standard owned Custodian contract that allows for modular customization without introducing security concerns.
 
 How Custodians Work
 ===================
@@ -27,9 +27,7 @@ Custody and Beneficial Ownership
 
 Custodians interact with an issuer’s investor counts differently from regular investors. When an investor transfers a balance into a custodian it does not increase the overall investor count, instead the investor is now included in the list of beneficial owners represented by the custodian. Even if the investor now has a balance of 0 in their own wallet, they will be still be included in the issuer’s investor count.
 
-Custodian transfer functions include a boolean ``_stillOwner``. When set to true, even if an investor's balance is at 0 as a result of a transfer, that investor will still be included in the list of beneficial owners within the custodian. This allows the custodian to continue to reserver the slot within the investor count, which is useful in a situation such as a secondary market where an investor may be moving in and out of the position many times over a short period.
-
-The value of ``_stillOwner`` is only checked when a transfer results in a 0 balance for the sender. If set to false during a transfer where the investor's final balance is greater than zero, the transfer will succeed but the beneficial owner status will not be released.
+Custodian balances are tracked directly in the corresponding ``SecurityToken`` contract using the private mapping ``custodianBalances``.
 
 Token Transfers
 ---------------
@@ -38,7 +36,7 @@ There are three types of token transfers related to Custodians.
 
 * **Inbound**: transfers from an investor into the Custodian contract.
 * **Outbound**: transfers from the Custodian contract to an investor's wallet.
-* **Internal**: transfers involving a change of beneficial ownership records within the Custodian contract. This is the only type of transfer that involves a change of ownership of the token.
+* **Internal**: transfers involving a change of ownership records within the Custodian contract. This is the only type of transfer that involves a change of ownership of the token.
 
 In order to perform these transfers, Custodian contracts interact with IssuingEntity and SecurityToken contracts via the following methods. None of these methods are user-facing; if you are only using the standard Custodian contracts within the protocol you can skip the rest of this section.
 

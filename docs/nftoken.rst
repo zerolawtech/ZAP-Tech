@@ -1,19 +1,18 @@
-.. _security-token:
+.. _nftoken:
 
-#############
-SecurityToken
-#############
+#######
+NFToken
+#######
 
-The ``SecurityToken`` contract represents a single class of fungible, non-certificated "book entry" securities.  It is based on the `ERC20 Token
+The ``NFToken`` contract represents a single class of non-fungible certificated securities. It is based on the `ERC20 Token
 Standard <https://theethereum.wiki/w/index.php/ERC20_Token_Standard>`__, with an additional ``checkTransfer`` function available to verify if transfers will succeed.
 
 Token contracts include :ref:`multisig` and :ref:`modules` via the associated :ref:`issuing-entity` contract. See the respective documents for more detailed information.
 
 It may be useful to view source code for the following contracts while reading this document:
 
-* `SecurityToken.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/SecurityToken.sol>`__: the deployed contract, with functionality specific to ``SecurityToken``.
-* `Token.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/bases/Token.sol>`__: the base contract that both ``SecurityToken`` and ``NFToken`` inherit functionality from.
-
+* `NFToken.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/NFToken.sol>`__: the deployed contract, with functionality specific to ``NFToken``.
+* `Token.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/bases/Token.sol>`__: the base contract that both ``NFToken`` and ``SecurityToken`` inherit functionality from.
 
 Deployment
 ==========

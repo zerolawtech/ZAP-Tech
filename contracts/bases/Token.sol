@@ -33,11 +33,6 @@ contract TokenBase is Modular {
 		uint256 tokens
 	);
 	event AuthorizedSupplyChanged(uint256 oldAuthorized, uint256 newAuthorized);
-	event TotalSupplyChanged(
-		address indexed owner,
-		uint256 oldBalance,
-		uint256 newBalance
-	);
 
 	/**
 		@notice Security token constructor
@@ -248,7 +243,6 @@ contract TokenBase is Modular {
 			0x00,
 			abi.encode(_owner, _id, _rating, _country, _old, _new)
 		));
-		emit TotalSupplyChanged(_owner, _old, _new);
 		return true;
 	}
 

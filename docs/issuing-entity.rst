@@ -33,6 +33,19 @@ The constructor declares the owner as per standard :ref:`multisig`.
         IssuingEntity deployed at: 0xa79269260195879dBA8CEFF2767B7F2B5F2a54D8
         <IssuingEntity Contract object '0xa79269260195879dBA8CEFF2767B7F2B5F2a54D8'>
 
+Public Constants
+================
+
+The following public variables cannot be changed after contract deployment.
+
+.. method:: IssuingEntity.ownerID()
+
+    The bytes32 ID hash of the issuer.
+
+    .. code-block:: python
+
+        >>> issuer.ownerID()
+        0xce1e12589ad8fb3eed11af5b9ef8788c25b574d4073d23c871e003021400c429
 
 Tokens, Registrars and Custodians
 =================================
@@ -391,24 +404,10 @@ Getters
 
     .. code-block:: python
 
-        >>> issuer.isActiveModule(module)
+        >>> issuer.isActiveModule(issuer_module)
         True
         >>> issuer.isActiveModule(token_module)
         False
-
-Public Constants
-================
-
-The following public variables cannot be changed after contract deployment.
-
-.. method:: IssuingEntity.ownerID()
-
-    The bytes32 ID hash of the issuer.
-
-    .. code-block:: python
-
-        >>> issuer.ownerID()
-        0xce1e12589ad8fb3eed11af5b9ef8788c25b574d4073d23c871e003021400c429
 
 Events
 ======

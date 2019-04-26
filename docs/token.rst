@@ -5,9 +5,7 @@ Token
 #####
 
 Each token contract represents a single class of securities from an issuer. Token contracts are based on the `ERC20 Token
-Standard <https://theethereum.wiki/w/index.php/ERC20_Token_Standard>`__, with an additional ``checkTransfer`` function available to verify if transfers will succeed.
-
-Depending on the use case, there are two token implementations:
+Standard <https://theethereum.wiki/w/index.php/ERC20_Token_Standard>`__. Depending on the use case, there are two token implementations:
 
 * `SecurityToken.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/SecurityToken.sol>`__ is used for the issuance of non-certificated (book entry) securities. These tokens are fungible.
 * `NFToken.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/NFToken.sol>`__ is used for the issuance of certificated securities. These tokens are non-fungible.

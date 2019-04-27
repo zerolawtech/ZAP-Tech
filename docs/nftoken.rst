@@ -157,7 +157,7 @@ Setters
     * ``_start``: Start index of token range to burn.
     * ``_stop``: Stop index of token range to burn.
 
-    Burning a partial range is allowed. Burn tokens from multiple ranges in the same call is not.
+    Burning a partial range is allowed. Burning tokens from multiple ranges in the same call is not.
 
     A ``Transfer`` event is emitted showing the new tokens as transferring to ``0x00`` and the total supply will increase.
 
@@ -220,28 +220,103 @@ Ranges
 
 .. method:: NFToken.getRange(uint256 _idx)
 
+    Returns information about the token range that ``_idx`` is a part of.
+
+    .. code-block:: python
+
+        >>> token.getRange(1337).dict()
+        {
+            '_custodian': "0x0000000000000000000000000000000000000000",
+            '_owner': "0x055f1c2c9334a4e57ACF2C4d7ff95d03CA7d6741",
+            '_start': 1000,
+            '_stop': 2000,
+            '_tag': "0x0000",
+            '_time': 0
+        }
+
+
 .. method:: NFToken.rangesOf(address _owner)
+
+    Returns the ``_start:_stop`` indexes of each token range belonging to ``_owner``.
+
+    .. code-block:: python
+
+        >>> token.rangesOf(accounts[1])
+        ((1, 1000), (2000, 10001))
 
 .. method:: NFToken.custodianRangesOf(address _owner, address _custodian)
 
+    Returns the ``_start:_stop`` indexes of each token range belonging to ``_owner`` that is custodied by ``_custodian``.
+
+    .. code-block:: python
+
+        >>> token.custodianRangesOf(accounts[1], cust)
+        ((1000, 2000))
+
 .. method:: NFToken.modifyRange(uint48 _pointer, uint32 _time, bytes2 _tag)
 
-.. method:: NFToken.modifyRanges(
-		uint48 _start,
-		uint48 _stop,
-		uint32 _time,
-		bytes2 _tag
-	)
+    .. code-block:: python
 
-.. method:: NFToken.transferRange(
-		address _to,
-		uint48 _start,
-		uint48 _stop
-	)
+        >>> token.getRange(1).dict()
+        {
+            '_custodian': "0x0000000000000000000000000000000000000000",
+            '_owner': "0xf414d65808f5f59aE156E51B97f98094888e7d92",
+            '_start': 1,
+            '_stop': 1000,
+            '_tag': "0x0000",
+            '_time': 0
+        }
+        >>> token.modifyRange(1, 1600000000, "0x1234", {'from':accounts[0]})
 
-.. method:: NFToken.
+        Transaction sent: 0xed36d04d4888db5d9fefb69b0fa98367f19049d304f60c55b6a1b74da3fd8edd
+        NFToken.modifyRange confirmed - block: 18   gas used: 51594 (0.64%)
+        >>> token.getRange(1).dict()
+        {
+            '_custodian': "0x0000000000000000000000000000000000000000",
+            '_owner': "0xf414d65808f5f59aE156E51B97f98094888e7d92",
+            '_start': 1,
+            '_stop': 1000,
+            '_tag': "0x1234",
+            '_time': 1600000000
+        }
 
-.. method:: NFToken.
+.. method:: NFToken.modifyRanges(uint48 _start, uint48 _stop, uint32 _time, bytes2 _tag)
+
+    .. code-block:: python
+
+        >>> token.getRange(1).dict()
+        {
+            '_custodian': "0x0000000000000000000000000000000000000000",
+            '_owner': "0xf414d65808f5f59aE156E51B97f98094888e7d92",
+            '_start': 1,
+            '_stop': 1000,
+            '_tag': "0x0000",
+            '_time': 0
+        }
+        >>> token.modifyRanges(500, 1500, 2000000000, "0xffff", {'from':accounts[0]})
+
+        Transaction sent: 0xe9a6d2e961bdd24339d24c140e8d16fd69cf93a72fc93810798aa0d2bbe69525
+        NFToken.modifyRanges confirmed - block: 21   gas used: 438078 (5.48%)
+        <Transaction object '0xe9a6d2e961bdd24339d24c140e8d16fd69cf93a72fc93810798aa0d2bbe69525'>
+        >>>
+        >>> token.getRange(1).dict()
+        {
+            '_custodian': "0x0000000000000000000000000000000000000000",
+            '_owner': "0xf414d65808f5f59aE156E51B97f98094888e7d92",
+            '_start': 1,
+            '_stop': 500,
+            '_tag': "0x0000",
+            '_time': 0
+        }
+        >>> token.getRange(500).dict()
+        {
+            '_custodian': "0x0000000000000000000000000000000000000000",
+            '_owner': "0xf414d65808f5f59aE156E51B97f98094888e7d92",
+            '_start': 500,
+            '_stop': 1000,
+            '_tag': "0xffff",
+            '_time': 2000000000
+        }
 
 Balances and Transfers
 ======================
@@ -353,7 +428,7 @@ Transferring Tokens
 
     Some logic in this method deviates from the ERC20 standard, see :ref:`security-token-non-standard` for more information.
 
-    All transfers will emit the ``Transfer`` event. Transfers where there is a change of ownership will also emit``IssuingEntity.TransferOwnership``.
+    All transfers will emit the ``Transfer`` event, as well as one or more ``TransferRange`` events. Transfers where there is a change of ownership will also emit``IssuingEntity.TransferOwnership``.
 
     .. code-block:: python
 
@@ -398,6 +473,22 @@ Transferring Tokens
         Transaction sent: 0x84cdd0c85d3e39f1ba4f5cbd0c4cb196c0f343c90c0819157acd14f6041fe945
         NFToken.transferFrom confirmed - block: 21   gas used: 234557 (2.93%)
         <Transaction object '0x84cdd0c85d3e39f1ba4f5cbd0c4cb196c0f343c90c0819157acd14f6041fe945'>
+
+.. method:: NFToken.transferRange(address _to, uint48 _start, uint48 _stop)
+
+    Transfers the token range ``_start:_stop`` from ``msg.sender`` to ``_to``.
+
+    Transferring a partial range is allowed. Transferring tokens from multiple ranges in the same call is not.
+
+    All transfers will emit the ``Transfer`` and ``TransferRange`` events. Transfers where there is a change of ownership will also emit``IssuingEntity.TransferOwnership``.
+
+    .. code-block:: python
+
+        >>> token.transferRange(accounts[2], 1000, 2000, {'from': accounts[1]})
+
+        Transaction sent: 0x9ae3c41984aad767b2a535a5ade8f70b104b125da622124e9c3be52b7e373a11
+        NFToken.transferRange confirmed - block: 17   gas used: 441081 (5.51%)
+        <Transaction object '0x9ae3c41984aad767b2a535a5ade8f70b104b125da622124e9c3be52b7e373a11'>
 
 .. _nftoken-non-standard:
 
@@ -463,6 +554,14 @@ The ``NFToken`` contract includes the following events.
 
     Also emitted by ``NFToken.mint`` and ``NFToken.burn``. For minting the address of the sender will be ``0x00``, for burning it will be the address of the receiver.
 
+.. method:: NFToken.TransferRange(address indexed from, address indexed to, uint256 start, uint256 stop, uint256 amount)
+
+    Emitted whenever a token range is transferred via ``NFToken.transferRange``.
+
+    Emitted once for each range transferred during calls to ``NFToken.transfer`` and ``NFToken.transferFrom``.
+
+    Also emitted by ``NFToken.mint`` and ``NFToken.burn``. For minting the address of the sender will be ``0x00``, for burning it will be the address of the receiver.
+
 .. method:: TokenBase.Approval(address indexed tokenOwner, address indexed spender, uint256 tokens)
 
     Emitted when an approved transfer amount is set via ``NFToken.approve``.
@@ -471,6 +570,6 @@ The ``NFToken`` contract includes the following events.
 
     Emitted when the authorized supply is changed via ``TokenBase.modifyAuthorizedSupply``.
 
-.. method:: NFToken.TransferRange(address indexed from, address indexed to, uint256 start, uint256 stop, uint256 amount)
-
 .. method:: NFToken.RangeSet(bytes2 indexed tag, uint256 start, uint256 stop, uint32 time)
+
+    Emitted when a token range is modified via ``NFToken.modifyRange`` or ``NFToken.modifyRanges``, or when a new range is minted with ``NFToken.mint``.

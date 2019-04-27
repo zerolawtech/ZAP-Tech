@@ -24,7 +24,7 @@ interface IBaseModule {
 	@notice SecurityToken module interface
 	@dev These are all the possible hook point methods for token modules
 */
-interface ISTModule {
+contract ISTModule is IBaseModule {
 	
 	function token() external returns (address);
 	
@@ -88,24 +88,11 @@ interface ISTModule {
 
 /**
 	@notice NFToken module interface
-	@dev These are all the possible hook point methods for NF-token modules
+	@dev
+		These are all the possible hook point methods for NFToken modules
+		All SecurityToken module hook points are also available
 */
-interface INFTModule {
-
-	function token() external returns (address);
-
-	/* 0x70aaf928 */
-	function checkTransfer(
-		address[2] _addr,
-		bytes32 _authID,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value
-	)
-		external
-		view
-		returns (bool);
+contract INFTModule is ISTModule {
 
 	/* 0x2d79c6d7 taggable */
 	function checkTransferRange(
@@ -131,45 +118,13 @@ interface INFTModule {
 		external
 		returns (bool);
 
-	/* 0x8b5f1240 */
-	function transferTokensCustodian(
-		address _custodian,
-		address[2] _addr,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country,
-		uint256 _value
-	)
-		external
-		returns (bool);
-
-	/* 0xb1a1a455 */
-	function modifyAuthorizedSupply(
-		address _token,
-		uint256 _oldSupply,
-		uint256 _newSupply
-	)
-		external
-		returns (bool);
-
-	/* 0x741b5078 */
-	function totalSupplyChanged(
-		address _addr,
-		bytes32 _id,
-		uint8 _rating,
-		uint16 _country,
-		uint256 _old,
-		uint256 _new
-	)
-		external
-		returns (bool);
 }
 
 /**
 	@notice IssuingEntity module interface
 	@dev These are all the possible hook point methods for issuer modules
 */
-interface IIssuerModule {
+contract IIssuerModule is IBaseModule {
 
 	/* 0x9a5150fc */
 	function checkTransfer(
@@ -200,7 +155,7 @@ interface IIssuerModule {
 	@notice Custodian module interface
 	@dev These are all the possible hook point methods for custodian modules
 */
-interface ICustodianModule {
+contract ICustodianModule is IBaseModule {
 
 	/**
 		@notice Custodian sent tokens

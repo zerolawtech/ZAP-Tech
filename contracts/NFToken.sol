@@ -375,7 +375,7 @@ contract NFToken is TokenBase  {
 
 	/**
 		@notice Burns tokens
-		@dev Canoot burn multiple ranges in a single call
+		@dev Cannot burn multiple ranges in a single call
 		@param _start Start index of range to burn
 		@param _stop Stop index of range to burn
 		@return Bool success

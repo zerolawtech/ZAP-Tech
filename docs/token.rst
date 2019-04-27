@@ -22,3 +22,4 @@ Because of significant differences in the contracts, ``SecurityToken`` and ``NFT
 
     security-token.rst
     nftoken.rst
+    token-non-standard.rst

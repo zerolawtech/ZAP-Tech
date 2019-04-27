@@ -26,7 +26,7 @@ Deployment
 
     After the contract is deployed it must be associated with the issuer via ``IssuingEntity.addToken``. It is not possible to mint tokens until this is done.
 
-    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The issuer may then mint tokens by calling ``mint`` directly or via a module. See :ref:`security-token-mint-burn`.
+    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The issuer may then mint tokens by calling ``SecurityToken.mint`` directly or via a module. See :ref:`security-token-mint-burn`.
 
     .. code-block:: python
 
@@ -92,12 +92,12 @@ The following public variables cannot be changed after contract deployment.
 Total Supply, Minting and Burning
 =================================
 
-Along with the ERC20 standard ``totalSupply``, token contracts include an ``authorizedSupply`` that represents the maximum allowable total supply. The issuer may mint new tokens using ``mint`` until the total supply is equal to the authorized supply. The initial authorized supply is set during deployment and may be increased later using ``modifyAuthorizedSupply``.
+Authorized Supply
+-----------------
+
+Along with the ERC20 standard ``totalSupply``, token contracts include an ``authorizedSupply`` that represents the maximum allowable total supply. The issuer may mint new tokens using ``SecurityToken.mint`` until the total supply is equal to the authorized supply. The initial authorized supply is set during deployment and may be increased later using ``TokenBase.modifyAuthorizedSupply``.
 
 A governance module can be deployed to dictate when the issuer is allowed to modify the authorized supply.
-
-Setters
--------
 
 .. method:: TokenBase.modifyAuthorizedSupply(uint256 _value)
 
@@ -116,6 +116,9 @@ Setters
         Transaction sent: 0x83b7a23e1bc1248445b64f275433add538f05336a4fe07007d39edbd06e1f476
         SecurityToken.modifyAuthorizedSupply confirmed - block: 13   gas used: 46666 (0.58%)
         <Transaction object '0x83b7a23e1bc1248445b64f275433add538f05336a4fe07007d39edbd06e1f476'>
+
+Minting and Burning
+-------------------
 
 .. method:: SecurityToken.mint(address _owner, uint256 _value)
 
@@ -173,7 +176,7 @@ Getters
 
 .. method:: TokenBase.authorizedSupply
 
-    Returns the maximum authorized total supply of tokens. Whenever the authorized supply exceeds the total supply, the issuer may mint new tokens using ``mint``.
+    Returns the maximum authorized total supply of tokens. Whenever the authorized supply exceeds the total supply, the issuer may mint new tokens using ``SecurityToken.mint``.
 
     .. code-block:: python
 
@@ -309,7 +312,7 @@ Transferring Tokens
 
     Transfers ``_value`` tokens from ``msg.sender`` to ``_to``. If the transfer cannot be completed, the call will revert with the reason given in the error string.
 
-    Some logic in this method deviates from the ERC20 standard, see :ref:`security-token-non-standard` for more information.
+    Some logic in this method deviates from the ERC20 standard, see :ref:`token-non-standard` for more information.
 
     All transfers will emit the ``Transfer`` event. Transfers where there is a change of ownership will also emit``IssuingEntity.TransferOwnership``.
 
@@ -343,7 +346,7 @@ Transferring Tokens
 
     Transfers ``_value`` tokens from ``_from`` to ``_to``.
 
-    Prior approval must have been given via ``TokenBase.approve``, except in certain cases documented under :ref:`security-token-non-standard`.
+    Prior approval must have been given via ``TokenBase.approve``, except in certain cases documented under :ref:`token-non-standard`.
 
     All transfers will emit the ``Transfer`` event. Transfers where there is a change of ownership will also emit``IssuingEntity.TransferOwnership``.
 
@@ -356,32 +359,6 @@ Transferring Tokens
         Transaction sent: 0x84cdd0c85d3e39f1ba4f5cbd0c4cb196c0f343c90c0819157acd14f6041fe945
         SecurityToken.transferFrom confirmed - block: 21   gas used: 234557 (2.93%)
         <Transaction object '0x84cdd0c85d3e39f1ba4f5cbd0c4cb196c0f343c90c0819157acd14f6041fe945'>
-
-.. _security-token-non-standard:
-
-Non Standard Behaviours
-=======================
-
-``SecurityToken`` is based upon the ERC-20 standard, however it deviates in several areas.
-
-Issuer Balances
----------------
-
-Tokens held by the issuer will always be at the address of the IssuingEntity contract.  ``SecurityToken.treasurySupply()`` returns the same result as ``SecurityToken.balanceOf(SecurityToken.issuer())``.
-
-As a result, the following non-standard behaviours exist:
-
-* Any address associated with the issuer can transfer tokens from the IssuingEntity contract using ``SecurityToken.transfer``.
-* Attempting to send tokens to any address associated with the issuer will result in the tokens being sent to the IssuingEntity contract.
-
-Token Transfers
----------------
-
-The following behaviours deviate from ERC20 relating to token transfers:
-
-* Transfers of 0 tokens will revert with an error string "Cannot send 0 tokens".
-* If the caller and sender addresses are both associated to the same ID, ``SecurityToken.transferFrom`` may be called without giving prior approval. In this way an investor can easily recover tokens when a private key is lost or compromised.
-* The issuer may call ``SecurityToken.transferFrom`` to move tokens between any addresses without prior approval. Transfers of this type must still pass the normal checks, with the exception that the sending address may be restricted.  In this way the issuer can aid investors with token recovery in the event of a lost or compromised private key, or force a transfer in the event of a court order or sanction.
 
 Modules
 =======

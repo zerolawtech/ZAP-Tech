@@ -14,15 +14,25 @@ It may be useful to view source code for the following contracts while reading t
 * `NFToken.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/NFToken.sol>`__: the deployed contract, with functionality specific to ``NFToken``.
 * `Token.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/bases/Token.sol>`__: the base contract that both ``NFToken`` and ``SecurityToken`` inherit functionality from.
 
+.. _nftoken-range-intro:
+
 How it Works
 ============
 
-Rah rah non-fungibility at scale.
+``NFToken`` applies a unique, sequential index value to every token. This results in fully non-fungible tokens that can transfer at scale without prohibitively high gas costs.
 
-* Ranges
-* Tagging
-* Time locks
-* why uint48
+The first token minted will have an index value of 1.  The maximum index value is 281474976710654 (``2**48 - 2``).  References to token ranges are in the format ``start:stop`` where the final included value is ``stop-1``.  For example, a range of ``2:6`` would contains tokens 2, 3, 4 and 5.
+
+Each range includes the following values:
+
+    * ``_time``: A ``uint32`` epoch time based transfer restriction that is applied to the range. The tokens cannot be transferred until ``now > _time``. Maximum value is 4294967295 (February, 2106).
+    * ``_tag``: A ``bytes2`` tag attached to the range, that allows for more granular control over which modules are called when attempting to transfer the range. See :ref:`modules-hooks-tags` for more information.
+
+These values are initially set at the time of minting and can be modified later with ``NFToken.modifyRange`` or ``NFToken.modifyRanges``. See :ref:`nftoken-ranges` for more information on these methods.
+
+Any time a range is created, modified or transferred, the contract will merge it with neighboring ranges if possible.
+
+To track the chain of custody for each token, monitor the ``TransferRange`` event.
 
 Deployment
 ==========
@@ -36,7 +46,7 @@ Deployment
 
     After the contract is deployed it must be associated with the issuer via ``IssuingEntity.addToken``. It is not possible to mint tokens until this is done.
 
-    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The issuer may then mint tokens by calling ``mint`` directly or via a module. See :ref:`nftoken-mint-burn`.
+    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The issuer may then mint tokens by calling ``NFToken.mint`` directly or via a module. See :ref:`nftoken-mint-burn`.
 
     .. code-block:: python
 
@@ -102,12 +112,12 @@ The following public variables cannot be changed after contract deployment.
 Total Supply, Minting and Burning
 =================================
 
-Along with the ERC20 standard ``totalSupply``, token contracts include an ``authorizedSupply`` that represents the maximum allowable total supply. The issuer may mint new tokens using ``mint`` until the total supply is equal to the authorized supply. The initial authorized supply is set during deployment and may be increased later using ``modifyAuthorizedSupply``.
+Authorized Supply
+-----------------
+
+Along with the ERC20 standard ``totalSupply``, token contracts include an ``authorizedSupply`` that represents the maximum allowable total supply. The issuer may mint new tokens using ``NFToken.mint`` until the total supply is equal to the authorized supply. The initial authorized supply is set during deployment and may be increased later using ``TokenBase.modifyAuthorizedSupply``.
 
 A governance module can be deployed to dictate when the issuer is allowed to modify the authorized supply.
-
-Setters
--------
 
 .. method:: TokenBase.modifyAuthorizedSupply(uint256 _value)
 
@@ -126,6 +136,9 @@ Setters
         Transaction sent: 0x83b7a23e1bc1248445b64f275433add538f05336a4fe07007d39edbd06e1f476
         NFToken.modifyAuthorizedSupply confirmed - block: 13   gas used: 46666 (0.58%)
         <Transaction object '0x83b7a23e1bc1248445b64f275433add538f05336a4fe07007d39edbd06e1f476'>
+
+Minting and Burning
+-------------------
 
 .. method:: NFToken.mint(address _owner, uint48 _value, uint32 _time, bytes2 _tag)
 
@@ -157,7 +170,7 @@ Setters
     * ``_start``: Start index of token range to burn.
     * ``_stop``: Stop index of token range to burn.
 
-    Burning a partial range is allowed. Burning tokens from multiple ranges in the same call is not.
+    Burning a partial range is allowed. Burning tokens from multiple ranges in the same call is not. Once tokens are burnt they are gone forever, their index values will never be re-used.
 
     A ``Transfer`` event is emitted showing the new tokens as transferring to ``0x00`` and the total supply will increase.
 
@@ -187,7 +200,7 @@ Getters
 
 .. method:: TokenBase.authorizedSupply
 
-    Returns the maximum authorized total supply of tokens. Whenever the authorized supply exceeds the total supply, the issuer may mint new tokens using ``mint``.
+    Returns the maximum authorized total supply of tokens. Whenever the authorized supply exceeds the total supply, the issuer may mint new tokens using ``NFToken.mint``.
 
     .. code-block:: python
 
@@ -215,45 +228,29 @@ Getters
         >>> token.circulatingSupply()
         4000
 
-Ranges
-======
+.. _nftoken-ranges:
 
-.. method:: NFToken.getRange(uint256 _idx)
+Token Ranges
+============
 
-    Returns information about the token range that ``_idx`` is a part of.
+If you haven't yet, read the :ref:`nftoken-range-intro` section for an introduction to how token ranges work within this contract.
 
-    .. code-block:: python
-
-        >>> token.getRange(1337).dict()
-        {
-            '_custodian': "0x0000000000000000000000000000000000000000",
-            '_owner': "0x055f1c2c9334a4e57ACF2C4d7ff95d03CA7d6741",
-            '_start': 1000,
-            '_stop': 2000,
-            '_tag': "0x0000",
-            '_time': 0
-        }
-
-
-.. method:: NFToken.rangesOf(address _owner)
-
-    Returns the ``_start:_stop`` indexes of each token range belonging to ``_owner``.
-
-    .. code-block:: python
-
-        >>> token.rangesOf(accounts[1])
-        ((1, 1000), (2000, 10001))
-
-.. method:: NFToken.custodianRangesOf(address _owner, address _custodian)
-
-    Returns the ``_start:_stop`` indexes of each token range belonging to ``_owner`` that is custodied by ``_custodian``.
-
-    .. code-block:: python
-
-        >>> token.custodianRangesOf(accounts[1], cust)
-        ((1000, 2000))
+Modifying Ranges
+----------------
 
 .. method:: NFToken.modifyRange(uint48 _pointer, uint32 _time, bytes2 _tag)
+
+    Modifies the time restriction and tag for a single range.
+
+    * ``_pointer``: Start index of the range to modify
+    * ``_time``: New time restriction for the range
+    * ``_tag``: New tag for the range
+
+    If the index given in ``_pointer`` is not the first token in a range, the call will revert.
+
+    This method is callable directly by the issuer, implementing multi-sig via ``MultiSig.checkMultiSigExternal``. It may also be called by a permitted module.
+
+    Emits the ``RangeSet`` event.
 
     .. code-block:: python
 
@@ -281,6 +278,19 @@ Ranges
         }
 
 .. method:: NFToken.modifyRanges(uint48 _start, uint48 _stop, uint32 _time, bytes2 _tag)
+
+    Modifies the time restriction and tag for all tokens within a given range.
+
+    * ``_start``: Start index of the range to modify
+    * ``_stop``: Stop index of the range to modify.
+    * ``_time``: New time restriction for the range
+    * ``_tag``: New tag for the range
+
+    This method may be used to apply changes across multiple ranges, or to modify a portion of a single range.
+
+    This method is callable directly by the issuer, implementing multi-sig via ``MultiSig.checkMultiSigExternal``. It may also be called by a permitted module.
+
+    Emits the ``RangeSet`` event for each range that is modified.
 
     .. code-block:: python
 
@@ -317,6 +327,46 @@ Ranges
             '_tag': "0xffff",
             '_time': 2000000000
         }
+
+Getters
+-------
+
+References to token ranges are in the format ``start:stop`` where the final included value is ``stop-1``.  For example, a range of ``2:6`` would contains tokens 2, 3, 4 and 5.
+
+.. method:: NFToken.getRange(uint256 _idx)
+
+    Returns information about the token range that ``_idx`` is a part of.
+
+    .. code-block:: python
+
+        >>> token.getRange(1337).dict()
+        {
+            '_custodian': "0x0000000000000000000000000000000000000000",
+            '_owner': "0x055f1c2c9334a4e57ACF2C4d7ff95d03CA7d6741",
+            '_start': 1000,
+            '_stop': 2000,
+            '_tag': "0x0000",
+            '_time': 0
+        }
+
+
+.. method:: NFToken.rangesOf(address _owner)
+
+    Returns the ``start:stop`` indexes of each token range belonging to ``_owner``.
+
+    .. code-block:: python
+
+        >>> token.rangesOf(accounts[1])
+        ((1, 1000), (2000, 10001))
+
+.. method:: NFToken.custodianRangesOf(address _owner, address _custodian)
+
+    Returns the ``start:stop`` indexes of each token range belonging to ``_owner`` that is custodied by ``_custodian``.
+
+    .. code-block:: python
+
+        >>> token.custodianRangesOf(accounts[1], cust)
+        ((1000, 2000))
 
 Balances and Transfers
 ======================
@@ -426,7 +476,9 @@ Transferring Tokens
 
     Transfers ``_value`` tokens from ``msg.sender`` to ``_to``. If the transfer cannot be completed, the call will revert with the reason given in the error string.
 
-    Some logic in this method deviates from the ERC20 standard, see :ref:`security-token-non-standard` for more information.
+    This call will iterate through each range owned by the caller and transfer them until ``_value`` tokens have been sent. If a partial range is sent, it will split it and send the range with a lower start index.  For example, if the sender owns range ``1000:2000`` and ``_value`` is 400 tokens, it will transfer ``1000:1400`` to the receiver.
+
+    Some logic in this method deviates from the ERC20 standard, see :ref:`token-non-standard` for more information.
 
     All transfers will emit the ``Transfer`` event, as well as one or more ``TransferRange`` events. Transfers where there is a change of ownership will also emit``IssuingEntity.TransferOwnership``.
 
@@ -460,7 +512,7 @@ Transferring Tokens
 
     Transfers ``_value`` tokens from ``_from`` to ``_to``.
 
-    Prior approval must have been given via ``TokenBase.approve``, except in certain cases documented under :ref:`nftoken-non-standard`.
+    Prior approval must have been given via ``TokenBase.approve``, except in certain cases documented under :ref:`token-non-standard`.
 
     All transfers will emit the ``Transfer`` event. Transfers where there is a change of ownership will also emit``IssuingEntity.TransferOwnership``.
 
@@ -490,31 +542,6 @@ Transferring Tokens
         NFToken.transferRange confirmed - block: 17   gas used: 441081 (5.51%)
         <Transaction object '0x9ae3c41984aad767b2a535a5ade8f70b104b125da622124e9c3be52b7e373a11'>
 
-.. _nftoken-non-standard:
-
-Non Standard Behaviours
-=======================
-
-``NFToken`` is based upon the ERC-20 standard, however it deviates in several areas.
-
-Issuer Balances
----------------
-
-Tokens held by the issuer will always be at the address of the IssuingEntity contract.  ``NFToken.treasurySupply()`` returns the same result as ``NFToken.balanceOf(NFToken.issuer())``.
-
-As a result, the following non-standard behaviours exist:
-
-* Any address associated with the issuer can transfer tokens from the IssuingEntity contract using ``NFToken.transfer``.
-* Attempting to send tokens to any address associated with the issuer will result in the tokens being sent to the IssuingEntity contract.
-
-Token Transfers
----------------
-
-The following behaviours deviate from ERC20 relating to token transfers:
-
-* Transfers of 0 tokens will revert with an error string "Cannot send 0 tokens".
-* If the caller and sender addresses are both associated to the same ID, ``NFToken.transferFrom`` may be called without giving prior approval. In this way an investor can easily recover tokens when a private key is lost or compromised.
-* The issuer may call ``NFToken.transferFrom`` to move tokens between any addresses without prior approval. Transfers of this type must still pass the normal checks, with the exception that the sending address may be restricted.  In this way the issuer can aid investors with token recovery in the event of a lost or compromised private key, or force a transfer in the event of a court order or sanction.
 
 Modules
 =======

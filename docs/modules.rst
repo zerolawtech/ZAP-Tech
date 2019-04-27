@@ -4,13 +4,13 @@
 Modules
 #######
 
-Modules are contracts that hook into various methods in :ref:`issuing-entity`, :ref:`security-token` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
+Modules are contracts that hook into various methods in :ref:`issuing-entity`, :ref:`token` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
 
 It may be useful to view source code for the following contracts while reading this document:
 
-* `Modular.sol <https://github.com/SFT-Protocol/security-token/tree/master/contracts/components/Modular.sol>`__: Inherited by modular contracts. Provides functionality around attaching, detaching, and calling modules.
-* `ModuleBase.sol <https://github.com/SFT-Protocol/security-token/tree/master/contracts/components/Modular.sol>`__: Inherited by modules. Provide required functionality for modules to be able to attach or detach.
-* `IModules.sol <https://github.com/SFT-Protocol/security-token/tree/master/contracts/components/Modular.sol>`__: Interfaces outlining standard module functionality. Includes inputs for all possible hook methods.
+* `Modular.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/bases/Modular.sol>`__: Inherited by modular contracts. Provides functionality around attaching, detaching, and calling modules.
+* `Module.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/modules/bases/Module.sol>`__: Inherited by modules. Provide required functionality for modules to be able to attach or detach.
+* `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/interfaces/IModules.sol>`__: Interfaces outlining standard module functionality. Includes inputs for all possible hook methods.
 
 .. note:: In order to minimize gas costs, modules should be attached only when their functionality is required and detached as soon as they are no longer needed.
 
@@ -63,6 +63,8 @@ Hooks and permissions are set the first time a module is attached by calling the
 
 Before attaching a module, be sure to check the return value of this function and compare the requested hook points and permissions to those that would be required for the documented functionality of the module. For example, a module intended to block token transfers should not require permission to mint new tokens.
 
+.. _modules-hooks-tags:
+
 Hooks and Tags
 ==============
 
@@ -98,7 +100,9 @@ For hook points that do not involve tags, the module should set ``active`` and `
 Settings Hooks and Tags
 -----------------------
 
-The following methods are used to modify hook and tag settings for a module. These methods may only be called from the module while it is active.
+Modules can be designed to modify their own active hook points and tag settings as they progress through different stages of functionality. Avoiding unnecessary external calls from hook points to modules that are no longer relevent helps keep gas costs down.
+
+The following methods are used to modify hook and tag settings. These methods may only be called from the module while it is active.
 
 .. method:: Modular.setHook(bytes4 _sig, bool _active, bool _always)
 
@@ -128,15 +132,12 @@ The following methods are used to modify hook and tag settings for a module. The
 
     For example: if ``_tagBase = [0xee, 0xff]`` it will clear tags ``0xee00``, ``0xee01`` ... ``0xeeff``, and ``0xff00``, ``0xff01`` ... ``0xffff``.
 
-
-
-
 Hookable Module Methods
 -----------------------
 
 The following methods may be included in modules and given as hook points via ``getPermissions``.
 
-Inputs and outputs of all hook points are also defined in `IModules.sol <https://github.com/SFT-Protocol/security-token/tree/master/contracts/components/Modular.sol>`__. This can be a useful starting point when writing your own modules.
+Inputs and outputs of all hook points are also defined in `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/interfaces/IModules.sol>`__. This can be a useful starting point when writing your own modules.
 
 SecurityToken
 *************
@@ -168,7 +169,7 @@ SecurityToken
 
 .. method:: STModule.transferTokensCustodian(address _custodian, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
 
-    * Hook signature: ``0x6eaf832c``
+    * Hook signature: ``0x8b5f1240``
 
     Called after an internal custodian token transfer has completed with ``Custodian.transferInternal``.
 
@@ -177,6 +178,16 @@ SecurityToken
     * ``_rating``: Sender and receiver investor ratings.
     * ``_country``: Sender and receiver country codes.
     * ``_value``: Amount that was transferred.
+
+.. method:: STModule.modifyAuthorizedSupply(address _token, uint256 _oldSupply, uint256 _newSupply)
+
+    * Hook signature: ``0xb1a1a455``
+
+    Called before changing the authorized supply of a token.
+
+    * ``_token``: Token address
+    * ``_oldSupply``: Current authorized supply
+    * ``_newSupply``: New authorized supply
 
 .. method:: STModule.totalSupplyChanged(address _addr, bytes32 _id, uint8 _rating, uint16 _country, uint256 _old, uint256 _new)
 
@@ -191,22 +202,44 @@ SecurityToken
     * ``_old``: Previous token balance at the address.
     * ``_new``: New token balance at the address.
 
-.. method:: STModule.modifyAuthorizedSupply(address _token, uint256 _oldSupply, uint256 _newSupply)
+NFToken
+*******
 
-    * Hook signature: ``0xb1a1a455``
+``NFToken`` contracts also include all the hook points for ``SecurityToken``.
 
-    Called before changing the authorized supply of a token.
+Hook points that are unique to ``NFToken`` also perform a check against the tag of the related range before calling to a module.
 
-    * ``_token``: Token address
-    * ``_oldSupply``: Current authorized supply
-    * ``_newSupply``: New authorized supply
+.. method:: NFTModule.checkTransferRange(address[2] _addr, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint48[2] _range)
+
+    * Hook signature: ``0x2d79c6d7``
+
+    Called by ``NFToken.checkTransfer`` and ``NFToken.transferRange`` to verify if the transfer of a specific range is permitted.
+
+    * ``_addr``: Sender and receiver addresses.
+    * ``_authID``: ID of the authority who wishes to perform the transfer. It may differ from the sender ID if the check is being performed prior to a ``transferFrom`` call.
+    * ``_id``: Sender and receiver IDs.
+    * ``_rating``: Sender and receiver investor ratings.
+    * ``_country``: Sender and receiver countriy codes.
+    * ``_range``: Start and stop index of token range.
+
+.. method:: NFTModule.transferTokenRange(address[2] _addr, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint48[2] _range)
+
+    * Hook signature: ``0xead529f5``
+
+    Called after a token range has been transferred successfully with ``NFToken.transfer`, ``NFToken.transferFrom`` or ``NFToken.transferRange``.
+
+    * ``_addr``: Sender and receiver addresses.
+    * ``_id``: Sender and receiver IDs.
+    * ``_rating``: Sender and receiver investor ratings.
+    * ``_country``: Sender and receiver countriy codes.
+    * ``_range``: Start and stop index of token range.
 
 IssuingEntity
 *************
 
-.. method:: IssuerModule.checkTransfer(address _token, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
+.. method:: IssuerModule.checkTransfer(address _token, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country)
 
-    * Hook signature: ``0x47fca5df``
+    * Hook signature: ``0x9a5150fc``
 
     Called by ``IssuingEntity.checkTransfer`` to verify if a transfer is permitted.
 
@@ -215,38 +248,12 @@ IssuingEntity
     * ``_id``: Sender and receiver IDs.
     * ``_rating``: Sender and receiver investor ratings.
     * ``_country``: Sender and receiver countriy codes.
-    * ``_value``: Amount to be transferred.
-
-.. method:: IssuerModule.transferTokens(address _token, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
-
-    * Hook signature: ``0x0cfb54c9``
-
-    Called after a token transfer has completed successfully with ``SecurityToken.transfer`` or ``SecurityToken.transferFrom``.
-
-    * ``_token``: Address of the token that was transferred.
-    * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
-    * ``_country``: Sender and receiver country codes.
-    * ``_value``: Amount that was transferred.
-
-.. method:: IssuerModule.transferTokensCustodian(address _token, address _custodian, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
-
-    * Hook signature: ``0x3b59c439``
-
-    Called after an internal custodian token transfer has completed with ``Custodian.transferInternal``.
-
-    * ``_token``: Address of the token that was transferred.
-    * ``_custodian``: Address of the custodian contract.
-    * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
-    * ``_country``: Sender and receiver country codes.
-    * ``_value``: Amount that was transferred.
 
 .. method:: IssuerModule.tokenTotalSupplyChanged(address _token, bytes32 _id, uint8 _rating, uint16 _country, uint256 _old, uint256 _new)
 
     * Hook signature: ``0xb446f3ca``
 
-    Called after a token's total supply has been modified by ``SecurityToken.mint`` or ``SecurityToken.burn``.
+    Called after a token's total supply has been modified by ``mint`` or ``burn``.
 
     * ``_token``: Token address where balance has changed.
     * ``_id``: ID of the investor who's balance changed.
@@ -258,47 +265,36 @@ IssuingEntity
 Custodian
 *********
 
-.. method:: CustodianModule.sentTokens(address _token, bytes32 _id, uint256 _value, bool _stillOwner)
+.. method:: CustodianModule.sentTokens(address _token, address _to, uint256 _value)
 
-    * Hook signature: ``0x31b45d35``
+    * Hook signature: ``0xb4684410``
 
     Called after tokens have been transferred out of a Custodian via ``Custodian.transfer``.
 
     * ``_token``: Address of token that was sent.
-    * ``_id``: ID of the recipient.
+    * ``_to``: Address of the recipient.
     * ``_value``: Number of tokens that were sent.
-    * ``_stillOwner``: Is the recipient still a beneficial owner for this token?
 
-.. method:: CustodianModule.receivedTokens(address _token, bytes32 _id, uint256 _value, bool _newOwner)
+.. method:: CustodianModule.receivedTokens(address _token, address _from, uint256 _value)
 
-    * Hook signature: ``0xa0e7f751``
+    * Hook signature: ``0xb15bcbc4``
 
     Called after a tokens have been transferred into a Custodian.
 
     * ``_token``: Address of token that was received.
-    * ``_id``: ID of the sender.
+    * ``_from``: Address of the sender.
     * ``_value``: Number of tokens that were received.
 
-.. method:: CustodianModule.internalTransfer(address _token, bytes32 _fromID, bytes32 _toID, uint256 _value, bool _stillOwner)
+.. method:: CustodianModule.internalTransfer(address _token, address _from, address _to, uint256 _value)
 
-    * Hook signature: ``0x7054b724``
+    * Hook signature: ``0x44a29e2a``
 
     Called after an internal transfer of ownership within the Custodian contract via ``Custodian.transferInternal``.
 
     * ``_token``: Address of token that was received.
-    * ``_fromID``: ID of the sender.
-    * ``_toID``: ID of the recipient.
+    * ``_from``: Address of the sender.
+    * ``_to``: Address of the recipient.
     * ``_value``: Number of tokens that were received.
-    * ``_stillOwner``: Is the sender still a beneficial owner for this token?
-
-.. method:: CustodianModule.ownershipReleased(address _issuer, bytes32 _id)
-
-    * Hook signature: ``0x054d1c76``
-
-    Called after an investor's beneficial ownership status has been released within the Custodian contract via ``Custodian.releaseOwnership``.
-
-    * ``_issuer``: IssuingEntity contract address
-    * ``_id``: Investor ID
 
 Calling Parent Methods
 ======================
@@ -383,4 +379,4 @@ Use Cases
 
 The wide range of functionality that modules can hook into and access allows for many different applications. Some examples include: crowdsales, country/time based token locks, right of first refusal enforcement, voting rights, dividend payments, tender offers, and bond redemption.
 
-We have included some sample modules on `GitHub <https://github.com/SFT-Protocol/security-token/tree/master/contracts/modules>`__ as examples to help understand module development and demonstrate the range of available functionality.
+We have included some sample modules on `GitHub <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/modules>`__ as examples to help understand module development and demonstrate the range of available functionality.

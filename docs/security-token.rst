@@ -227,7 +227,7 @@ Checking Balances
 
     .. code-block:: python
 
-        >>> token.custodianBalanceOf(accounts[1])
+        >>> token.custodianBalanceOf(accounts[1], cust)
         0
 
 .. method:: TokenBase.allowance(address _owner, address _spender)

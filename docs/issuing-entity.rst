@@ -352,9 +352,9 @@ Document Verification
 Modules
 =======
 
-The issuer may use these methods to attach or detach modules to this contract or any associated token contract.
+Modules for token contracts are attached and detached through the associated ``IssuingEntity``. This contract itself is not directly modular, however any module that declares it as the owner may be attached to all the associated token contracts.
 
-See the :ref:`modules` documentation for more information on module functionality and development, as well as methods inherited by ``IssuingEntity``.
+See the :ref:`modules` documentation for more information on module functionality and development.
 
 .. _issuing-entity-modules-attach-detach:
 
@@ -385,7 +385,7 @@ Attaching and Detaching
 
 .. method:: IssuingEntity.detachModule(address _target, address _module)
 
-    Detaches a module. A module may call to detach itself, but not other modules.
+    Detaches a module.
 
     .. code-block:: python
 
@@ -394,35 +394,6 @@ Attaching and Detaching
         Transaction sent: 0xe1539492053b91ffb05dec6da6f73a02f0b3e44fcec707acf911d37922b65699
         IssuingEntity.detachModule confirmed - block: 15   gas used: 28323 (0.35%)
         <Transaction object '0xe1539492053b91ffb05dec6da6f73a02f0b3e44fcec707acf911d37922b65699'>
-
-Getters
--------
-
-.. method:: IssuingEntity.isActiveModule(address _module)
-
-    Returns true if a module is currently active on the contract. Modules that are not active, or that are active on a token will return ``false``.
-
-    See `Modules`_.
-
-    .. code-block:: python
-
-        >>> issuer.isActiveModule(issuer_module)
-        True
-        >>> issuer.isActiveModule(token_module)
-        False
-
-.. method:: IssuingEntity.isPermittedModule(address _module, bytes4 _sig)
-
-    Returns ``true`` if a module is permitted to access a specific method. If the module is not active or not permitted to call the method, returns ``false``.
-
-    .. code-block:: python
-
-        >>> issuer.isPermittedModule(issuer_module, "0x40c10f19")
-        True
-        >>> issuer.isPermittedModule(issuer_module, "0xc39f42ed")
-        False
-        >>> issuer.isPermittedModule(token_module, "0x40c10f19")
-        False
 
 Events
 ======

@@ -4,7 +4,7 @@
 Modules
 #######
 
-Modules are contracts that hook into various methods in :ref:`issuing-entity`, :ref:`token` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
+Modules are contracts that hook into various methods in :ref:`token` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
 
 Modules introduce functionality in two ways:
 
@@ -26,9 +26,16 @@ It may be useful to view source code for the following contracts while reading t
 Attaching and Detaching
 =======================
 
-Modules are attached or detached via methods ``attachModule`` and ``detachModule`` in the inheriting contracts. See the :ref:`issuing-entity` and :ref:`custodian` documentation implementations.
+Modules are attached or detached via the ``attachModule`` and ``detachModule`` methods. For :ref:`custodian` modules this method is available within ``OwnedCustodian``, for token modules it is called via the associated ``IssuingEntity`` contract.
 
-Token modules are attached and detached via the associated IssuingEntity contract.
+Ownership
+---------
+
+Each module has an owner which is typically set during deployment.  If the owner is set as an ``IssuingEntity`` contract, it may be attached to every token associated with that issuer. In this way a single module can add functionality or permissioning to many tokens.
+
+.. method:: ModuleBase.getOwner()
+
+    Returns the address of the parent contract that the module is owned by.
 
 Declaring Hooks and Permissions
 -------------------------------
@@ -107,21 +114,6 @@ The following getter is available in the parent contract, to check if a module i
 
     Returns ``true`` if a module is currently active on the contract.
 
-    Modules that are attached to an ``IssuingEntity`` are also considered active on any tokens belonging to that issuer.
-
-TODO
-----
-
-.. method:: ModuleBase.getOwner()
-
-    Returns the address of the parent contract that the module has been attached to.
-
-.. method:: ModuleBase.name()
-
-    Returns a string name of the module.
-
-    OPTIONAL - This method is useful to simplify knowing what each module's purpose is, but it is not required.
-
 Permissioning
 =============
 
@@ -147,8 +139,6 @@ Modules may be permitted to call the following parent methods:
 
 SecurityToken
 *************
-
-Any module applied to an IssuingEntity contract may also be permitted to call methods on any token belonging to the issuer.  See :ref:`security-token` for more detailed information on these methods.
 
 .. method:: SecurityToken.transferFrom(address _from, address _to, uint256 _value)
 
@@ -186,12 +176,10 @@ Any module applied to an IssuingEntity contract may also be permitted to call me
 
     * Permission signature: ``0xbb2a8522``
 
-    Detaches a module. This method can only be called directly by a permitted module, for the issuer to detach a SecurityToken level module the call must be made via the IssuingEntity contract.
+    Detaches a module. This method can only be called directly by a permitted module. For the issuer to detach a SecurityToken level module the call must be made via the ``IssuingEntity`` contract.
 
 NFToken
 *******
-
-Any module applied to an IssuingEntity contract may also be permitted to call methods on any token belonging to the issuer.  See :ref:`nftoken` for more detailed information on these methods.
 
 .. method:: NFToken.transferFrom(address _from, address _to, uint256 _value)
 
@@ -241,16 +229,7 @@ Any module applied to an IssuingEntity contract may also be permitted to call me
 
     * Permission signature: ``0xbb2a8522``
 
-    Detaches a module. This method can only be called directly by a permitted module, for the issuer to detach a SecurityToken level module the call must be made via the IssuingEntity contract.
-
-IssuingEntity
-*************
-
-.. method:: IssuingEntity.detachModule(address _target, address _module)
-
-    * Permission signature: ``0x3556099d``
-
-    Detaches module contract ``_module`` from parent contract ``_target``.
+    Detaches a module. This method can only be called directly by a permitted module, for the issuer to detach a SecurityToken level module the call must be made via the ``IssuingEntity`` contract.
 
 Custodian
 *********
@@ -448,34 +427,6 @@ Hook points that are unique to ``NFToken`` also perform a check against the tag 
     * ``_rating``: Sender and receiver investor ratings.
     * ``_country``: Sender and receiver countriy codes.
     * ``_range``: Start and stop index of token range.
-
-IssuingEntity
-*************
-
-.. method:: IssuerModule.checkTransfer(address _token, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country)
-
-    * Hook signature: ``0x9a5150fc``
-
-    Called by ``IssuingEntity.checkTransfer`` to verify if a transfer is permitted.
-
-    * ``_token``: Address of the token to be transferred.
-    * ``_authID``: ID of the authority who wishes to perform the transfer. It may differ from the sender ID if the check is being performed prior to a ``transferFrom`` call.
-    * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
-    * ``_country``: Sender and receiver countriy codes.
-
-.. method:: IssuerModule.tokenTotalSupplyChanged(address _token, bytes32 _id, uint8 _rating, uint16 _country, uint256 _old, uint256 _new)
-
-    * Hook signature: ``0xb446f3ca``
-
-    Called after a token's total supply has been modified by ``mint`` or ``burn``.
-
-    * ``_token``: Token address where balance has changed.
-    * ``_id``: ID of the investor who's balance changed.
-    * ``_rating``: Investor rating.
-    * ``_country``: Investor country code.
-    * ``_old``: Previous investor balance (across all tokens).
-    * ``_new``: New investor balance (across all tokens).
 
 Custodian
 *********

@@ -506,7 +506,11 @@ contract NFToken is TokenBase  {
 		}
 		while (_start < _stop) {
 			r = rangeMap[_start];
-			if (r.stop < _stop && rangeMap[r.stop].owner == r.owner) {
+			if (
+				r.stop < _stop &&
+				rangeMap[r.stop].owner == r.owner &&
+				rangeMap[r.stop].custodian == r.custodian
+			) {
 				/* merge with next range */
 				uint48 _next = rangeMap[r.stop].stop;
 				_setRangePointers(r.stop, _next, 0);

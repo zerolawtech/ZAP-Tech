@@ -89,7 +89,6 @@ Contents
     issuing-entity.rst
     kyc.rst
     custodian.rst
-    security-considerations.rst
     multisig.rst
     modules.rst
     data-standards.rst

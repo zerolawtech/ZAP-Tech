@@ -179,13 +179,12 @@ SecurityToken
     * ``_country``: Sender and receiver country codes.
     * ``_value``: Amount that was transferred.
 
-.. method:: STModule.modifyAuthorizedSupply(address _token, uint256 _oldSupply, uint256 _newSupply)
+.. method:: STModule.modifyAuthorizedSupply(uint256 _oldSupply, uint256 _newSupply)
 
-    * Hook signature: ``0xb1a1a455``
+    * Hook signature: ``0xa5f502c1``
 
     Called before changing the authorized supply of a token.
 
-    * ``_token``: Token address
     * ``_oldSupply``: Current authorized supply
     * ``_newSupply``: New authorized supply
 

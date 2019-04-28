@@ -28,7 +28,19 @@ contract ISTModule is IBaseModule {
 	
 	function token() external returns (address);
 	
-	/* 0x70aaf928 */
+	/**
+		@notice Check if a transfer is possible
+		@dev
+			Called before a token transfer to check if it is permitted
+			Hook signature: 0x70aaf928
+		@param _addr sender and receiver addresses
+		@param _authID id hash of caller
+		@param _id sender and receiver id hashes
+		@param _rating sender and receiver investor ratings
+		@param _country sender and receiver country codes
+		@param _value amount of tokens to be transfered
+		@return bool success
+	 */
 	function checkTransfer(
 		address[2] _addr,
 		bytes32 _authID,
@@ -41,7 +53,18 @@ contract ISTModule is IBaseModule {
 		view
 		returns (bool);
 
-	/* 0x35a341da */
+	/**
+		@notice Token transfer
+		@dev
+			Called a token transfer has completed
+			Hook signature: 0x35a341da
+		@param _addr sender and receiver addresses
+		@param _id sender and receiver id hashes
+		@param _rating sender and receiver investor ratings
+		@param _country sender and receiver country codes
+		@param _value amount of tokens to be transfered
+		@return bool success
+	 */
 	function transferTokens(
 		address[2] _addr,
 		bytes32[2] _id,
@@ -52,7 +75,19 @@ contract ISTModule is IBaseModule {
 		external
 		returns (bool);
 
-	/* 0x8b5f1240 */
+	/**
+		@notice Token custodial internal transfer
+		@dev
+			Called a custodian internal token transfer has completed
+			Hook signature: 0x8b5f1240
+		@param _custodian custodian address
+		@param _addr sender and receiver addresses
+		@param _id sender and receiver id hashes
+		@param _rating sender and receiver investor ratings
+		@param _country sender and receiver country codes
+		@param _value amount of tokens to be transfered
+		@return bool success
+	 */
 	function transferTokensCustodian(
 		address _custodian,
 		address[2] _addr,
@@ -64,9 +99,15 @@ contract ISTModule is IBaseModule {
 		external
 		returns (bool);
 
-	/* 0xb1a1a455 */
+
+	/**
+		@notice Modify authorized supply
+		@dev
+			Called before modifying the authorized supply of a token
+			Hook signature: 0xa5f502c1
+		@param _token
+	 */
 	function modifyAuthorizedSupply(
-		address _token,
 		uint256 _oldSupply,
 		uint256 _newSupply
 	)
@@ -161,7 +202,7 @@ contract ICustodianModule is IBaseModule {
 		@notice Custodian sent tokens
 		@dev
 			Called after a successful token transfer from the custodian.
-			Use 0xb4684410 as the hook value for this method.
+			Hook signature: 0xb4684410
 		@param _token Token address
 		@param _to Recipient address
 		@param _value Amount of tokens transfered
@@ -179,7 +220,7 @@ contract ICustodianModule is IBaseModule {
 		@notice Custodian received tokens
 		@dev
 			Called after a successful token transfer to the custodian.
-			Use 0xb15bcbc4 as the hook value for this method.
+			Hook signature: 0xb15bcbc4
 		@param _token Token address
 		@param _from Sender address
 		@param _value Amount of tokens transfered
@@ -193,7 +234,16 @@ contract ICustodianModule is IBaseModule {
 		external
 		returns (bool);
 
-	/* 0x44a29e2a */
+	/**
+		@notice Custodian internal token transfer
+		@dev
+			Called after a successful internal token transfer by the custodian
+			Hook signature: 0x44a29e2a
+		@param _token Token address
+		@param _from Sender address
+		@param _value Amount of tokens transfered
+		@return bool success
+	 */
 	function internalTransfer(
 		address _token,
 		address _from,

@@ -209,9 +209,9 @@ contract TokenBase is Modular {
 		require(_value >= totalSupply, "dev: auth below total");
 		/* bytes4 signature for token module modifyAuthorizedSupply() */
 		require(_callModules(
-			0xb1a1a455,
+			0xa5f502c1,
 			0x00,
-			abi.encode(address(this), authorizedSupply, _value)
+			abi.encode(authorizedSupply, _value)
 		));
 		emit AuthorizedSupplyChanged(authorizedSupply, _value);
 		authorizedSupply = _value;

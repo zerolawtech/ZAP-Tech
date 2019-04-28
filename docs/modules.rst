@@ -6,6 +6,13 @@ Modules
 
 Modules are contracts that hook into various methods in :ref:`issuing-entity`, :ref:`token` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
 
+Modules introduce functionality in two ways:
+
+* **Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting investor limits, transferring tokens, or changing the total supply.
+* **Hooks** are points within the parent contract's methods where the module will be called. They can be used to introduce extra permissioning requirements or record additional data.
+
+In short: hooks involve calls from a parent contract into a module, permissions involve calls from a module into the parent contract.
+
 It may be useful to view source code for the following contracts while reading this document:
 
 * `Modular.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/bases/Modular.sol>`__: Inherited by modular contracts. Provides functionality around attaching, detaching, and calling modules.
@@ -23,33 +30,8 @@ Modules are attached or detached via methods ``attachModule`` and ``detachModule
 
 Token modules are attached and detached via the associated IssuingEntity contract.
 
-All contracts implementing modular functionality will also include the following method:
-
-.. method:: Modular.isActiveModule(address _module)
-
-    Returns true if a module is currently active on the contract.
-
-    Modules that are attached to an IssuingEntity are also considered active on any tokens belonging to that issuer.
-
-Modules include the following getters:
-
-.. method:: ModuleBase.getOwner()
-
-    Returns the address of the parent contract that the module has been attached to.
-
-.. method:: ModuleBase.name()
-
-    Returns a string name of the module.
-
-Permissioning and Functionality
-===============================
-
-Modules introduce functionality in two ways:
-
-* **Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting investor limits, transferring tokens, or changing the total supply.
-* **Hooks** are points within the parent contract's methods where the module will be called. They can be used to introduce extra permissioning requirements or record additional data.
-
-In short: hooks involve calls from a parent contract into a module, permissions involve calls from a module into the parent contract.
+Declaring Hooks and Permissions
+-------------------------------
 
 Hooks and permissions are set the first time a module is attached by calling the following method:
 
@@ -59,9 +41,243 @@ Hooks and permissions are set the first time a module is attached by calling the
 
     * ``permissions``: ``bytes4`` array of method signatures within the parent contract that the module is permitted to call.
     * ``hooks``: ``bytes4`` array of method signatures within the module that the parent contract may call into.
-    * ``hookBools``: A ``uint256`` bit field. The first 128 bits set if each hook is active initially, the second half sets if each hook should be always called.
+    * ``hookBools``: A ``uint256`` bit field. The first 128 bits set if each hook is active initially, the second half sets if each hook should be always called. See :ref:`modules_bitfields`.
 
 Before attaching a module, be sure to check the return value of this function and compare the requested hook points and permissions to those that would be required for the documented functionality of the module. For example, a module intended to block token transfers should not require permission to mint new tokens.
+
+.. _modules_bitfields:
+
+Bit Fields
+**********
+
+Solidity uses 8 bits to store a boolean, however only 1 bit is required. To maximize gas efficiency when handling many booleans at once, ``ModuleBase`` uses `bit fields <https://en.wikipedia.org/wiki/Bit_field>`_.
+
+This functionality is mostly handled within internal methods and not user-facing, with one notable exception: in ``ModuleBase.getPermissions`` the return value ``hookBools`` is a set of 2 x 128 byte bit fields given as a single ``uint256``. The first determines if each hook is active initially, the second if the hook method should always be called when it is active.
+
+Each bit field is read **right to left**.
+
+For example: suppose you have declared four hook points for a module. The first, third and fourth should be active initially. The third should always called when active.
+
+Written left to right, the two bit fields will look like:
+
+.. code-block:: python
+
+    active = "1011"
+    always = "0010"
+
+Now we must reverse them, and left-pad with zeros to 128 bits:
+
+.. code-block:: python
+
+    >>> active = active[::-1].zfill(128)
+    >>> print(active)
+    00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101
+    >>>
+    >>> always = always[::-1].zfill(128)
+    >>> print(always)
+    00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100
+
+Finally we join the two strings, and then convert the value from binary to decimal:
+
+.. code-block:: python
+
+    >>> final = active + always
+    >>> int(final, 2)
+    4423670769972200025023869896612986748932
+
+The following python function can be used to quickly convert two boolean lists into a uint256 to be used as ``hookBools``:
+
+.. code-block:: python
+
+    def generate_bitfield(active: list, always: list) -> int:
+        assert len(active) == len(always)
+        assert len(active) <= 128
+        active = "".join("1" if i else "0" for i in active[::-1]).zfill(128)
+        always = "".join("1" if i else "0" for i in always[::-1]).zfill(128)
+        return int(active + always, 2)
+
+.. note:: If all your hooks are to be active initially and always called, the simplest approach is to set ``hookBool = uint256(-1)``. Underflowing uint256 in this way results in 256 bits set to 1.
+
+Checking Active Modules
+-----------------------
+
+The following getter is available in the parent contract, to check if a module is currently active:
+
+.. method:: Modular.isActiveModule(address _module)
+
+    Returns ``true`` if a module is currently active on the contract.
+
+    Modules that are attached to an ``IssuingEntity`` are also considered active on any tokens belonging to that issuer.
+
+TODO
+----
+
+.. method:: ModuleBase.getOwner()
+
+    Returns the address of the parent contract that the module has been attached to.
+
+.. method:: ModuleBase.name()
+
+    Returns a string name of the module.
+
+    OPTIONAL - This method is useful to simplify knowing what each module's purpose is, but it is not required.
+
+Permissioning
+=============
+
+**Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting investor limits, transferring tokens, or changing the total supply.
+
+Once attached, modules may call into methods in the parent contract where they have been given permission.
+
+Checking Permissions
+--------------------
+
+Any call from a module to a function within the parent contract must first pass a check by this method:
+
+.. method:: Modular.isPermittedModule(address _module, bytes4 _sig)
+
+    Returns ``true`` if a module is active on the contract, and permitted to call the given method signature. Returns ``false`` if not permitted.
+
+Callable Parent Methods
+-----------------------
+
+Modules may be permitted to call the following parent methods:
+
+.. note:: When a module calls into the parent contract, it will still trigger any of it's own hooked in methods. With poor contract design you can create infinite loops and effectively break the parent contract functionality as long as the module remains attached.
+
+SecurityToken
+*************
+
+Any module applied to an IssuingEntity contract may also be permitted to call methods on any token belonging to the issuer.  See :ref:`security-token` for more detailed information on these methods.
+
+.. method:: SecurityToken.transferFrom(address _from, address _to, uint256 _value)
+
+    * Permission signature: ``0x23b872dd``
+
+    Transfers tokens between two addresses. A module calling ``SecurityToken.transferFrom`` has the same level of authority as if the call was from the issuer.
+
+    Calling this method will also call any hooked in ``STModule.checkTransfer``, ``IssuerModule.checkTransfer``, and ``STModule.transferTokens`` methods.
+
+.. method:: TokenBase.modifyAuthorizedSupply(uint256 _value)
+
+    * Permission signature: ``0xc39f42ed``
+
+    Modifies the authorized supply.
+
+    Calling this method will also call any hooked in ``STModule.modifyAuthorizedSupply`` methods.
+
+.. method:: SecurityToken.mint(address _owner, uint256 _value)
+
+    * Permission signature: ``0x40c10f19``
+
+    Mints new tokens to the given address.
+
+    Calling this method will also call any hooked in ``STModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+
+.. method:: SecurityToken.burn(address _owner, uint256 _value)
+
+    * Permission signature: ``0x9dc29fac``
+
+    Burns tokens at the given address.
+
+    Calling this method will also call any hooked in ``STModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+
+.. method:: TokenBase.detachModule(address _module)
+
+    * Permission signature: ``0xbb2a8522``
+
+    Detaches a module. This method can only be called directly by a permitted module, for the issuer to detach a SecurityToken level module the call must be made via the IssuingEntity contract.
+
+NFToken
+*******
+
+Any module applied to an IssuingEntity contract may also be permitted to call methods on any token belonging to the issuer.  See :ref:`nftoken` for more detailed information on these methods.
+
+.. method:: NFToken.transferFrom(address _from, address _to, uint256 _value)
+
+    * Permission signature: ``0x23b872dd``
+
+    Transfers tokens between two addresses. A module calling ``NFToken.transferFrom`` has the same level of authority as if the call was from the issuer.
+
+    Calling this method will also call any hooked in ``NFTModule.checkTransfer``, ``IssuerModule.checkTransfer``, and ``NFTModule.transferTokens`` methods.
+
+.. method:: TokenBase.modifyAuthorizedSupply(uint256 _value)
+
+    * Permission signature: ``0xc39f42ed``
+
+    Modifies the authorized supply.
+
+    Calling this method will also call any hooked in ``NFTModule.modifyAuthorizedSupply`` methods.
+
+.. method:: NFToken.mint(address _owner, uint48 _value, uint32 _time, bytes2 _tag)
+
+    * Permission signature: ``0x15077ec8``
+
+    Mints new tokens to the given address.
+
+    Calling this method will also call any hooked in ``NFTModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+
+.. method:: NFToken.burn(uint48 _start, uint48 _stop)
+
+    * Permission signature: ``0x9a0d378b``
+
+    Burns tokens at the given address.
+
+    Calling this method will also call any hooked in ``NFTModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+
+.. method:: NFToken.modifyRange(uint48 _pointer, uint32 _time, bytes2 _tag)
+
+    * Permission signature: ``0x712a516a``
+
+    Modifies the time restriction and tag for a single range.
+
+.. method:: NFToken.modifyRanges(uint48 _start, uint48 _stop, uint32 _time, bytes2 _tag)
+
+    * Permission signature: ``0x786500aa``
+
+    Modifies the time restriction and tag for all tokens within a given range.
+
+.. method:: TokenBase.detachModule(address _module)
+
+    * Permission signature: ``0xbb2a8522``
+
+    Detaches a module. This method can only be called directly by a permitted module, for the issuer to detach a SecurityToken level module the call must be made via the IssuingEntity contract.
+
+IssuingEntity
+*************
+
+.. method:: IssuingEntity.detachModule(address _target, address _module)
+
+    * Permission signature: ``0x3556099d``
+
+    Detaches module contract ``_module`` from parent contract ``_target``.
+
+Custodian
+*********
+
+See :ref:`custodian` for more detailed information on these methods.
+
+.. method:: OwnedCustodian.transfer(address _token, address _to, uint256 _value)
+
+    * Permission signature: ``0xbeabacc8``
+
+    Transfers tokens from the custodian to an investor.
+
+    Calling this method will also call any hooked in ``CustodianModule.sentTokens`` methods.
+
+.. method:: OwnedCustodian.transferInternal(address _token, address _from, address _to, uint256 _value)
+
+    * Permission signature: ``0x2f98a4c3``
+
+    Transfers the ownership of tokens between investors within the Custodian contract.
+
+    Calling this method will also call any hooked in ``CustodianModule.internalTransfer`` methods.
+
+.. method:: OwnedCustodian.detachModule(address _module)
+
+    * Permission signature: ``0xbb2a8522``
+
+    Detaches a module.
 
 .. _modules-hooks-tags:
 
@@ -97,8 +313,8 @@ For example, if the tag is ``0xff32``, the hook point will be called if either `
 
 For hook points that do not involve tags, the module should set ``active`` and ``always`` to true when it wishes to be called.
 
-Settings Hooks and Tags
------------------------
+Setting and Modifying
+---------------------
 
 Modules can be designed to modify their own active hook points and tag settings as they progress through different stages of functionality. Avoiding unnecessary external calls from hook points to modules that are no longer relevent helps keep gas costs down.
 
@@ -295,83 +511,22 @@ Custodian
     * ``_to``: Address of the recipient.
     * ``_value``: Number of tokens that were received.
 
-Calling Parent Methods
-======================
+Events
+======
 
-Once attached, modules may call into methods in the parent contract where they have been given permission.
+Contracts that include modular functionality have the following events:
 
-.. note:: When a module calls into the parent contract, it will still trigger any of it's own methods hooked into the called method. With poor contract design you can create infinite loops and effectively break the parent contract functionality as long as the module remains attached.
+.. method:: Modular.ModuleAttached(address module, bytes4[] hooks, bytes4[] permissions)
 
-SecurityToken
--------------
+    Emitted whenever a module is attached with ``Modular.attachModule``.
 
-Any module applied to an IssuingEntity contract may also be permitted to call methods on any token belonging to the issuer.  See :ref:`security-token` for more detailed information on these methods.
+.. method:: Modular.ModuleHookSet(address module, bytes4 hook, bool active, bool always)
 
-.. method:: SecurityToken.transferFrom(address _from, address _to, uint256 _value)
+    Emitted once for each hook that is set when a module is attached with ``Modular.attachModule``.
 
-    * Permission signature: ``0x23b872dd``
+.. method:: Modular.ModuleDetached(address module)
 
-    Transfers tokens between two addresses. A module calling ``transferFrom`` has the same level of authority as if the call was from the issuer.
-
-    Calling this method will also call any hooked in ``checkTransfer`` and ``transferTokens`` methods.
-
-.. method:: SecurityToken.mint(address _owner, uint256 _value)
-
-    * Permission signature: ``0x40c10f19``
-
-    Mints new tokens to the given address.
-
-    Calling this method will also call any hooked in ``totalSupplyChanged`` methods.
-
-.. method:: SecurityToken.burn(address _owner, uint256 _value)
-
-    * Permission signature: ``0x9dc29fac``
-
-    Burns tokens at the given address.
-
-    Calling this method will also call any hooked in ``totalSupplyChanged`` methods.
-
-.. method:: SecurityToken.detachModule(address _module)
-
-    * Permission signature: ``0xbb2a8522``
-
-    Detaches a module. This method can only be called directly by a permitted module, for the issuer to detach a SecurityToken level module the call must be made via the IssuingEntity contract.
-
-IssuingEntity
--------------
-
-.. method:: IssuingEntity.detachModule(address _target, address _module)
-
-    * Permission signature: ``0x3556099d``
-
-    Detaches module contract ``_module`` from parent contract ``_target``.
-
-Custodian
----------
-
-See :ref:`custodian` for more detailed information on these methods.
-
-.. method:: Custodian.transfer(address _token, address _to, uint256 _value)
-
-    * Permission signature: ``0xbeabacc8``
-
-    Transfers tokens from the custodian to an investor.
-
-    Calling this method will also call any hooked in ``sentTokens`` methods.
-
-.. method:: Custodian.transferInternal(address _token, address _from, address _to, uint256 _value)
-
-    * Permission signature: ``0x2f98a4c3``
-
-    Transfers the ownership of tokens between investors within the Custodian contract.
-
-    Calling this method will also call any hooked in ``internalTransfer`` methods.
-
-.. method:: Custodian.detachModule(address _module)
-
-    * Permission signature: ``0xbb2a8522``
-
-    Detaches a module.
+    Emitted when a module is detached with ``Modular.detachModule``.
 
 Use Cases
 =========

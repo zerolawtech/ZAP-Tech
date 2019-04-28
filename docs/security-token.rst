@@ -363,7 +363,7 @@ Transferring Tokens
 Modules
 =======
 
-Modules are attached and detached to token contracts via :ref:`issuing-entity`.
+Modules are attached and detached to token contracts via the associated ``IssuingEntity``. See :ref:`issuing-entity-modules-attach-detach`.
 
 .. method:: TokenBase.isActiveModule(address _module)
 

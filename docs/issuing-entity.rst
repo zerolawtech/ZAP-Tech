@@ -354,7 +354,9 @@ Modules
 
 The issuer may use these methods to attach or detach modules to this contract or any associated token contract.
 
-See the :ref:`modules` documentation for information module functionality and development.
+See the :ref:`modules` documentation for more information on module functionality and development, as well as methods inherited by ``IssuingEntity``.
+
+.. _issuing-entity-modules-attach-detach:
 
 Attaching and Detaching
 -----------------------
@@ -407,6 +409,19 @@ Getters
         >>> issuer.isActiveModule(issuer_module)
         True
         >>> issuer.isActiveModule(token_module)
+        False
+
+.. method:: IssuingEntity.isPermittedModule(address _module, bytes4 _sig)
+
+    Returns ``true`` if a module is permitted to access a specific method. If the module is not active or not permitted to call the method, returns ``false``.
+
+    .. code-block:: python
+
+        >>> issuer.isPermittedModule(issuer_module, "0x40c10f19")
+        True
+        >>> issuer.isPermittedModule(issuer_module, "0xc39f42ed")
+        False
+        >>> issuer.isPermittedModule(token_module, "0x40c10f19")
         False
 
 Events

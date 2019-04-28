@@ -259,7 +259,7 @@ contract TokenBase is Modular {
 	}
 
 	/**
-		@notice Attach a security token module
+		@notice Detach a security token module
 		@dev
 			Called indirectly from IssuingEntity.attachModule() or by the
 			module that is attached.

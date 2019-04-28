@@ -23,9 +23,9 @@ Security tokens in the protocol are built upon the ERC20 token standard. Tokens 
 
 The SFT protocol is comprised of four core components:
 
-1. **SecurityToken**
+1. **Token**
 
-    * ERC20 compliant token contract
+    * ERC20 compliant token contracts
     * Intended to represent a corporate shareholder registry in book entry or certificated form
     * Permissioning logic to enforce enforce legal and contractural restrictions around token transfers
     * Modular design allows for optional added functionality
@@ -37,7 +37,7 @@ The SFT protocol is comprised of four core components:
     * Modular design allows for optional added functionality
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
 
-3. **KYCRegistrar**
+3. **KYC**
 
     * Whitelists that provide identity, region, and accreditation information of investors based on off-chain KYC/AML verification
     * May be maintained by a single entity for a single token issuance, or a federation across multiple jurisdictions providing identity data for many issuers

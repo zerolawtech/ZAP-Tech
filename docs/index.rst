@@ -31,9 +31,9 @@ Components
 
 The SFT protocol is comprised of four core components:
 
-1. :ref:`security-token`
+1. :ref:`token`
 
-    * ERC20 compliant token contract
+    * ERC20 compliant token contracts
     * Intended to represent a corporate shareholder registry in book entry or certificated form
     * Permissioning logic to enforce enforce legal and contractural restrictions around token transfers
     * Modular design allows for optional added functionality
@@ -45,7 +45,7 @@ The SFT protocol is comprised of four core components:
     * Modular design allows for optional added functionality
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
 
-3. :ref:`kyc-registrar`
+3. :ref:`kyc`
 
     * Whitelists that provide identity, region, and accreditation information of investors based on off-chain KYC/AML verification
     * May be maintained by a single entity for a single token issuance, or a federation across multiple jurisdictions providing identity data for many issuers
@@ -62,14 +62,21 @@ The SFT protocol is comprised of four core components:
 Source Code
 ===========
 
-The SFT Protocol is open source. You can view the code on `GitHub <https://github.com/HyperLink-Technology/SFT-Protocol>`__.
+Many core components of the SFT Protocol are open sourced. You can view the code on `GitHub <https://github.com/HyperLink-Technology/SFT-Protocol>`__.
 
 Testing and Deployment
 ======================
 
 Unit testing and deployment of this project is performed with `Brownie <https://github.com/HyperLink-Technology/brownie>`__.
 
-.. warning:: The SFT Protocol is still under active development and has not yet undergone a third party audit. Please notify us if you find any issues in the code. We highly recommend against using these contracts prior to an audit by a trusted third party.
+To run the tests:
+
+::
+
+    $ brownie test
+
+
+.. warning:: The SFT Protocol is still under active development and has not yet undergone a third party audit. Please notify us if you find any issues in the code. **We highly recommend against using these contracts on the main-net prior to an audit by a trusted third party**.
 
 License
 =======

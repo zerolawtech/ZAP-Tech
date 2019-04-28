@@ -50,13 +50,10 @@ def is_permitted():
     '''check permitted'''
     module = compile_source(module_source.format('0xbb2a8522'))[0].deploy(a[0], token)
     check.false(token.isPermittedModule(module, "0xbb2a8522"))
-    check.false(issuer.isPermittedModule(module, "0xbb2a8522"))
     issuer.attachModule(token, module, {'from': a[0]})
     check.true(token.isPermittedModule(module, "0xbb2a8522"))
-    check.false(issuer.isPermittedModule(module, "0xbb2a8522"))
     issuer.detachModule(token, module, {'from': a[0]})
     check.false(token.isPermittedModule(module, "0xbb2a8522"))
-    check.false(issuer.isPermittedModule(module, "0xbb2a8522"))
 
 
 def token_detachModule():

@@ -107,10 +107,9 @@ def transferTokensCustodian():
 
 def modifyAuthorizedSupply():
     source = '''modifyAuthorizedSupply(
-        address _token,
         uint256 _oldSupply,
         uint256 _newSupply'''
-    _hook(nft, nft.modifyAuthorizedSupply, (100000000,), source, "0xb1a1a455")
+    _hook(nft, nft.modifyAuthorizedSupply, (100000000,), source, "0xa5f502c1")
 
 def totalSupplyChanged():
     source = '''totalSupplyChanged(
@@ -122,28 +121,6 @@ def totalSupplyChanged():
         uint256 _new'''
     _burn(nft, source, "0x741b5078")
     _hook(nft, nft.mint, (a[2], 1000, 0, "0x00"), source, "0x741b5078")
-
-def issuer_checkTransfer():
-    source = '''checkTransfer(
-        address _token,
-        bytes32 _authID,
-        bytes32[2] _id,
-        uint8[2] _rating,
-        uint16[2] _country'''
-    _hook(issuer, nft.checkTransfer, (a[0], a[1], 1000), source, "0x9a5150fc")
-
-
-def issuer_tokenTotalSupplyChanged():
-    source = '''tokenTotalSupplyChanged(
-        address _token,
-        bytes32 _id,
-        uint8 _rating,
-        uint16 _country,
-        uint256 _old,
-        uint256 _new'''
-    _burn(issuer, source, "0xb446f3ca")
-    _hook(issuer, nft.mint, (a[2], 1000, 0, "0x00"), source, "0xb446f3ca")
-
 
 def _hook(contract, fn, args, source, sig):
     args = list(args)+[{'from': a[0]}]

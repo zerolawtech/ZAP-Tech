@@ -462,6 +462,25 @@ Custodian
     * ``_to``: Address of the recipient.
     * ``_value``: Number of tokens that were received.
 
+Module Execution Flows
+======================
+
+The following diagrams show the sequence in which modules are called during some of the more complex methods.
+
+.. figure:: flow1.png
+    :align: center
+    :alt: SecurityToken
+    :figclass: align-center
+
+    SecurityToken
+
+.. figure:: flow2.png
+    :align: center
+    :alt: NFToken
+    :figclass: align-center
+
+    NFToken
+
 Events
 ======
 

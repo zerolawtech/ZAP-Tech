@@ -6,7 +6,7 @@ IssuingEntity
 
 IssuingEntity contracts hold shared compliance logic for all security tokens created by a single issuer. They are the central contract that an issuer uses to connect and interact with registrars, tokens and custodians.
 
-Each issuer contract includes standard SFT protocol :ref:`multisig` and :ref:`modules` functionality. See the respective documents for detailed information on these components.
+Each issuer contract includes standard SFT protocol multis-gi functionality. See :ref:`multisig` for detailed information on this component.
 
 This documentation only explains contract methods that are meant to be accessed directly. External methods that will revert unless called through another contract, such as a token or module, are not included.
 

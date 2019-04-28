@@ -621,10 +621,37 @@ contract NFToken is TokenBase  {
 		}
 
 		address _cust;
-		require(_smallVal <= balances[_addr[0]].balance);
-		balances[_addr[0]].balance -= _smallVal;
-		balances[_addr[1]].balance += _smallVal;
-		
+		(_cust, _addr) = _adjustBalances(_id, _addr, _rating, _country, _smallVal);
+		_transferMultipleRanges(_id, _addr, _cust, _rating, _country, _smallVal, _range);
+	}
+
+	/**
+		@notice Internal function to modify balance mappings
+		@dev common logic for transfer(), transferFrom() and transferRange()
+		@param _id Array of sender/receiver ID
+		@param _addr Array of sender/receiver addresses
+		@param _rating Array of sender/receiver investor rating
+		@param _country Array of sender/receiver countries
+		@param _value Amount to transfer
+		@return Custodian address, sender/receiver addresses
+	 */
+	function _adjustBalances(
+		bytes32[2] _id,
+		address[2] _addr,
+		uint8[2] _rating,
+		uint16[2] _country,
+		uint48 _value
+	)
+		internal
+		returns (
+			address _cust,
+			address[2]
+		)
+	{
+		require(_value <= balances[_addr[0]].balance);
+		balances[_addr[0]].balance -= _value;
+		balances[_addr[1]].balance += _value;
+
 		if (_rating[0] == 0 && _id[0] != ownerID) {
 			/* sender is custodian, reduce custodian balance */
 			custBalances[_addr[1]][_addr[0]] -= _value;
@@ -636,7 +663,13 @@ contract NFToken is TokenBase  {
 			custBalances[_addr[0]][_cust] += _value;
 			require(IBaseCustodian(_cust).receiveTransfer(_addr[0], _value));
 		}
-		_transferMultipleRanges(_id, _addr, _cust, _rating, _country, _smallVal, _range);
+		/* bytes4 signature for token module transferTokens() */
+		require(_callModules(
+			0x35a341da,
+			0x00,
+			abi.encode(_addr, _id, _rating, _country, _value)
+		));
+		return (_cust, _addr);
 	}
 
 	/**
@@ -701,7 +734,7 @@ contract NFToken is TokenBase  {
 
 	/**
 		@notice Internal transfer function
-		@dev common logic for transfer(), transferFrom() and transferRange()
+		@dev common logic for transfer(), transferFrom() and transferCustodian()
 		@param _id Array of sender/receiver ID
 		@param _addr Array of sender/receiver addresses
 		@param _custodian Custodian of new ranges
@@ -820,18 +853,8 @@ contract NFToken is TokenBase  {
 			abi.encode(_addr, _authID, _id, _rating, _country, _range)
 		));
 
-		balances[_addr[0]].balance -= _value;
-
 		address _cust;
-		if (_rating[1] == 0 && _id[1] != ownerID) {
-			/* if sender is custodian, look at custodied ranges */
-			_cust = _addr[1];
-			_addr[1] = _addr[0];
-			custBalances[_addr[0]][_cust] += _value;
-			balances[_cust].balance += _value;
-		} else {
-			balances[_addr[1]].balance += _value;
-		}
+		(_cust, _addr) = _adjustBalances(_id, _addr, _rating, _country, _value);
 
 		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], _cust);
 		/* hook point for NFToken.transferTokenRange() */

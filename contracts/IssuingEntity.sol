@@ -4,11 +4,10 @@ import "./open-zeppelin/SafeMath.sol";
 import "./KYCRegistrar.sol";
 import "./SecurityToken.sol";
 import "./interfaces/IBaseCustodian.sol";
-import "./bases/Modular.sol";
 import "./bases/MultiSig.sol";
 
 /** @title Issuing Entity */
-contract IssuingEntity is Modular, MultiSig {
+contract IssuingEntity is MultiSig {
 
 	using SafeMath32 for uint32;
 	using SafeMath for uint256;
@@ -651,12 +650,6 @@ contract IssuingEntity is Modular, MultiSig {
 				}
 			}
 		}
-		/* bytes4 signature for issuer module checkTransfer() */
-		require(_callModules(
-			0x9a5150fc,
-			0x00,
-			abi.encode(msg.sender, _authID, _id, _rating, _country)
-		));
 	}
 
 	/**
@@ -779,12 +772,6 @@ contract IssuingEntity is Modular, MultiSig {
 				}
 			}
 		}
-		/* bytes4 signature for token module tokenTotalSupplyChanged() */
-		require(_callModules(
-			0xb446f3ca,
-			0x00,
-			abi.encode(msg.sender, _id, _rating, _country, _old, _new)
-		));
 		return (_id, _rating, _country);
 	}
 
@@ -845,18 +832,16 @@ contract IssuingEntity is Modular, MultiSig {
 	 */
 	function attachModule(
 		address _target,
-		address _module
+		IBaseModule _module
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
-		if (_target == address(this)) {
-			_attachModule(_module);
-		} else {
-			require(tokens[_target].set, "dev: unknown target");
-			SecurityToken(_target).attachModule(_module);
-		}
+		address _owner = _module.getOwner();
+		require(tokens[_target].set, "dev: unknown target");
+		require (_owner == _target || _owner == address(this), "dev: wrong owner");
+		require(SecurityToken(_target).attachModule(_module));
 		return true;
 	}
 
@@ -874,18 +859,9 @@ contract IssuingEntity is Modular, MultiSig {
 		external
 		returns (bool)
 	{
-		if (_module != msg.sender) {
-			if (!_checkMultiSig()) return false;
-		} else {
-			/* msg.sig = 0x3556099d */
-			require(isPermittedModule(msg.sender, msg.sig));
-		}
-		if (_target == address(this)) {
-			_detachModule(_module);
-		} else {
-			require(tokens[_target].set, "dev: unknown target");
-			SecurityToken(_target).detachModule(_module);
-		}
+		if (!_checkMultiSig()) return false;
+		require(tokens[_target].set, "dev: unknown target");
+		require(SecurityToken(_target).detachModule(_module));
 		return true;
 	}
 

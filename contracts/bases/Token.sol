@@ -278,44 +278,6 @@ contract TokenBase is Modular {
 	}
 
 	/**
-		@notice Check if a module is active on this token
-		@dev
-			IssuingEntity modules are considered active on all tokens
-			associated with that issuer.
-		@param _module Deployed module address
-	 */
-	function isActiveModule(address _module) public view returns (bool) {
-		if (moduleData[_module].active) return true;
-		return issuer.isActiveModule(_module);
-	}
-
-	/**
-		@notice Check if a module is permitted to access a specific function
-		@dev
-			This returns false instead of throwing because an issuer level 
-			module must be checked twice
-		@param _module Module address
-		@param _sig Function signature
-		@return bool permission
-	 */
-	function isPermittedModule(
-		address _module,
-		bytes4 _sig
-	)
-		public
-		view
-		returns (bool)
-	{
-		if (
-			moduleData[_module].active && 
-			moduleData[_module].permissions[_sig]
-		) {
-			return true;
-		}
-		return issuer.isPermittedModule(_module, _sig);
-	}
-
-	/**
 		@notice Checks that a call comes from a permitted module or the issuer
 		@dev If the caller is the issuer, requires multisig approval
 		@return bool multisig approved

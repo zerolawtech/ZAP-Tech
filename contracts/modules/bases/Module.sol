@@ -13,7 +13,7 @@ contract ModuleBaseABC {
 
 /**
 	@title Module Base Contract
-	@dev Inherited contract for IssuingEntity or Custodian modules
+	@dev Inherited contract for Custodian modules
 */
 contract ModuleBase is ModuleBaseABC {
 

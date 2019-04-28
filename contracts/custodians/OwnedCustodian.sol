@@ -184,12 +184,13 @@ contract OwnedCustodian is Modular, MultiSig {
 		@return bool success
 	 */
 	function attachModule(
-		address _module
+		IBaseModule _module
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
+		require(_module.getOwner() == address(this), "dev: wrong owner");
 		_attachModule(_module);
 		return true;
 	}

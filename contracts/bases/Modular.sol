@@ -47,7 +47,6 @@ contract Modular {
 	function _attachModule(address _module) internal {
 		require (!moduleData[_module].active, "dev: already active");
 		IBaseModule b = IBaseModule(_module);
-		require (b.getOwner() == address(this), "dev: wrong owner");
 		Module storage m = moduleData[_module];
 		m.active = true;
 		activeModules.push(_module);

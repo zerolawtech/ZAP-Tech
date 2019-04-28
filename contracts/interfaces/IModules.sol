@@ -203,60 +203,6 @@ contract INFTModule is ISTModule {
 }
 
 /**
-	@notice IssuingEntity module interface
-	@dev These are all the possible hook point methods for issuer modules
-*/
-contract IIssuerModule is IBaseModule {
-
-	/**
-		@notice Check if a transfer is possible
-		@dev
-			Called before a token transfer to check if it is permitted
-			Hook signature: 0x9a5150fc
-		@param _token token address
-		@param _authID id hash of caller
-		@param _id sender and receiver id hashes
-		@param _rating sender and receiver investor ratings
-		@param _country sender and receiver country codes
-		@return bool success
-	 */
-	function checkTransfer(
-		address _token,
-		bytes32 _authID,
-		bytes32[2] _id,
-		uint8[2] _rating,
-		uint16[2] _country
-	)
-		external
-		view
-		returns (bool);
-
-	/**
-		@notice Total supply changed
-		@dev
-			Called after the total supply has been changed via minting or burning
-			Hook signature: 0xb446f3ca
-		@param _token token address
-		@param _id sender and receiver id hashes
-		@param _rating sender and receiver investor ratings
-		@param _country sender and receiver country codes
-		@param _old Previous token balance at the address
-		@param _new New token balance at the address
-		@return bool success
-	 */
-	function tokenTotalSupplyChanged(
-		address _token,
-		bytes32 _id,
-		uint8 _rating,
-		uint16 _country,
-		uint256 _old,
-		uint256 _new
-	)
-		external
-		returns (bool);
-}
-
-/**
 	@notice Custodian module interface
 	@dev These are all the possible hook point methods for custodian modules
 */

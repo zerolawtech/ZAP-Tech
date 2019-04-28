@@ -373,8 +373,8 @@ Modules are attached and detached to token contracts via the associated ``Issuin
 
         >>> token.isActiveModule(token_module)
         True
-        >>> token.isActiveModule(issuer_module)
-        True
+        >>> token.isActiveModule(other_module)
+        False
 
 .. method:: TokenBase.isPermittedModule(address _module, bytes4 _sig)
 

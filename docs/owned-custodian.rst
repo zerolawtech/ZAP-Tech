@@ -37,6 +37,8 @@ The constructor declares the owner as per standard :ref:`multisig`.
 Public Constants
 ================
 
+The following public variables cannot be changed after contract deployment.
+
 .. method:: OwnedCustodian.ownerID
 
     The bytes32 ID hash of the contract owner.
@@ -46,12 +48,11 @@ Public Constants
         >>> cust.ownerID()
         0x8be1198d7f1848ebeddb3f807146ce7d26e63d3b6715f27697428ddb52db9b63
 
-
 Balances and Transfers
 ======================
 
 Checking Balances
-=================
+-----------------
 
 Custodied investor balances are tracked within the token contract. They can be queried using ``TokenBase.custodianBalanceOf`` or ``OwnedCustodian.balanceOf``.
 
@@ -67,7 +68,7 @@ Custodied investor balances are tracked within the token contract. They can be q
         5000
 
 Checking Transfer Permissions
-============================-
+-----------------------------
 
 .. method:: OwnedCustodian.checkCustodianTransfer(address _token, address _from, address _to, uint256 _value)
 
@@ -82,8 +83,19 @@ Checking Transfer Permissions
 
     Permissioning checks for custodial transfers are identical to those of normal transfers.
 
+    .. code-block:: python
+
+        >>> cust.balanceOf(token, accounts[1])
+        2000
+        >>> cust.checkCustodianTransfer(token, accounts[1], accounts[2], 1000)
+        True
+        >>> cust.checkCustodianTransfer(token, accounts[1], accounts[2], 5000)
+        File "contract.py", line 282, in call
+          raise VirtualMachineError(e)
+        VirtualMachineError: VM Exception while processing transaction: revert Insufficient Custodial Balance
+
 Transferring Tokens
-===================
+-------------------
 
 .. method:: OwnedCustodian.transferInternal(address _token, address _from, address _to, uint256 _value)
 
@@ -92,6 +104,14 @@ Transferring Tokens
     * ``_to``: Receiver address
     * ``_value``: Amount to transfer
 
+    .. code-block:: python
+
+        >>> cust.transferInternal(token, accounts[1], accounts[2], 5000, {'from': accounts[0]})
+
+        Transaction sent: 0x1c5cf1d01d2d5f9b9d9e801d8e2a0b9b2eb50fa11fbe03864b69ccf0fe2c03fc
+        OwnedCustodian.transferInternal confirmed - block: 17   gas used: 189610 (2.37%)
+        <Transaction object '0x1c5cf1d01d2d5f9b9d9e801d8e2a0b9b2eb50fa11fbe03864b69ccf0fe2c03fc'>
+
 .. method:: OwnedCustodian.transfer(address _token, address _to, uint256 _value)
 
     Transfers tokens out of the Custodian contract.
@@ -99,6 +119,14 @@ Transferring Tokens
     * ``_token``: Token address
     * ``_to``:  Receipient address
     * ``_value``: Amount to transfer
+
+    .. code-block:: python
+
+        >>> cust.transfer(token, accounts[2], 5000, {'from': accounts[0]})
+
+        Transaction sent: 0x227f7c24d68d63aa567c16458e039a283481ef5fd79d8b9e48c88b033ff18f79
+        OwnedCustodian.transfer confirmed - block: 18   gas used: 149638 (1.87%)
+        <Transaction object '0x227f7c24d68d63aa567c16458e039a283481ef5fd79d8b9e48c88b033ff18f79'>
 
 .. _custodian-modules:
 
@@ -113,19 +141,61 @@ See the :ref:`modules` documentation for information module funtionality and dev
 
     Attaches a module to the custodian. Only callable by the owner or an approved authority.
 
+    .. code-block:: python
+
+        >>> cust.attachModule(module, {'from': accounts[0]})
+
+        Transaction sent: 0x7123091c968dbe0c279aa6850c668534aef327972a08d65b67779108cbaa9b45
+        OwnedCustodian.attachModule confirmed - block: 14   gas used: 212332 (2.65%)
+        <Transaction object '0x7123091c968dbe0c279aa6850c668534aef327972a08d65b67779108cbaa9b45'>
+
 .. method:: OwnedCustodian.detachModule(address _module)
 
     Detaches a module. A module may call to detach itself, but not other modules.
 
-.. method:: OwnedCustodian.isActiveModule(address _module)
+    .. code-block:: python
+
+        >>> cust.detachModule(module, {'from': accounts[0]})
+
+        Transaction sent: 0x7123091c968dbe0c279aa6850c668534aef327972a08d65b67779108cbaa9b45
+        OwnedCustodian.detachhModule confirmed - block: 15   gas used: 43828 (2.65%)
+        <Transaction object '0x7123091c968dbe0c279aa6850c668534aef327972a08d65b67779108cbaa9b45'>
+
+.. method:: Modular.isActiveModule(address _module)
 
      Returns ``true`` if a module is currently active on the contract, ``false`` if not.
+
+    .. code-block:: python
+
+        >>> cust.isActiveModule(cust_module)
+        True
+        >>> cust.isActiveModule(other_module)
+        False
 
 .. method:: Modular.isPermittedModule(address _module, bytes4 _sig)
 
     Returns ``true`` if a module is active on the contract, and permitted to call the given method signature. Returns ``false`` if not permitted.
 
+    .. code-block:: python
+
+        >>> cust.isPermittedModule(cust_module, "0x40c10f19")
+        True
+        >>> cust.isPermittedModule(cust_module, "0xc39f42ed")
+        False
 
 Events
 ======
 
+``OwnedCustodian`` includes the following events:
+
+.. method:: OwnedCustodian.ReceivedTokens(address indexed token, address indexed from, uint256 amount)
+
+    Emitted by ``OwnedCustodian.receiveTransfer`` when tokens are sent into the custodian contract.
+
+.. method:: OwnedCustodian.SentTokens(address indexed token, address indexed to, uint256 amount)
+
+    Emitted by ``OwnedCustodian.transfer`` after tokens are sent out of the custodian contract.
+
+.. method:: OwnedCustodian.TransferOwnership(address indexed token, address indexed from, address indexed to, uint256 value)
+
+    Emitted by ``OwnedCustodia.transferInternal`` after an internal change of beneficial ownership.

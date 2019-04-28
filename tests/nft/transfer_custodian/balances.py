@@ -27,6 +27,19 @@ def into_custodian():
     check.equal(token.custodianBalanceOf(a[2], cust), 10000)
     check.equal(token.balanceOf(cust), 14000)
 
+def into_custodian_transferRange():
+    '''Transfer into custodian - transferRange'''
+    token.transfer(a[1], 10000, {'from': a[0]})
+    token.transfer(a[2], 10000, {'from': a[0]})
+    token.transferRange(cust, 1000, 5000, {'from': a[1]})
+    token.transferRange(cust, 10001, 20001, {'from': a[2]})
+    check.equal(token.balanceOf(a[1]), 6000)
+    check.equal(token.custodianBalanceOf(a[1], cust), 4000)
+    check.equal(token.balanceOf(a[2]), 0)
+    check.equal(token.custodianBalanceOf(a[2], cust), 10000)
+    check.equal(token.balanceOf(cust), 14000)
+
+
 def cust_internal():
     '''Custodian transfer internal - investor to investor'''
     token.transfer(a[2], 10000, {'from': a[0]})

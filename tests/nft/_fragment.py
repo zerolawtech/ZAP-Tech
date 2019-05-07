@@ -4,7 +4,6 @@ import itertools
 
 
 def setup():
-    config['test']['always_transact'] = False
     global token, issuer
     kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
     issuer = accounts[0].deploy(IssuingEntity, [accounts[0]], 1)

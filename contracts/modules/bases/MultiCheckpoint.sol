@@ -23,7 +23,6 @@ contract MultiCheckpointModule is IssuerModuleBase {
         mapping (address => mapping(address => uint256)) custBalances;
         mapping (address => mapping(address => bool)) custZeroBalances;
     }
-
     struct EpochPointers {
         uint64 previous;
         uint64 next;
@@ -32,6 +31,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
     mapping (address => EpochPointers) pointers;
     mapping (address => mapping(uint256 => Checkpoint)) checkpointData;
 
+    event CheckpointSet(address indexed token, uint64 time);
 
     /**
         @notice Base constructor
@@ -322,9 +322,9 @@ contract MultiCheckpointModule is IssuerModuleBase {
         @return bool success
      */
     function newCheckpoint(address _token, uint64 _time) external returns (bool) {
-        require(_time > now);
-        require(issuer.isActiveToken(msg.sender));
-        require(!checkpointData[_token][_time].set);
+        require(_time > now, "dev: time");
+        require(issuer.isActiveToken(_token), "dev: token");
+        require(!checkpointData[_token][_time].set, "dev: already set");
         mapping(uint256 => Checkpoint) c = checkpointData[_token];
         if (pointers[_token].next == 0 || _time < pointers[_token].next) {
             EpochPointers memory p = pointers[_token];
@@ -339,6 +339,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         c[p.previous].next = _time;
         if (p.next != 0) c[p.next].previous = _time;
         c[_time] = Checkpoint(0, p.previous, p.next, true);
+        emit CheckpointSet(_token, _time);
         return true;
     }
 

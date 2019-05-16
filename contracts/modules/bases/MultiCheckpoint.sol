@@ -283,13 +283,11 @@ contract MultiCheckpointModule is IssuerModuleBase {
         returns (bool)
     {
         _onlyToken();
-        uint256 _previous = _advanceCheckpoints(msg.sender);
-        if (_previous == 0) return true;
-        Checkpoint storage c = checkpointData[msg.sender][_previous];
-        if (c.next != 0) {
-            uint256 _totalSupply = c.totalSupply.add(_new).sub(_old);
-            checkpointData[msg.sender][c.next].totalSupply = _totalSupply;
-        }
+        _advanceCheckpoints(msg.sender);
+        uint64 _next = pointers[msg.sender].next;
+        if (_next == 0) return true;
+        Checkpoint storage c = checkpointData[msg.sender][_next];
+        c.totalSupply = c.totalSupply.add(_new).sub(_old);
         _setBalance(c, _addr, _old);
         return true;
     }
@@ -306,8 +304,9 @@ contract MultiCheckpointModule is IssuerModuleBase {
         }
         Checkpoint storage c = checkpointData[_token][p.next];
         uint64 _prev = p.next;
-        while (c.next != 0 && now > c.next) {
+        while (c.next != 0) {
             checkpointData[_token][c.next].totalSupply = c.totalSupply;
+            if (c.next > now) break;
             _prev = c.next;
             c = checkpointData[_token][c.next];
         }
@@ -330,6 +329,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         if (pointers[_token].next == 0 || _time < pointers[_token].next) {
             EpochPointers memory p = pointers[_token];
             pointers[_token].next = _time;
+            c[_time].totalSupply = TokenBase(_token).totalSupply();
         } else {
             uint64 _previous = pointers[_token].next;
             while (c[_previous].next != 0 && c[_previous].next < _time) {
@@ -339,7 +339,9 @@ contract MultiCheckpointModule is IssuerModuleBase {
         }
         c[p.previous].next = _time;
         if (p.next != 0) c[p.next].previous = _time;
-        c[_time] = Checkpoint(0, p.previous, p.next, true);
+        c[_time].previous = p.previous;
+        c[_time].next = p.next;
+        c[_time].set = true;
         emit CheckpointSet(_token, _time);
         return true;
     }

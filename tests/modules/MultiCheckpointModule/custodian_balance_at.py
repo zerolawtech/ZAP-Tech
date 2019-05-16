@@ -8,12 +8,15 @@ from scripts.deployment import main
 
 def setup():
     main(SecurityToken)
-    global token, issuer, cp
+    global token, issuer, cust, cp
     token = SecurityToken[0]
     issuer = IssuingEntity[0]
+    cust = a[0].deploy(OwnedCustodian, [a[0]], 1)
+    issuer.addCustodian(cust, {'from': a[0]})
     cp = a[0].deploy(MultiCheckpointModule, issuer)
     for i in range(1, 6):
-        token.mint(a[i], 1000*i, {'from': a[0]})
+        token.mint(a[i], 3000*i, {'from': a[0]})
+        token.transfer(cust, 1000*i, {'from': a[i]})
     issuer.attachModule(token, cp, {'from': a[0]})
 
 def check_balances():
@@ -22,7 +25,7 @@ def check_balances():
     cp.newCheckpoint(token, cptime, {'from': a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
 
 
 def moved_before():
@@ -30,10 +33,10 @@ def moved_before():
     cptime = rpc.time()+100
     cp.newCheckpoint(token, cptime, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
 
 
 def moved_after():
@@ -42,9 +45,9 @@ def moved_after():
     cp.newCheckpoint(token, cptime, {'from': a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        token.transfer(a[0], 1000, {'from':a[i]})
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
 
 
 def moved_before_after():
@@ -52,12 +55,12 @@ def moved_before_after():
     cptime = rpc.time()+100
     cp.newCheckpoint(token, cptime, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
-        token.transfer(a[i], 1000, {'from':a[0]})
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
+        cust.transferInternal(token, a[0], a[i], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
 
 
 def two_checkpoints():
@@ -67,11 +70,11 @@ def two_checkpoints():
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
 
 
 def two_moved_before():
@@ -80,14 +83,14 @@ def two_moved_before():
     cp.newCheckpoint(token, cptime, {'from': a[0]})
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), (i-1)*1000)
 
 
 def two_moved_in_between():
@@ -97,11 +100,11 @@ def two_moved_in_between():
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), (i-1)*1000)
 
 
 def two_moved_after():
@@ -111,9 +114,9 @@ def two_moved_after():
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     rpc.sleep(210)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
 
 
 def two_moved_before_after():
@@ -122,12 +125,12 @@ def two_moved_before_after():
     cp.newCheckpoint(token, cptime, {'from': a[0]})
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(210)
     for i in range(1, 6):
-        token.transfer(a[i], 1000, {'from':a[0]})
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), (i-1)*1000)
+        cust.transferInternal(token, a[0], a[i], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), (i-1)*1000)
 
 
 def two_moved_before_in_between_after():
@@ -136,15 +139,15 @@ def two_moved_before_in_between_after():
     cp.newCheckpoint(token, cptime, {'from': a[0]})
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[i], 1000, {'from':a[0]})
+        cust.transferInternal(token, a[0], a[i], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
 
 def three_checkpoints():
     '''check balances - three checkpoints'''
@@ -154,16 +157,16 @@ def three_checkpoints():
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), i*1000)
 
 def three_before():
     '''three checkpoints - moved before'''
@@ -172,12 +175,12 @@ def three_before():
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(310)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), (i-1)*1000)
 
 def three_after():
     '''three checkpoints - moved after'''
@@ -187,10 +190,10 @@ def three_after():
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     rpc.sleep(310)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), i*1000)
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), i*1000)
 
 
 def three_between_first_second():
@@ -201,12 +204,12 @@ def three_between_first_second():
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(210)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), (i-1)*1000)
 
 
 def three_between_second_third():
@@ -217,12 +220,12 @@ def three_between_second_third():
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     rpc.sleep(210)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), (i-1)*1000)
 
 def three_between():
     '''three checkpoints - moved in between'''
@@ -232,15 +235,15 @@ def three_between():
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[i], 1000, {'from':a[0]})
+        cust.transferInternal(token, a[0], a[i], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        check.equal(cp.balanceAt(token, a[i], cptime), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), i*1000)
 
 
 def three_before_after():
@@ -250,13 +253,13 @@ def three_before_after():
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(310)
     for i in range(1, 6):
-        token.transfer(a[i], 1000, {'from':a[0]})
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), (i-1)*1000)
+        cust.transferInternal(token, a[0], a[i], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), (i-1)*1000)
 
 
 def three_before_in_betwee_after():
@@ -266,16 +269,16 @@ def three_before_in_betwee_after():
     cp.newCheckpoint(token, cptime+100, {'from': a[0]})
     cp.newCheckpoint(token, cptime+200, {'from': a[0]})
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[i], 1000, {'from':a[0]})
+        cust.transferInternal(token, a[0], a[i], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[0], 1000, {'from':a[i]})
+        cust.transferInternal(token, a[i], a[0], 1000, {'from':a[0]})
     rpc.sleep(110)
     for i in range(1, 6):
-        token.transfer(a[i], 1000, {'from':a[0]})
-        check.equal(cp.balanceAt(token, a[i], cptime), (i-1)*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+100), i*1000)
-        check.equal(cp.balanceAt(token, a[i], cptime+200), (i-1)*1000)
+        cust.transferInternal(token, a[0], a[i], 1000, {'from':a[0]})
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime), (i-1)*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+100), i*1000)
+        check.equal(cp.custodianBalanceAt(token, a[i], cust, cptime+200), (i-1)*1000)

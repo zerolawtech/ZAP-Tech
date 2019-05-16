@@ -156,8 +156,8 @@ contract MultiCheckpointModule is IssuerModuleBase {
             } else {
                 c.balances[_owner] = _value;
             }
-            c = checkpointData[msg.sender][c.previous];
             if (c.previous == 0) return;
+            c = checkpointData[msg.sender][c.previous];
         }
     }
 
@@ -182,12 +182,12 @@ contract MultiCheckpointModule is IssuerModuleBase {
                 c.custZeroBalances[_owner][_cust]
             ) return;
             if (_value == 0) {
-                c.custZeroBalances[_owner][_cust] == true;
+                c.custZeroBalances[_owner][_cust] = true;
             } else {
                 c.custBalances[_owner][_cust] = _value;
             }
-            c = checkpointData[msg.sender][c.previous];
             if (c.previous == 0) return;
+            c = checkpointData[msg.sender][c.previous];
         }
     }
 
@@ -261,6 +261,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         _setCustodianBalance(c, _addr[0], _cust, _bal);
         _bal = _token.custodianBalanceOf(_addr[1], _cust).sub(_value);
         _setCustodianBalance(c, _addr[1], _cust, _bal);
+        return true;
     }
 
     /**

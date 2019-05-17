@@ -322,20 +322,23 @@ contract MultiCheckpointModule is IssuerModuleBase {
 
     /**
         @notice Set a new checkpoint
-        @dev TODO - this shouldn't be callable by everyone
+        @dev callable by a permitted authority or token module
         @param _token Token contract address to set checkpoint for
         @param _time Epoch time to set checkpoint at
         @return bool success
      */
-    function newCheckpoint(address _token, uint64 _time) external returns (bool) {
+    function newCheckpoint(TokenBase _token, uint64 _time) external returns (bool) {
         require(_time > now, "dev: time");
         require(issuer.isActiveToken(_token), "dev: token");
+        if (!_token.isPermittedModule(msg.sender, 0x17020cc7)) {
+            if (!_onlyAuthority()) return false;
+        }
         require(!checkpointData[_token][_time].set, "dev: already set");
         mapping(uint256 => Checkpoint) c = checkpointData[_token];
         if (pointers[_token].next == 0 || _time < pointers[_token].next) {
             EpochPointers memory p = pointers[_token];
             pointers[_token].next = _time;
-            c[_time].totalSupply = TokenBase(_token).totalSupply();
+            c[_time].totalSupply = _token.totalSupply();
         } else {
             uint64 _previous = pointers[_token].next;
             while (c[_previous].next != 0 && c[_previous].next < _time) {

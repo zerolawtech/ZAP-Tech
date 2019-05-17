@@ -1,8 +1,8 @@
 pragma solidity >=0.4.24 <0.5.0;
 
-import "../../open-zeppelin/SafeMath.sol";
-import "../../bases/Token.sol";
-import "./Module.sol";
+import "../open-zeppelin/SafeMath.sol";
+import "../bases/Token.sol";
+import "./bases/Module.sol";
 
 
 /**
@@ -67,6 +67,12 @@ contract MultiCheckpointModule is IssuerModuleBase {
         return (permissions, hooks, ~uint256(0));
     }
 
+    /**
+        @notice Query token checkpoint totalSupply
+        @param _token Token contract address
+        @param _time Checkpoint time
+        @return uint256 totalSupply at checkpoint
+     */
     function totalSupplyAt(
         address _token,
         uint256 _time

@@ -202,8 +202,8 @@ contract IssuingEntity is MultiSig {
 	function addToken(address _token) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		SecurityToken token = SecurityToken(_token);
-		require(!tokens[_token].set);
-		require(token.ownerID() == ownerID);
+		require(!tokens[_token].set, "dev: already set");
+		require(token.ownerID() == ownerID, "dev: wrong owner");
 		require(token.circulatingSupply() == 0);
 		if (address(governance) != 0x00) {
 			require(governance.addToken(_token), "Action has not been approved");

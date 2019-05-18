@@ -154,8 +154,6 @@ SecurityToken
 
     Modifies the authorized supply.
 
-    Calling this method will also call any hooked in ``STModule.modifyAuthorizedSupply`` methods.
-
 .. method:: SecurityToken.mint(address _owner, uint256 _value)
 
     * Permission signature: ``0x40c10f19``
@@ -194,8 +192,6 @@ NFToken
     * Permission signature: ``0xc39f42ed``
 
     Modifies the authorized supply.
-
-    Calling this method will also call any hooked in ``NFTModule.modifyAuthorizedSupply`` methods.
 
 .. method:: NFToken.mint(address _owner, uint48 _value, uint32 _time, bytes2 _tag)
 
@@ -373,15 +369,6 @@ SecurityToken
     * ``_rating``: Sender and receiver investor ratings.
     * ``_country``: Sender and receiver country codes.
     * ``_value``: Amount that was transferred.
-
-.. method:: STModule.modifyAuthorizedSupply(uint256 _oldSupply, uint256 _newSupply)
-
-    * Hook signature: ``0xa5f502c1``
-
-    Called before changing the authorized supply of a token.
-
-    * ``_oldSupply``: Current authorized supply
-    * ``_newSupply``: New authorized supply
 
 .. method:: STModule.totalSupplyChanged(address _addr, bytes32 _id, uint8 _rating, uint16 _country, uint256 _old, uint256 _new)
 

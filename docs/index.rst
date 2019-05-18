@@ -98,5 +98,6 @@ Contents
     custodian.rst
     multisig.rst
     modules.rst
+    governance.rst
     data-standards.rst
     glossary.rst

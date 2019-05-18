@@ -15,9 +15,9 @@ In short: hooks involve calls from a parent contract into a module, permissions 
 
 It may be useful to view source code for the following contracts while reading this document:
 
-* `Modular.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/bases/Modular.sol>`__: Inherited by modular contracts. Provides functionality around attaching, detaching, and calling modules.
-* `Module.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/modules/bases/Module.sol>`__: Inherited by modules. Provide required functionality for modules to be able to attach or detach.
-* `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/interfaces/IModules.sol>`__: Interfaces outlining standard module functionality. Includes inputs for all possible hook methods.
+* `Modular.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/bases/Modular.sol>`__: Inherited by modular contracts. Provides functionality around attaching, detaching, and calling modules.
+* `Module.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/modules/bases/Module.sol>`__: Inherited by modules. Provide required functionality for modules to be able to attach or detach.
+* `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/interfaces/IModules.sol>`__: Interfaces outlining standard module functionality. Includes inputs for all possible hook methods.
 
 .. note:: In order to minimize gas costs, modules should be attached only when their functionality is required and detached as soon as they are no longer needed.
 
@@ -328,7 +328,7 @@ Hookable Module Methods
 
 The following methods may be included in modules and given as hook points via ``getPermissions``.
 
-Inputs and outputs of all hook points are also defined in `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/interfaces/IModules.sol>`__. This can be a useful starting point when writing your own modules.
+Inputs and outputs of all hook points are also defined in `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/interfaces/IModules.sol>`__. This can be a useful starting point when writing your own modules.
 
 SecurityToken
 *************

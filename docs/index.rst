@@ -2,7 +2,7 @@
 SFT Protocol
 ############
 
-The Secured Financial Transaction Protocol (SFT) is a set of smart contracts, written in `Solidity <https://solidity.readthedocs.io/>`__ for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. SFT favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
+The Secured Financial Transaction Protocol (SFT) is a set of smart contracts, written in `Solidity <https://solidity.readthedocs.io/en/latest>`__ for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. SFT favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
 
 The SFT Protocol was developed by `HyperLink Technology <https://hyperlink.technology>`__.
 

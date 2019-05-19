@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import main
 
 
 def setup():
@@ -14,12 +13,6 @@ def setup():
     owner_id = issuer.ownerID()
     auth_id = issuer.getID(a[3])
 
-
-# addInvestor
-# updateInvestor
-# setInvestorRestriction
-# registerAddresses
-# restrictAddresses
 
 def addInvestor():
     _multisig(kyc.addInvestor, "0x1234", 1, 1, 1, 9999999999, (a[7],))

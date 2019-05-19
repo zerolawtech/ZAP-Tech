@@ -7,10 +7,8 @@ from scripts.deployment import main
 
 
 def setup():
-    main(SecurityToken)
     global token, issuer, cp
-    token = SecurityToken[0]
-    issuer = IssuingEntity[0]
+    token, issuer, _ = main(SecurityToken, (1,2,3,4,5), (1,))
     cp = a[0].deploy(MultiCheckpointModule, issuer)
     for i in range(1, 6):
         token.mint(a[i], 1000*i, {'from': a[0]})

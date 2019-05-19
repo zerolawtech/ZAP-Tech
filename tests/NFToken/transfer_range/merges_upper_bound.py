@@ -3,10 +3,8 @@ from scripts.deployment import main
 
 
 def setup(always_transact=False):
-    main(NFToken)
     global token, issuer, upper
-    token = NFToken[0]
-    issuer = IssuingEntity[0]
+    token, issuer, _ = main(NFToken, (1,2,), (1,2))
     token.modifyAuthorizedSupply(2**48, {'from': a[0]})
     token.mint(a[1], 2**48-20002, 0, "0x00", {'from': a[0]})
     token.mint(a[2], 10000, 0, "0x00", {'from': a[0]})

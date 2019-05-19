@@ -3,16 +3,13 @@
 import time
 
 from brownie import *
-from scripts.deployment import main
+from scripts.deployment import main, deploy_custodian
 
 
 def setup():
-    main(SecurityToken)
     global token, issuer, cust, cp
-    token = SecurityToken[0]
-    issuer = IssuingEntity[0]
-    cust = a[0].deploy(OwnedCustodian, [a[0]], 1)
-    issuer.addCustodian(cust, {'from': a[0]})
+    token, issuer, _ = main(SecurityToken, (1,2,3,4,5), (1,))
+    cust = deploy_custodian()
     cp = a[0].deploy(MultiCheckpointModule, issuer)
     for i in range(1, 6):
         token.mint(a[i], 3000*i, {'from': a[0]})

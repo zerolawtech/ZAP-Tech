@@ -1,17 +1,13 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import main
+from scripts.deployment import deploy_contracts
 
 
 def setup():
     global token, issuer, kyc, kyc2
-    kyc = a[0].deploy(KYCRegistrar, [a[0]], 1)
+    token, issuer, kyc = deploy_contracts(SecurityToken)
     kyc2 = a[0].deploy(KYCRegistrar, [a[0]], 1)
-    issuer = a[0].deploy(IssuingEntity, [a[0]], 1)
-    token = a[0].deploy(SecurityToken, issuer, "Test", "TST", 1000000)
-    issuer.addToken(token, {'from': a[0]})
-    issuer.setRegistrar(kyc, True, {'from': a[0]})
     issuer.setRegistrar(kyc2, True, {'from': a[0]})
     token.mint(issuer, 1000000, {'from': a[0]})
 

@@ -1,16 +1,13 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import main
+from scripts.deployment import deploy_contracts, deploy_custodian
 
 
 def setup():
-    main(NFToken)
     global token, issuer, cust
-    token = NFToken[0]
-    issuer = IssuingEntity[0]
-    cust = a[0].deploy(OwnedCustodian, [a[0]], 1)
-    issuer.addCustodian(cust, {'from': a[0]})
+    token, issuer, _ = deploy_contracts(NFToken)
+    cust = deploy_custodian()
 
 def mint_zero():
     '''mint 0 tokens'''

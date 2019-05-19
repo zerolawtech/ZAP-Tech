@@ -4,10 +4,8 @@ from scripts.deployment import main
 
 def setup():
     config['test']['default_contract_owner'] = True
-    main(NFToken)
     global token, issuer
-    token = NFToken[0]
-    issuer = IssuingEntity[0]
+    token, issuer, _ = main(NFToken, (1,2), (1,))
 
 
 def mint_no_merge_owner():

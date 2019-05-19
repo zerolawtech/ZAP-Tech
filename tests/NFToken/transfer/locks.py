@@ -5,10 +5,8 @@ from scripts.deployment import main
 
 
 def setup():
-    main(NFToken)
     global token, issuer
-    token = NFToken[0]
-    issuer = IssuingEntity[0]
+    token, issuer, _ = main(NFToken, (1,2), (1,))
     token.mint(issuer, 100000, 0, "0x00", {'from': a[0]})
 
 

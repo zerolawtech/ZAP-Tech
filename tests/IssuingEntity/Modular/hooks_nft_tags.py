@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import main 
+from scripts.deployment import main, deploy_custodian
 
 module_source = """
 pragma solidity 0.4.25;
@@ -64,12 +64,9 @@ contract TestModule {
 
 
 def setup():
-    main(NFToken)
     global issuer, nft, cust, module
-    nft = NFToken[0]
-    issuer = IssuingEntity[0]
-    cust = a[0].deploy(OwnedCustodian, [a[0]], 1)
-    issuer.addCustodian(cust, {'from': a[0]})
+    nft, issuer, _ = main(NFToken, (1,2), (1,))
+    cust = deploy_custodian()
     nft.mint(a[1], 100, 0, "0x0000", {'from': a[0]}) #    1 - 100
     nft.mint(a[1], 100, 0, "0xaa01", {'from': a[0]}) # 101 - 200
     nft.mint(a[1], 100, 0, "0xaa02", {'from': a[0]}) # 201 - 300

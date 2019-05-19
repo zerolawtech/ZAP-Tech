@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import main 
+from scripts.deployment import deploy_contracts 
 
 module_source = """
 pragma solidity 0.4.25;
@@ -30,10 +30,8 @@ contract TestModule {
 
 
 def setup():
-    main(SecurityToken)
-    global token, issuer, TestModule, module_token, module_issuer
-    token = SecurityToken[0]
-    issuer = IssuingEntity[0]
+    global token, issuer, module_token, module_issuer
+    token, issuer, _ = deploy_contracts(SecurityToken)
     TestModule = compile_source(module_source)[0]
     module_token = a[0].deploy(TestModule, token)
     module_issuer = a[0].deploy(TestModule, issuer)

@@ -1,14 +1,13 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import main
+from scripts.deployment import deploy_contracts
 
 
 def setup():
-    main(SecurityToken)
     global token, issuer, ownerid, id1
-    token = SecurityToken[0]
-    issuer = IssuingEntity[0]
+    token, issuer, _ = deploy_contracts(SecurityToken)
+
     a[0].deploy(SecurityToken, issuer, "Test", "TST", 1000000)
     a[0].deploy(OwnedCustodian, [a[0]], 1)
     for i in range(6):

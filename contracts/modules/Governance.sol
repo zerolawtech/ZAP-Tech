@@ -1,6 +1,8 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "../IssuingEntity.sol";
+import "./MultiCheckpoint.sol";
+import "../open-zeppelin/SafeMath.sol";
 
 /**
     @title Governance Module Minimal Implementation
@@ -11,14 +13,16 @@ import "../IssuingEntity.sol";
 */
 contract GovernanceMinimal {
 
+    using SafeMath for uint256;
+
     IssuingEntity public issuer;
-    address public checkpoint;
+    MultiCheckpointModule public checkpoint;
 
     mapping (address => mapping (bytes => bool)) approval;
     mapping (bytes32 => Proposal) proposals;
 
     struct Proposal {
-        uint8 state;
+        uint8 state; /** 0=undeclared, 1=pending, 2=active, 3=closed */
         uint64 checkpoint;
         uint64 start;
         uint64 end;
@@ -26,16 +30,18 @@ contract GovernanceMinimal {
         string description;
         address approvalAddress;
         bytes approvalCalldata;
+        mapping (address => bool) hasVoted;
     }
 
     struct Vote {
         uint16 requiredPct;
         uint16 quorumPct;
-        Token[] eligibleTokens;
+        uint256 totalVotes;
+        Token[] tokens;
     }
 
     struct Token {
-        address token;
+        address addr;
         uint16 multiplier;
     }
 
@@ -60,6 +66,8 @@ contract GovernanceMinimal {
         );
     }
 
+    /** TODO - getters */
+
     function newProposal(
         bytes32 _id,
         uint64 _checkpoint,
@@ -75,6 +83,7 @@ contract GovernanceMinimal {
         if (!_checkPermitted()) return false;
         Proposal storage p = proposals[_id];
         require(p.state == 0);
+        require(_checkpoint <= _start);
         p.state = 1;
         p.checkpoint = _checkpoint;
         p.start = _start;
@@ -84,7 +93,7 @@ contract GovernanceMinimal {
             p.approvalAddress = _approvalAddress;
             p.approvalCalldata = _approvalCalldata;
         }
-        /* TODO checkpoint? */
+        /* TODO checkpoint - set it or verify it exists */
         /* TODO emit event */
         return true;
     }
@@ -108,15 +117,70 @@ contract GovernanceMinimal {
         Vote storage v = p.votes[p.votes.length-1];
         v.requiredPct = _requiredPct;
         v.quorumPct = _quorumPct;
-        v.eligibleTokens.length = _tokens.length;
+        v.tokens.length = _tokens.length;
         for (uint256 i; i < _tokens.length; i++) {
-            v.eligibleTokens[i] = Token(_tokens[i], _multipliers[i]);
+            v.tokens[i] = Token(_tokens[i], _multipliers[i]);
         }
         /* TODO emit event */
         return true;
     }
 
-    
+    function vote(bytes32 _id, bool _vote) external returns (bool) {
+        Proposal storage p = proposals[_id];
+        if (p.state == 1) {
+            require(now >= p.start);
+            for (uint256 i; i < p.votes.length; i++) {
+                p.votes[i].totalVotes = _getTotalVotes(
+                    p.votes[i].tokens,
+                    p.checkpoint
+                );
+            }
+            p.state = 2;
+        }
+        require(p.state == 2);
+        require(!p.hasVoted[msg.sender]);
+        require(p.end >= now);
+        /* TODO how to most effectively determine which tokens the sender holds? */
+    }
+
+    function _getTotalVotes(
+        Token[] storage t,
+        uint256 _time
+    )
+        internal
+        view
+        returns
+        (uint256 _total)
+    {
+        for (uint256 i; i < t.length; i++) {
+            uint256 _ts = checkpoint.totalSupplyAt(t[i].addr, _time);
+            _total = _total.add(_ts.mul(t[i].multiplier));
+        }
+        return _total;
+    }
+
+    function closeVote(bytes32 _id) external returns (bool) {
+        if (!_checkPermitted()) return false;
+        Proposal storage p = proposals[_id];
+        require(p.state == 2);
+        require(p.end < now);
+        p.state = 3;
+        /* TODO tally votes, give permission if yes */
+    }
+
+
+
+
+
+    function _checkApproval() internal {
+        if (!approval[msg.sender][msg.data]) revert();
+        approval[msg.sender][msg.data] = false;
+    }
+
+
+    function () external {
+        _checkApproval();
+    }
 
     /**
         @notice Approval to modify authorized supply
@@ -145,15 +209,6 @@ contract GovernanceMinimal {
     function addToken(address _token) external returns (bool) {
         _checkApproval();
         return true;
-    }
-
-    function _checkApproval() internal {
-        if (!approval[msg.sender][msg.data]) revert();
-        approval[msg.sender][msg.data] = false;
-    }
-
-    function () external {
-        _checkApproval();
     }
 
 }

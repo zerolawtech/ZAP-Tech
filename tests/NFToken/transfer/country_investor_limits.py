@@ -5,11 +5,8 @@ from scripts.deployment import main
 
 
 def setup():
-    main(NFToken)
     global token, issuer, kyc
-    token = NFToken[0]
-    issuer = IssuingEntity[0]
-    kyc = KYCRegistrar[0]
+    token, issuer, kyc = main(NFToken, (1,2), (1,2))
     token.mint(issuer, 1000000, 0, "0x00", {'from': a[0]})
     issuer.setCountry(1, True, 1, [1,0,0,0,0,0,0,0], {'from': a[0]})
     token.transfer(a[1], 1000, {'from': a[0]})

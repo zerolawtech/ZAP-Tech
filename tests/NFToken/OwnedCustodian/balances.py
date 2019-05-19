@@ -1,16 +1,13 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import main
+from scripts.deployment import main, deploy_custodian
 
 
 def setup(always_transact=False):
-    main(NFToken)
     global token, issuer, cust
-    token = NFToken[0]
-    issuer = IssuingEntity[0]
-    cust = a[0].deploy(OwnedCustodian, [a[0]], 1)
-    issuer.addCustodian(cust, {'from': a[0]})
+    token, issuer, _ = main(NFToken, (1,2,3), (1,))
+    cust = deploy_custodian()
     token.mint(issuer, 100000, 0, "0x00", {'from': a[0]})
 
 

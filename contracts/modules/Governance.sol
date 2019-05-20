@@ -40,7 +40,6 @@ contract GovernanceMinimal {
      */
     struct Proposal {
         uint8 state;
-        uint8 maxVoteValue;
         uint64 checkpoint;
         uint64 start;
         uint64 end;
@@ -65,6 +64,31 @@ contract GovernanceMinimal {
         uint16 multiplier;
     }
 
+    event NewProposal(
+        bytes32 id,
+        string description,
+        uint64 checkpoint,
+        uint64 start,
+        uint64 end,
+        address approvalAddress,
+        bytes approvalCalldata
+    );
+
+    event NewVote(
+        bytes32 id,
+        uint256 voteIndex,
+        uint16 requiredPct,
+        uint16 quorumPct,
+        address[] tokens,
+        uint16[] multipliers
+    );
+
+    event ProposalClosed(
+        bytes32 id,
+        uint256 result,
+        uint256[] voteResults
+    );
+
     /**
         @notice Base constructor
         @param _issuer IssuingEntity contract address
@@ -86,7 +110,15 @@ contract GovernanceMinimal {
         );
     }
 
-    /** TODO - getters */
+    function getProposalState(bytes32 _id) external view returns (uint8) {
+        return proposals[_id].state;
+    }
+
+    function getVoteResult(bytes32 _id, uint256 _voteIndex) external view returns (uint8) {
+        Proposal storage p = proposals[_id];
+        require (p.state > 2);
+        return _getVoteResult(p.votes[_voteIndex]);
+    }
 
     function newProposal(
         bytes32 _id,
@@ -113,7 +145,15 @@ contract GovernanceMinimal {
             p.approvalAddress = _approvalAddress;
             p.approvalCalldata = _approvalCalldata;
         }
-        /* TODO emit event */
+        emit NewProposal(
+            _id,
+            _description,
+            _checkpoint,
+            _start,
+            _end,
+            _approvalAddress,
+            _approvalCalldata
+        );
         return true;
     }
 
@@ -150,7 +190,14 @@ contract GovernanceMinimal {
             require(checkpoint.checkpointExists(_tokens[i], p.checkpoint));
             v.tokens[i] = Token(_tokens[i], _multipliers[i]);
         }
-        /* TODO emit event */
+        emit NewVote(
+            _id,
+            p.votes.length - 1,
+            _requiredPct,
+            _quorumPct,
+            _tokens,
+            _multipliers
+        );
         return true;
     }
 
@@ -180,7 +227,7 @@ contract GovernanceMinimal {
                 p.checkpoint
             ));
         }
-        /* TODO emit event? */
+        /** TODO emit event? */
         return true;
     }
 
@@ -205,7 +252,7 @@ contract GovernanceMinimal {
                 p.checkpoint
             );
         }
-        /* TODO emit event? */
+        /** TODO emit event? */
         return true;
     }
 
@@ -284,10 +331,11 @@ contract GovernanceMinimal {
             require(_state == 5);
         }
         p.state = uint8(_state);
-        
+
         if (_state == 5 && p.approvalAddress != 0x00) {
             approval[p.approvalAddress][p.approvalCalldata] = true;
         }
+        emit ProposalClosed(_id, _state, _results);
     }
 
     function _getVoteResult(Vote storage v) internal view returns (uint8) {
@@ -307,7 +355,9 @@ contract GovernanceMinimal {
         approval[msg.sender][msg.data] = false;
     }
 
-
+    /**
+        @notice Fallback function, can be used to provide module permissioning
+     */
     function () external {
         _checkApproval();
     }
@@ -315,17 +365,9 @@ contract GovernanceMinimal {
     /**
         @notice Approval to modify authorized supply
         @dev Called by IssuingEntity.modifyAuthorizedSupply
-        @param _token Token contract seeking to modify authorized supply
-        @param _value New authorized supply value
         @return permission boolean
      */
-    function modifyAuthorizedSupply(
-        address _token,
-        uint256 _value
-    )
-        external
-        returns (bool)
-    {
+    function modifyAuthorizedSupply(address, uint256) external returns (bool) {
         _checkApproval();
         return true;
     }
@@ -333,10 +375,9 @@ contract GovernanceMinimal {
     /**
         @notice Approval to attach a new token contract
         @dev Called by IssuingEntity.addToken
-        @param _token Token contract address
         @return permission boolean
      */
-    function addToken(address _token) external returns (bool) {
+    function addToken(address) external returns (bool) {
         _checkApproval();
         return true;
     }

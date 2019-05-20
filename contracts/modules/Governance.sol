@@ -1,8 +1,15 @@
 pragma solidity >=0.4.24 <0.5.0;
 
 import "../IssuingEntity.sol";
-import "./MultiCheckpoint.sol";
 import "../open-zeppelin/SafeMath.sol";
+
+
+interface IMultiCheckpointModule {
+    function totalSupplyAt(address, uint256) external view returns (uint256);
+    function balanceAt(address, address, uint256) external view returns (uint256);
+    function custodianBalanceAt(address, address, address, uint256) external view returns (uint256);
+}
+
 
 /**
     @title Governance Module Minimal Implementation
@@ -16,13 +23,14 @@ contract GovernanceMinimal {
     using SafeMath for uint256;
 
     IssuingEntity public issuer;
-    MultiCheckpointModule public checkpoint;
+    IMultiCheckpointModule public checkpoint;
 
     mapping (address => mapping (bytes => bool)) approval;
     mapping (bytes32 => Proposal) proposals;
 
     struct Proposal {
         uint8 state; /** 0=undeclared, 1=pending, 2=active, 3=closed */
+        uint8 maxVoteValue;
         uint64 checkpoint;
         uint64 start;
         uint64 end;
@@ -30,13 +38,15 @@ contract GovernanceMinimal {
         string description;
         address approvalAddress;
         bytes approvalCalldata;
-        mapping (address => bool) hasVoted;
+        /* holder => custodian address (0x00 if none) */
+        mapping (address => mapping (address => uint256)) hasVoted;
     }
 
     struct Vote {
         uint16 requiredPct;
         uint16 quorumPct;
         uint256 totalVotes;
+        uint256[] counts;
         Token[] tokens;
     }
 
@@ -74,6 +84,7 @@ contract GovernanceMinimal {
         uint64 _start,
         uint64 _end,
         string _description,
+        uint8 _maxVoteValue,
         address _approvalAddress,
         bytes _approvalCalldata
     )
@@ -84,11 +95,14 @@ contract GovernanceMinimal {
         Proposal storage p = proposals[_id];
         require(p.state == 0);
         require(_checkpoint <= _start);
+        /* overflow protection, value cannot be 0 or 255 */
+        require(_maxVoteValue - 1 < 254);
         p.state = 1;
         p.checkpoint = _checkpoint;
         p.start = _start;
         p.end = _end;
         p.description = _description;
+        p.maxVoteValue = _maxVoteValue;
         if (_approvalAddress != 0x00) {
             p.approvalAddress = _approvalAddress;
             p.approvalCalldata = _approvalCalldata;
@@ -118,6 +132,8 @@ contract GovernanceMinimal {
         v.requiredPct = _requiredPct;
         v.quorumPct = _quorumPct;
         v.tokens.length = _tokens.length;
+        v.counts.length = p.maxVoteValue + 1;
+        /* TODO make sure no duplicate entries in tokens array */
         for (uint256 i; i < _tokens.length; i++) {
             v.tokens[i] = Token(_tokens[i], _multipliers[i]);
         }
@@ -125,24 +141,56 @@ contract GovernanceMinimal {
         return true;
     }
 
-    function vote(bytes32 _id, bool _vote) external returns (bool) {
+    function vote(bytes32 _id, uint256 _vote) external returns (bool) {
         Proposal storage p = proposals[_id];
+        require(_vote <= p.maxVoteValue);
+
+        /* query checkpoint totalSupply and set total possible votes */
         if (p.state == 1) {
             require(now >= p.start);
+            p.state = 2;
             for (uint256 i; i < p.votes.length; i++) {
                 p.votes[i].totalVotes = _getTotalVotes(
                     p.votes[i].tokens,
                     p.checkpoint
                 );
             }
-            p.state = 2;
         }
         require(p.state == 2);
-        require(!p.hasVoted[msg.sender]);
         require(p.end >= now);
-        /* TODO how to most effectively determine which tokens the sender holds? */
+        require(p.hasVoted[msg.sender][0x00] == 0);
+        p.hasVoted[msg.sender][0x00] = _vote + 1;
+
+        for (i = 0; i < p.votes.length; i++) {
+            p.votes[i].counts[_vote] = p.votes[i].counts[_vote].add(_getVotes(
+                p.votes[i].tokens,
+                p.checkpoint
+            ));
+        }
+        /* TODO emit event? */
+        return true;
     }
 
+    function custodialVote(bytes32 _id, address _custodian) external returns (bool) {
+        Proposal storage p = proposals[_id];
+        require(p.state == 2);
+        require(p.end >= now || p.end == 0);
+        require(p.hasVoted[msg.sender][0x00] != 0);
+        require(p.hasVoted[msg.sender][_custodian] == 0);
+        uint256 _vote = p.hasVoted[msg.sender][0x00] - 1;
+        p.hasVoted[msg.sender][_custodian] = _vote + 1;
+        for (uint256 i; i < p.votes.length; i++) {
+            p.votes[i].counts[_vote] += _getCustodianVotes(p.votes[i].tokens, _custodian, p.checkpoint);
+        }
+        /* TODO emit event? */
+        return true;
+    }
+
+    /**
+        TODO - the next 3 functions could be a single function using .call
+        if this contract were solidity 0.5.x - once brownie can handle multiple
+        solc versions, make that change!
+     */
     function _getTotalVotes(
         Token[] storage t,
         uint256 _time
@@ -159,12 +207,49 @@ contract GovernanceMinimal {
         return _total;
     }
 
+    function _getVotes(
+        Token[] storage t,
+        uint256 _time
+    )
+        internal
+        view
+        returns (uint256 _total)
+    {
+        for (uint256 i; i < t.length; i++) {
+            uint256 _bal = checkpoint.balanceAt(t[i].addr, msg.sender, _time);
+            _total = _total.add(_bal.mul(t[i].multiplier));
+        }
+        return _total;
+    }
+
+    function _getCustodianVotes(
+        Token[] storage t,
+        address _cust,
+        uint256 _time
+    )
+        internal
+        view
+        returns (uint256 _total)
+    {
+        for (uint256 i; i < t.length; i++) {
+            uint256 _bal = checkpoint.custodianBalanceAt(t[i].addr, msg.sender, _cust, _time);
+            _total = _total.add(_bal.mul(t[i].multiplier));
+        }
+        return _total;
+    }
+
+
+
     function closeVote(bytes32 _id) external returns (bool) {
         if (!_checkPermitted()) return false;
         Proposal storage p = proposals[_id];
         require(p.state == 2);
         require(p.end < now);
+        if (p.end == 0) {
+
+        }
         p.state = 3;
+        
         /* TODO tally votes, give permission if yes */
     }
 

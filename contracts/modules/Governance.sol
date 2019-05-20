@@ -13,13 +13,10 @@ interface IMultiCheckpointModule {
 
 
 /**
-    @title Governance Module Minimal Implementation
-    @dev
-        This is included purely for testing purposes, a real implementation
-        will include some form of voting mechanism. Calls should only return
-        true once an action has been approved.
+    @title Governance Module
+    @dev Attaches to IssuingEntity and MultiCheckpointModule
 */
-contract GovernanceMinimal {
+contract GovernanceModule {
 
     using SafeMath for uint256;
 
@@ -110,16 +107,49 @@ contract GovernanceMinimal {
         );
     }
 
+
+    /**
+        @notice get the current state of a proposal
+        @param _id Proposal ID
+        @return uint8 state
+     */
     function getProposalState(bytes32 _id) external view returns (uint8) {
         return proposals[_id].state;
     }
 
-    function getVoteResult(bytes32 _id, uint256 _voteIndex) external view returns (uint8) {
+    /**
+        @notice get the result of a proposal vote
+        @param _id Proposal ID
+        @param _voteIndex Index of proposal vote
+        @return uint8 result
+     */
+    function getVoteResult(
+        bytes32 _id,
+        uint256 _voteIndex
+    )
+        external
+        view
+        returns (uint8)
+    {
         Proposal storage p = proposals[_id];
         require (p.state > 2);
         return _getVoteResult(p.votes[_voteIndex]);
     }
 
+    /**
+        @notice Create a new proposal
+        @dev
+            The ID should be a hash generated from legal documents pertaining
+            to the proposal.
+        @param _id Proposal ID
+        @param _checkpoint Epoch time for balance snapshot that votes are based on
+        @param _start Epoch time that voting begins
+        @param _end Epoch time that voting closes (leave as 0 to never close)
+        @param _description String description of proposal
+        @param _approvalAddress Optional - permissioned address if proposal passes
+        @param _approvalCalldata Optional - Permissioned calldata if proposal passes
+        @return bool success
+     */
     function newProposal(
         bytes32 _id,
         uint64 _checkpoint,
@@ -157,6 +187,15 @@ contract GovernanceMinimal {
         return true;
     }
 
+    /**
+        @notice Create a new vote within a proposal
+        @param _id Proposal ID
+        @param _requiredPct Required % for vote to pass, as int * 100
+        @param _requiredPct Quorum % (leave as 0 for no quorum requirement)
+        @param _tokens Array of token contract addresses
+        @param _multipliers Array of vote multipliers
+        @return bool success
+     */
     function newVote(
         bytes32 _id,
         uint16 _requiredPct,
@@ -201,6 +240,12 @@ contract GovernanceMinimal {
         return true;
     }
 
+    /**
+        @notice Cast a vote on a proposal
+        @param _id Proposal ID
+        @param _vote Vote boolean as an integer (0=no, 1=yes)
+        @return bool success
+     */
     function voteOnProposal(bytes32 _id, uint8 _vote) external returns (bool) {
         Proposal storage p = proposals[_id];
         require(_vote < 2);
@@ -227,10 +272,17 @@ contract GovernanceMinimal {
                 p.checkpoint
             ));
         }
-        /** TODO emit event? */
+        /** No event is emitted, cuz privacy */
         return true;
     }
 
+    /**
+        @notice Cast a vote on a proposal with custodied tokens
+        @dev voteForProposal must be called before this method, to log the vote
+        @param _id Proposal ID
+        @param _custodian Custodian contract address
+        @return bool success
+     */
     function custodialVoteForProposal(
         bytes32 _id,
         address _custodian
@@ -257,62 +309,10 @@ contract GovernanceMinimal {
     }
 
     /**
-        TODO - the next 3 functions could be a single function using .call
-        if this contract were solidity 0.5.x - once brownie can handle multiple
-        solc versions, make that change!
+        @notice Close a proposal
+        @param _id Proposal ID
+        @return bool success
      */
-    function _getTotalVotes(
-        Token[] storage t,
-        uint256 _time
-    )
-        internal
-        view
-        returns
-        (uint256 _total)
-    {
-        for (uint256 i; i < t.length; i++) {
-            uint256 _ts = checkpoint.totalSupplyAt(t[i].addr, _time);
-            _total = _total.add(_ts.mul(t[i].multiplier));
-        }
-        return _total;
-    }
-
-    function _getVotes(
-        Token[] storage t,
-        uint256 _time
-    )
-        internal
-        view
-        returns (uint256 _total)
-    {
-        for (uint256 i; i < t.length; i++) {
-            uint256 _bal = checkpoint.balanceAt(t[i].addr, msg.sender, _time);
-            _total = _total.add(_bal.mul(t[i].multiplier));
-        }
-        return _total;
-    }
-
-    function _getCustodianVotes(
-        Token[] storage t,
-        address _cust,
-        uint256 _time
-    )
-        internal
-        view
-        returns (uint256 _total)
-    {
-        for (uint256 i; i < t.length; i++) {
-            uint256 _bal = checkpoint.custodianBalanceAt(
-                t[i].addr,
-                msg.sender,
-                _cust,
-                _time
-            );
-            _total = _total.add(_bal.mul(t[i].multiplier));
-        }
-        return _total;
-    }
-
     function closeProposal(bytes32 _id) external returns (bool) {
         if (!_checkPermitted()) return false;
         Proposal storage p = proposals[_id];
@@ -338,6 +338,86 @@ contract GovernanceMinimal {
         emit ProposalClosed(_id, _state, _results);
     }
 
+    /**
+        @notice Internal - calculate total votes possible
+        @dev
+            TODO - This method and the following two can be combined to a single
+            one using .call() with solidity 0.5.x - but first brownie needs to
+            support multiple compiler versions on a project
+        @param t Storage marker for Token struct
+        @param _time Checkpoint time
+        @return uint256 total possible votes
+     */
+    function _getTotalVotes(
+        Token[] storage t,
+        uint256 _time
+    )
+        internal
+        view
+        returns
+        (uint256 _total)
+    {
+        for (uint256 i; i < t.length; i++) {
+            uint256 _ts = checkpoint.totalSupplyAt(t[i].addr, _time);
+            _total = _total.add(_ts.mul(t[i].multiplier));
+        }
+        return _total;
+    }
+
+    /**
+        @notice Internal - calculate total votes for an investor
+        @param t Storage marker for Token struct
+        @param _time Checkpoint time
+        @return uint256 total votes
+     */
+    function _getVotes(
+        Token[] storage t,
+        uint256 _time
+    )
+        internal
+        view
+        returns (uint256 _total)
+    {
+        for (uint256 i; i < t.length; i++) {
+            uint256 _bal = checkpoint.balanceAt(t[i].addr, msg.sender, _time);
+            _total = _total.add(_bal.mul(t[i].multiplier));
+        }
+        return _total;
+    }
+
+    /**
+        @notice Internal - calculate total votes for an investor via custodian
+        @param t Storage marker for Token struct
+        @param _cust Custodian contract address
+        @param _time Checkpoint time
+        @return uint256 total custodied votes
+     */
+    function _getCustodianVotes(
+        Token[] storage t,
+        address _cust,
+        uint256 _time
+    )
+        internal
+        view
+        returns (uint256 _total)
+    {
+        for (uint256 i; i < t.length; i++) {
+            uint256 _bal = checkpoint.custodianBalanceAt(
+                t[i].addr,
+                msg.sender,
+                _cust,
+                _time
+            );
+            _total = _total.add(_bal.mul(t[i].multiplier));
+        }
+        return _total;
+    }
+
+    /**
+        @notice Internal - get the results of a single vote
+        @param v Vote struct storage marker
+        @return uint8 vote result (3=below quorum, 4=failed, 5=passed)
+     */
     function _getVoteResult(Vote storage v) internal view returns (uint8) {
         if (v.quorumPct > 0) {
             uint256 _total = v.counts[0].add(v.counts[1]);
@@ -349,15 +429,13 @@ contract GovernanceMinimal {
         return 5;
     }
 
-
+    /** @notice Internal - check approval for a permissioned call */
     function _checkApproval() internal {
         if (!approval[msg.sender][msg.data]) revert();
         approval[msg.sender][msg.data] = false;
     }
 
-    /**
-        @notice Fallback function, can be used to provide module permissioning
-     */
+    /** @notice Fallback function, can be used to provide module permissioning */
     function () external {
         _checkApproval();
     }

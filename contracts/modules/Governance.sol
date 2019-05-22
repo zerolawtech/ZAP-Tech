@@ -90,8 +90,9 @@ contract GovernanceModule {
         @notice Base constructor
         @param _issuer IssuingEntity contract address
      */
-    constructor(IssuingEntity _issuer) public {
+    constructor(IssuingEntity _issuer, IMultiCheckpointModule _checkpoint) public {
         issuer = _issuer;
+        checkpoint = _checkpoint;
     }
 
     /**
@@ -210,11 +211,11 @@ contract GovernanceModule {
     {
         if (!_checkPermitted()) return false;
         Proposal storage p = proposals[_id];
-        require(p.state == 1);
-        require(_tokens.length > 0);
-        require(_tokens.length == _multipliers.length);
-        require(_requiredPct <= 10000);
-        require(_quorumPct <= 10000);
+        require(p.state == 1); // dev: wrong state
+        require(_tokens.length > 0); // dev: empty token array
+        require(_tokens.length == _multipliers.length); // dev: array length mismatch
+        require(_requiredPct <= 10000); // dev: required pct too high
+        require(_quorumPct <= 10000); // dev: quorum pct too high
         p.votes.length += 1;
         Vote storage v = p.votes[p.votes.length-1];
         v.requiredPct = _requiredPct;
@@ -222,13 +223,13 @@ contract GovernanceModule {
         v.tokens.length = _tokens.length;
         for (uint256 i; i < _tokens.length; i++) {
             for (uint256 x = i + 1; x < _tokens.length; x++) {
-                require(_tokens[x] != _tokens[i]);
+                require(_tokens[x] != _tokens[i]); // dev: token repeat
             }
             /**
                 checkpoint must exist when the vote is declared
                 possible TODO - allow this contract to create the checkpoint
              */
-            require(checkpoint.checkpointExists(_tokens[i], p.checkpoint));
+            require(checkpoint.checkpointExists(_tokens[i], p.checkpoint)); // dev: no checkpoint
             v.tokens[i] = Token(_tokens[i], _multipliers[i]);
         }
         emit NewVote(
@@ -249,26 +250,15 @@ contract GovernanceModule {
         @return bool success
      */
     function voteOnProposal(bytes32 _id, uint8 _vote) external returns (bool) {
+        require(_vote < 2); // dev: invalid vote
         Proposal storage p = proposals[_id];
-        require(_vote < 2);
-
-        /* query checkpoint totalSupply and set total possible votes */
-        if (p.state == 1) {
-            require(now >= p.start);
-            p.state = 2;
-            for (uint256 i; i < p.votes.length; i++) {
-                p.votes[i].totalVotes = _getTotalVotes(
-                    p.votes[i].tokens,
-                    p.checkpoint
-                );
-            }
-        }
-        require(p.state == 2);
-        require(p.end >= now);
-        require(p.hasVoted[msg.sender][0x00] == 0);
+        require(p.state > 0); // dev: invalid id
+        require(p.state < 3); // dev: proposal has closed
+        require(p.end >= now || p.end == 0); // dev: voting has finished
+        require(p.hasVoted[msg.sender][0x00] == 0); // dev: already voted
+        if (p.state == 1) _openVote(p);
         p.hasVoted[msg.sender][0x00] = _vote + 1;
-
-        for (i = 0; i < p.votes.length; i++) {
+        for (uint256 i; i < p.votes.length; i++) {
             p.votes[i].counts[_vote] = p.votes[i].counts[_vote].add(_getVotes(
                 p.votes[i].tokens,
                 p.checkpoint
@@ -285,7 +275,7 @@ contract GovernanceModule {
         @param _custodian Custodian contract address
         @return bool success
      */
-    function custodialVoteForProposal(
+    function custodialVoteOnProposal(
         bytes32 _id,
         address _custodian
     )
@@ -293,10 +283,10 @@ contract GovernanceModule {
         returns (bool)
     {
         Proposal storage p = proposals[_id];
-        require(p.state == 2);
-        require(p.end >= now || p.end == 0);
-        require(p.hasVoted[msg.sender][0x00] != 0);
-        require(p.hasVoted[msg.sender][_custodian] == 0);
+        require(p.state == 2); // dev: proposal not active
+        require(p.end >= now || p.end == 0); // dev: voting has finished
+        require(p.hasVoted[msg.sender][0x00] != 0); // dev: has not voted
+        require(p.hasVoted[msg.sender][_custodian] == 0); // dev: has voted with custodian
         uint256 _vote = p.hasVoted[msg.sender][0x00] - 1;
         p.hasVoted[msg.sender][_custodian] = _vote + 1;
         for (uint256 i; i < p.votes.length; i++) {
@@ -306,7 +296,7 @@ contract GovernanceModule {
                 p.checkpoint
             );
         }
-        /** TODO emit event? */
+        /** No event is emitted, cuz privacy */
         return true;
     }
 
@@ -318,8 +308,10 @@ contract GovernanceModule {
     function closeProposal(bytes32 _id) external returns (bool) {
         if (!_checkPermitted()) return false;
         Proposal storage p = proposals[_id];
-        require(p.state == 2);
-        require(p.end < now);
+        require(p.end < now); // dev: voting has not finished
+        if (p.state == 1) _openVote(p);
+        require(p.state == 2); // dev: proposal not active
+        
         uint256 _state = 5;
         uint256[] memory _results = new uint256[](p.votes.length);
         for (uint256 i; i < p.votes.length; i++) {
@@ -330,7 +322,7 @@ contract GovernanceModule {
         }
         /** if proposal has no end time, may only be closed once it passes */
         if (p.end == 0) {
-            require(_state == 5);
+            require(_state == 5); // dev: proposal has not passed
         }
         p.state = uint8(_state);
 
@@ -338,6 +330,18 @@ contract GovernanceModule {
             approval[p.approvalAddress][p.approvalCalldata] = true;
         }
         emit ProposalClosed(_id, _state, _results);
+    }
+
+    /* query checkpoint totalSupply and set total possible votes */
+    function _openVote(Proposal storage p) internal {
+        require(now >= p.start); // dev: vote has not started
+        p.state = 2;
+        for (uint256 i; i < p.votes.length; i++) {
+            p.votes[i].totalVotes = _getTotalVotes(
+                p.votes[i].tokens,
+                p.checkpoint
+            );
+        }
     }
 
     /**

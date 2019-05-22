@@ -68,6 +68,24 @@ contract MultiCheckpointModule is IssuerModuleBase {
     }
 
     /**
+        @notice Check if a checkpoint exists for a given token and time
+        @param _token Token contract address
+        @param _time Epoch time of checkpoint
+        @return boolean
+     */
+    function checkpointExists(
+        address _token,
+        uint256 _time
+    )
+        external
+        view
+        returns (bool)
+    {
+        return checkpointData[_token][_time].set;
+    }
+
+
+    /**
         @notice Query token checkpoint totalSupply
         @param _token Token contract address
         @param _time Checkpoint time
@@ -327,13 +345,19 @@ contract MultiCheckpointModule is IssuerModuleBase {
         @param _time Epoch time to set checkpoint at
         @return bool success
      */
-    function newCheckpoint(TokenBase _token, uint64 _time) external returns (bool) {
-        require(_time > now, "dev: time");
-        require(issuer.isActiveToken(_token), "dev: token");
+    function newCheckpoint(
+        TokenBase _token,
+        uint64 _time
+    )
+        external
+        returns (bool)
+    {
+        require(_time > now); // dev: time
+        require(issuer.isActiveToken(_token)); // dev: token
         if (!_token.isPermittedModule(msg.sender, 0x17020cc7)) {
             if (!_onlyAuthority()) return false;
         }
-        require(!checkpointData[_token][_time].set, "dev: already set");
+        require(!checkpointData[_token][_time].set); // dev: already set
         mapping(uint256 => Checkpoint) c = checkpointData[_token];
         if (pointers[_token].next == 0 || _time < pointers[_token].next) {
             EpochPointers memory p = pointers[_token];

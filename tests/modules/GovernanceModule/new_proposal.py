@@ -20,6 +20,12 @@ def new_proposal():
     gov.newProposal(*proposal_inputs)
 
 
+def new_proposal_no_end():
+    p = proposal_inputs.copy()
+    p[3] = 0
+    gov.newProposal(*proposal_inputs)
+
+
 def new_proposal_exists():
     gov.newProposal(*proposal_inputs)
     check.reverts(gov.newProposal, proposal_inputs, "dev: proposal already exists")

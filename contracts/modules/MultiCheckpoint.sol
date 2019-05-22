@@ -352,12 +352,12 @@ contract MultiCheckpointModule is IssuerModuleBase {
         external
         returns (bool)
     {
-        require(_time > now, "dev: time");
-        require(issuer.isActiveToken(_token), "dev: token");
+        require(_time > now); // dev: time
+        require(issuer.isActiveToken(_token)); // dev: token
         if (!_token.isPermittedModule(msg.sender, 0x17020cc7)) {
             if (!_onlyAuthority()) return false;
         }
-        require(!checkpointData[_token][_time].set, "dev: already set");
+        require(!checkpointData[_token][_time].set); // dev: already set
         mapping(uint256 => Checkpoint) c = checkpointData[_token];
         if (pointers[_token].next == 0 || _time < pointers[_token].next) {
             EpochPointers memory p = pointers[_token];

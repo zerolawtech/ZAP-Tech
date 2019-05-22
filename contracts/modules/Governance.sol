@@ -164,8 +164,10 @@ contract GovernanceModule {
     {
         if (!_checkPermitted()) return false;
         Proposal storage p = proposals[_id];
-        require(p.state == 0);
-        require(_checkpoint <= _start);
+        require(p.state == 0); // dev: proposal already exists
+        require(now < _start); // dev: start < now
+        require(_checkpoint <= _start); // dev: start < checkpoint
+        require(_start < _end); // dev: end < start
         p.state = 1;
         p.checkpoint = _checkpoint;
         p.start = _start;

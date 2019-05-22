@@ -119,7 +119,7 @@ contract GovernanceModule {
     }
 
     /**
-        @notice get the result of a proposal vote
+        @notice get the result of a proposal vote as a state value
         @param _id Proposal ID
         @param _voteIndex Index of proposal vote
         @return uint8 result
@@ -136,6 +136,32 @@ contract GovernanceModule {
         require (p.state > 2);
         return _getVoteResult(p.votes[_voteIndex]);
     }
+
+    /**
+        @notice get the percentage result of a proposal vote
+        @dev Percentages are expressed as integers * 100 (eg. 50% is 5000)
+        @param _id Proposal ID
+        @param _voteIndex Index of proposal vote
+        @return yes % of vote, quorum % of vote
+     */
+    function getVotePct(
+        bytes32 _id,
+        uint256 _voteIndex
+    )
+        external
+        view
+        returns (uint256 _votePct, uint256 _quorumPct)
+    {
+        Vote storage v = proposals[_id].votes[_voteIndex];
+        if (v.quorumPct > 0) {
+            uint256 _total = v.counts[0].add(v.counts[1]);
+            _quorumPct = _total.mul(10000).div(v.totalVotes);
+        } else {
+            _total = v.totalVotes;
+        }
+        return (v.counts[1].mul(10000).div(_total), _quorumPct);
+    }
+
 
     /**
         @notice Create a new proposal
@@ -168,7 +194,7 @@ contract GovernanceModule {
         require(p.state == 0); // dev: proposal already exists
         require(now < _start); // dev: start < now
         require(_checkpoint <= _start); // dev: start < checkpoint
-        require(_start < _end); // dev: end < start
+        require(_end == 0 || _start < _end); // dev: end < start
         p.state = 1;
         p.checkpoint = _checkpoint;
         p.start = _start;

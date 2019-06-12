@@ -165,11 +165,14 @@ contract MultiSig {
 	}
 
 	/**
-		@notice Private multisig functionality
-		@dev common logic for _checkMultiSig() and checkMultiSigExternal()
+		@notice Shared multisig / authority permission functionality
+		@dev
+			* reverts if the caller is not permitted to access this method
+			* returns false if caller is permitted, but has not met the multisig threshold
+			* returns true if caller is permitted and has met the threshold
 		@param _authID calling authority ID
-		@param _sig original msg.sig
-		@param _callHash keccack256 of msg.callhash
+		@param _sig call method signature
+		@param _callHash keccack256 of msg.calldata
 		@param _sender caller address
 		@return bool - has call met multisig threshold?
 	 */

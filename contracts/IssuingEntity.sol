@@ -278,29 +278,28 @@ contract IssuingEntity is MultiSig {
 	}
 
 	/**
-		@notice Attach or remove a KYCRegistrar contract
+		@notice Attach or restrict a KYCRegistrar contract
 		@param _registrar address of registrar
-		@param _permitted registrar permission
+		@param _restricted registrar permission
 		@return bool success
 	 */
 	function setRegistrar(
 		KYCRegistrar _registrar,
-		bool _permitted
+		bool _restricted
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
+		emit RegistrarSet(_registrar, _restricted);
 		for (uint256 i = 1; i < registrars.length; i++) {
 			if (registrars[i].addr == _registrar) {
-				registrars[i].restricted = !_permitted;
-				emit RegistrarSet(_registrar, _permitted);
+				registrars[i].restricted = _restricted;
 				return true;
 			}
 		}
-		if (_permitted) {
-			registrars.push(RegistrarContract(_registrar, false));
-			emit RegistrarSet(_registrar, _permitted);
+		if (!_restricted) {
+			registrars.push(RegistrarContract(_registrar, _restricted));
 			return true;
 		}
 		revert();
@@ -384,7 +383,7 @@ contract IssuingEntity is MultiSig {
 		@notice Set restriction on an investor or custodian ID
 		@dev restrictions on sub-authorities are handled via MultiSig methods
 		@param _id investor ID
-		@param _permitted permission bool
+		@param _restricted permission bool
 		@return bool success
 	 */
 	function setEntityRestriction(

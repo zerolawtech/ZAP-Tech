@@ -566,19 +566,34 @@ contract IssuingEntity is MultiSig {
 		/* If both investors are in the same registry, call getInvestors */
 		KYCRegistrar r = registrars[_key[SENDER]].addr;
 		if (_key[SENDER] > 0 && _key[SENDER] == _key[RECEIVER]) {
-			(, _permitted, _rating, _country) = r.getInvestors(_addr[SENDER], _addr[RECEIVER]);
+			(
+				,
+				_permitted,
+				_rating,
+				_country
+			) = r.getInvestors(_addr[SENDER], _addr[RECEIVER]);
 			return (_permitted, _rating, _country);
 		}
 		/* Otherwise, call getInvestor at each registry */
 		if (_key[SENDER] != 0) {
-			(, _permitted[SENDER], _rating[SENDER], _country[SENDER]) = r.getInvestor(_addr[SENDER]);
+			(
+				,
+				_permitted[SENDER],
+				_rating[SENDER],
+				_country[SENDER]
+			) = r.getInvestor(_addr[SENDER]);
 		} else {
 			/* If key == 0 the address belongs to the issuer or a custodian. */
 			_permitted[SENDER] = true;
 		}
 		if (_key[RECEIVER] != 0) {
 			r = registrars[_key[RECEIVER]].addr;
-			(, _permitted[RECEIVER], _rating[RECEIVER], _country[RECEIVER]) = r.getInvestor(_addr[RECEIVER]);
+			(
+				,
+				_permitted[RECEIVER],
+				_rating[RECEIVER],
+				_country[RECEIVER]
+			) = r.getInvestor(_addr[RECEIVER]);
 		} else {
 			_permitted[RECEIVER] = true;
 		}

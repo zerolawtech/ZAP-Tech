@@ -615,7 +615,11 @@ contract NFToken is TokenBase  {
 			_value
 		);
 
-		if (_authID != _id[SENDER] && _id[SENDER] != _id[RECEIVER] && _authID != ownerID) {
+		if (
+			_authID != _id[SENDER] &&
+			_id[SENDER] != _id[RECEIVER] &&
+			_authID != ownerID
+		) {
 			/**
 				If the call was not made by the issuer or the sender and involves
 				a change in ownership, subtract from the allowed mapping.
@@ -774,7 +778,14 @@ contract NFToken is TokenBase  {
 			else {
 				_value -= _amount;
 			}
-			_transferSingleRange(_start, _addr[SENDER], _addr[RECEIVER], _start, _stop, _custodian);
+			_transferSingleRange(
+				_start,
+				_addr[SENDER],
+				_addr[RECEIVER],
+				_start,
+				_stop,
+				_custodian
+			);
 			/** hook point for NFToken.transferTokenRange() */
 			require(_callModules(
 				0xead529f5,
@@ -863,7 +874,14 @@ contract NFToken is TokenBase  {
 		address _cust;
 		(_cust, _addr) = _adjustBalances(_id, _addr, _rating, _country, _value);
 
-		_transferSingleRange(_pointer, _addr[SENDER], _addr[RECEIVER], _range[0], _range[1], _cust);
+		_transferSingleRange(
+			_pointer,
+			_addr[SENDER],
+			_addr[RECEIVER],
+			_range[0],
+			_range[1],
+			_cust
+		);
 		/* hook point for NFToken.transferTokenRange() */
 		require(_callModules(
 			0xead529f5,

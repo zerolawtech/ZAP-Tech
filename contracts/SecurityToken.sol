@@ -238,7 +238,11 @@ contract SecurityToken is TokenBase {
 			_value
 		);
 
-		if (_authID != _id[SENDER] && _id[SENDER] != _id[RECEIVER] && _authID != ownerID) {
+		if (
+			_authID != _id[SENDER] &&
+			_id[SENDER] != _id[RECEIVER] &&
+			_authID != ownerID
+		) {
 			/*
 				If the call was not made by the issuer or the sender and involves
 				a change in ownership, subtract from the allowed mapping.
@@ -256,12 +260,16 @@ contract SecurityToken is TokenBase {
 
 		if (_rating[SENDER] == 0 && _id[SENDER] != ownerID) {
 			/* sender is custodian, reduce custodian balance */
-			custBalances[_addr[RECEIVER]][_addr[SENDER]] = custBalances[_addr[RECEIVER]][_addr[SENDER]].sub(_value);
+			custBalances[_addr[RECEIVER]][_addr[SENDER]] = (
+				custBalances[_addr[RECEIVER]][_addr[SENDER]].sub(_value)
+			);
 		}
 
 		if (_rating[RECEIVER] == 0 && _id[RECEIVER] != ownerID) {
 			/* receiver is custodian, increase custodian balance and notify */
-			custBalances[_addr[SENDER]][_addr[RECEIVER]] = custBalances[_addr[SENDER]][_addr[RECEIVER]].add(_value);
+			custBalances[_addr[SENDER]][_addr[RECEIVER]] = (
+				custBalances[_addr[SENDER]][_addr[RECEIVER]].add(_value)
+			);
 			require(IBaseCustodian(_addr[RECEIVER]).receiveTransfer(_addr[SENDER], _value));
 		}
 
@@ -316,8 +324,12 @@ contract SecurityToken is TokenBase {
 			_country,
 			_value
 		);
-		custBalances[_addr[SENDER]][msg.sender] = custBalances[_addr[SENDER]][msg.sender].sub(_value);
-		custBalances[_addr[RECEIVER]][msg.sender] = custBalances[_addr[RECEIVER]][msg.sender].add(_value);
+		custBalances[_addr[SENDER]][msg.sender] = (
+			custBalances[_addr[SENDER]][msg.sender].sub(_value)
+		);
+		custBalances[_addr[RECEIVER]][msg.sender] = (
+			custBalances[_addr[RECEIVER]][msg.sender].add(_value)
+		);
 		/* bytes4 signature for token module transferTokensCustodian() */
 		require(_callModules(
 			0x8b5f1240,

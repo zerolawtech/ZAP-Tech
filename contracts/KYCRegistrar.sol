@@ -184,27 +184,26 @@ contract KYCRegistrar is KYCBase {
 	{
 		if (!_checkMultiSig(true)) return false;
 		require(_threshold > 0, "dev: zero threshold");
-		bytes32 _id = keccak256(abi.encodePacked(address(this), _addr[0]));
-		emit NewAuthority(_id);
-		require(investorData[_id].authority == 0, "dev: investor ID");
-		Authority storage a = authorityData[_id];
+		bytes32 _authID = keccak256(abi.encodePacked(address(this), _addr[0]));
+		require(investorData[_authID].authority == 0, "dev: investor ID");
+		Authority storage a = authorityData[_authID];
 		require(a.addressCount == 0, "dev: authority exists");
-		a.addressCount = _addAddresses(_id, _addr);
+		a.addressCount = _addAddresses(_authID, _addr);
 		require(a.addressCount >= _threshold, "dev: threshold too high");
 		a.multiSigThreshold = _threshold;
 		_setCountries(a.countries, _countries, true);
-		emit NewAuthority(_id);
+		emit NewAuthority(_authID);
 		return true;
 	}
 
 	/**
 		@notice Modifies the number of calls needed by a multisig authority
-		@param _id Authority ID
+		@param _authID Authority ID
 		@param _threshold Minimum number of calls to a method for multisig
 		@return bool success
 	 */
 	function setAuthorityThreshold(
-		bytes32 _id,
+		bytes32 _authID,
 		uint32 _threshold
 	)
 		external
@@ -212,21 +211,21 @@ contract KYCRegistrar is KYCBase {
 	{
 		if (!_checkMultiSig(true)) return false;
 		require(_threshold > 0, "dev: zero threshold");
-		require(authorityData[_id].addressCount > 0, "dev: not authority");
-		require(_threshold <= authorityData[_id].addressCount, "dev: threshold too high");
-		authorityData[_id].multiSigThreshold = _threshold;
+		require(authorityData[_authID].addressCount > 0, "dev: not authority");
+		require(_threshold <= authorityData[_authID].addressCount, "dev: threshold too high");
+		authorityData[_authID].multiSigThreshold = _threshold;
 		return true;
 	}
 
 	/**
 		@notice Sets approval of an authority to register entities in a country
-		@param _id Authority ID
+		@param _authID Authority ID
 		@param _countries Array of country IDs
 		@param _permitted boolean to set or restrict countries
 		@return bool succcess
 	 */
 	function setAuthorityCountries(
-		bytes32 _id,
+		bytes32 _authID,
 		uint16[] _countries,
 		bool _permitted
 	)
@@ -234,7 +233,7 @@ contract KYCRegistrar is KYCBase {
 		returns (bool)
 	{
 		if (!_checkMultiSig(true)) return false;
-		Authority storage a = authorityData[_id];
+		Authority storage a = authorityData[_authID];
 		require(a.addressCount > 0, "dev: not authority");
 		_setCountries(a.countries, _countries, _permitted);
 		return true;
@@ -245,22 +244,22 @@ contract KYCRegistrar is KYCBase {
 		@dev
 			Restricting an authority will also restrict every investor that
 			was approved by that authority.
-		@param _id Authority ID
+		@param _authID Authority ID
 		@param _permitted Permission bool
 		@return bool success
 	 */
 	function setAuthorityRestriction(
-		bytes32 _id,
+		bytes32 _authID,
 		bool _permitted
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig(true)) return false;
-		require(_id != ownerID, "dev: owner");
-		require(authorityData[_id].addressCount > 0, "dev: not authority");
-		authorityData[_id].restricted = !_permitted;
-		emit AuthorityRestriction(_id, _permitted);
+		require(_authID != ownerID, "dev: owner");
+		require(authorityData[_authID].addressCount > 0, "dev: not authority");
+		authorityData[_authID].restricted = !_permitted;
+		emit AuthorityRestriction(_authID, _permitted);
 		return true;
 	}
 
@@ -452,10 +451,10 @@ contract KYCRegistrar is KYCBase {
 		@param _addr Authority address
 		@return bytes32 Authority ID
 	 */
-	function getAuthorityID(address _addr) external view returns (bytes32 _id) {
-		_id = idMap[_addr].id;
-		require (authorityData[_id].addressCount > 0);
-		return _id;
+	function getAuthorityID(address _addr) external view returns (bytes32 _authID) {
+		_authID = idMap[_addr].id;
+		require (authorityData[_authID].addressCount > 0);
+		return _authID;
 	}
 
 	/**

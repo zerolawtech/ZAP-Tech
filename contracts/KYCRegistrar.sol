@@ -18,7 +18,7 @@ contract KYCRegistrar is KYCBase {
 	mapping (bytes32 => Authority) authorityData;
 
 	event NewAuthority(bytes32 indexed id);
-	event AuthorityRestriction(bytes32 indexed id, bool permitted);
+	event AuthorityRestriction(bytes32 indexed id, bool restricted);
 	event MultiSigCall(
 		bytes32 indexed id,
 		bytes4 indexed callSignature,
@@ -245,12 +245,12 @@ contract KYCRegistrar is KYCBase {
 			Restricting an authority will also restrict every investor that
 			was approved by that authority.
 		@param _authID Authority ID
-		@param _permitted Permission bool
+		@param _restricted Permission bool
 		@return bool success
 	 */
 	function setAuthorityRestriction(
 		bytes32 _authID,
-		bool _permitted
+		bool _restricted
 	)
 		external
 		returns (bool)
@@ -258,8 +258,8 @@ contract KYCRegistrar is KYCBase {
 		if (!_checkMultiSig(true)) return false;
 		require(_authID != ownerID, "dev: owner");
 		require(authorityData[_authID].addressCount > 0, "dev: not authority");
-		authorityData[_authID].restricted = !_permitted;
-		emit AuthorityRestriction(_authID, _permitted);
+		authorityData[_authID].restricted = _restricted;
+		emit AuthorityRestriction(_authID, _restricted);
 		return true;
 	}
 
@@ -329,20 +329,20 @@ contract KYCRegistrar is KYCBase {
 		@notice Set or remove an investor's restricted status
 		@dev This modifies restriciton on all addresses attached to the ID
 		@param _id Investor ID
-		@param _permitted Permission bool
+		@param _restricted Permission bool
 		@return bool success
 	 */
 	function setInvestorRestriction(
 		bytes32 _id,
-		bool _permitted
+		bool _restricted
 	)
 		external
 		returns (bool)
 	{
 		_authorityCheck(investorData[_id].country);
 		if (!_checkMultiSig(false)) return false;
-		investorData[_id].restricted = !_permitted;
-		emit InvestorRestriction(_id, _permitted, idMap[msg.sender].id);
+		investorData[_id].restricted = _restricted;
+		emit InvestorRestriction(_id, _restricted, idMap[msg.sender].id);
 		return true;
 	}
 

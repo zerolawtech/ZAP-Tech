@@ -66,12 +66,12 @@ contract IssuingEntity is MultiSig {
 	event InvestorLimitsSet(uint32[8] limits);
 	event NewDocumentHash(string indexed document, bytes32 documentHash);
 	event GovernanceSet(address indexed governance);
-	event RegistrarSet(address indexed registrar, bool permitted);
+	event RegistrarSet(address indexed registrar, bool restricted);
 	event CustodianAdded(address indexed custodian);
 	event TokenAdded(address indexed token);
-	event EntityRestriction(bytes32 indexed id, bool permitted);
-	event TokenRestriction(address indexed token, bool permitted);
-	event GlobalRestriction(bool permitted);
+	event EntityRestriction(bytes32 indexed id, bool restricted);
+	event TokenRestriction(address indexed token, bool restricted);
+	event GlobalRestriction(bool restricted);
 
 	/**
 		@notice Issuing entity constructor
@@ -389,15 +389,15 @@ contract IssuingEntity is MultiSig {
 	 */
 	function setEntityRestriction(
 		bytes32 _id,
-		bool _permitted
+		bool _restricted
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
 		require(authorityData[_id].addressCount == 0, "dev: authority");
-		accounts[_id].restricted = !_permitted;
-		emit EntityRestriction(_id, _permitted);
+		accounts[_id].restricted = _restricted;
+		emit EntityRestriction(_id, _restricted);
 		return true;
 	}
 
@@ -407,33 +407,33 @@ contract IssuingEntity is MultiSig {
 			Only the issuer can transfer restricted tokens. Useful in dealing
 			with a security breach or a token migration.
 		@param _token Address of the token
-		@param _permitted permission bool
+		@param _restricted permission bool
 		@return bool success
 	 */
 	function setTokenRestriction(
 		address _token,
-		bool _permitted
+		bool _restricted
 	)
 		external
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
 		require(tokens[_token].set);
-		tokens[_token].restricted = !_permitted;
-		emit TokenRestriction(_token, _permitted);
+		tokens[_token].restricted = _restricted;
+		emit TokenRestriction(_token, _restricted);
 		return true;
 	}
 
 	/**
 		@notice Set restriction on all tokens for this issuer
 		@dev Only the issuer can transfer restricted tokens.
-		@param _permitted permission bool
+		@param _restricted permission bool
 		@return bool success
 	 */
-	function setGlobalRestriction(bool _permitted) external returns (bool) {
+	function setGlobalRestriction(bool _restricted) external returns (bool) {
 		if (!_checkMultiSig()) return false;
-		locked = !_permitted;
-		emit GlobalRestriction(_permitted);
+		locked = _restricted;
+		emit GlobalRestriction(_restricted);
 		return true;
 	}
 

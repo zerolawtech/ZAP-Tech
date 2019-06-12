@@ -55,7 +55,7 @@ contract KYCBase is KYCBaseABC {
 	);
 	event InvestorRestriction(
 		bytes32 indexed id,
-		bool permitted,
+		bool restricted,
 		bytes32 indexed authority
 	);
 	event RegisteredAddresses(

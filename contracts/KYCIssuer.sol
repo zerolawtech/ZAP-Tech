@@ -129,20 +129,20 @@ contract KYCIssuer is KYCBase {
 		@notice Set or remove an investor's restricted status
 		@dev This modifies restriciton on all addresses attached to the ID
 		@param _id Investor ID
-		@param _permitted Permission bool
+		@param _restricted Permission bool
 		@return bool success
 	 */
 	function setInvestorRestriction(
 		bytes32 _id,
-		bool _permitted
+		bool _restricted
 	)
 		external
 		returns (bool)
 	{
 		if (!_onlyAuthority()) return false;
 		require(investorData[_id].country != 0);
-		investorData[_id].restricted = !_permitted;
-		emit InvestorRestriction(_id, _permitted, issuer.getID(msg.sender));
+		investorData[_id].restricted = _restricted;
+		emit InvestorRestriction(_id, _restricted, issuer.getID(msg.sender));
 		return true;
 	}
 

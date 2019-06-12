@@ -42,11 +42,11 @@ contract KYCIssuer is KYCBase {
 				_inv.restricted = false;
 			/* If address has not had an investor ID associated - set the ID */
 			} else if (_inv.id == 0) {
-				require(!issuer.isAuthority(_addr[i]), "dev: auth address");
+				require(!issuer.isAuthority(_addr[i])); // dev: auth address
 				_inv.id = _id;
 			/* In all other cases, revert */
 			} else {
-				revert("dev: known address");
+				revert(); // dev: known address
 			}
 		}
 		emit RegisteredAddresses(_id, _addr, issuer.getID(msg.sender));
@@ -78,9 +78,9 @@ contract KYCIssuer is KYCBase {
 		returns (bool)
 	{
 		if (!_onlyAuthority()) return false;
-		require(!issuer.isAuthorityID(_id), "dev: authority ID");
-		require(investorData[_id].country == 0, "dev: investor ID");
-		require(_country > 0, "dev: country 0");
+		require(!issuer.isAuthorityID(_id)); // dev: authority ID
+		require(investorData[_id].country == 0); // dev: investor ID
+		require(_country > 0); // dev: country 0
 		_setInvestor(0x00, _id, _country, _region, _rating, _expires);
 		emit NewInvestor(
 			_id,
@@ -113,7 +113,7 @@ contract KYCIssuer is KYCBase {
 		returns (bool)
 	{
 		if (!_onlyAuthority()) return false;
-		require(investorData[_id].country != 0, "dev: unknown ID");
+		require(investorData[_id].country != 0); // dev: unknown ID
 		_setInvestor(0x00, _id, 0, _region, _rating, _expires);
 		emit UpdatedInvestor(
 			_id,
@@ -187,8 +187,8 @@ contract KYCIssuer is KYCBase {
 	{
 		if (!_onlyAuthority()) return false;
 		for (uint256 i; i < _addr.length; i++) {
-			require(idMap[_addr[i]].id == _id, "dev: wrong ID");
-			require(!idMap[_addr[i]].restricted, "dev: already restricted");
+			require(idMap[_addr[i]].id == _id); // dev: wrong ID
+			require(!idMap[_addr[i]].restricted); // dev: already restricted
 			idMap[_addr[i]].restricted = true;
 		}
 		emit RestrictedAddresses(_id, _addr, issuer.getID(msg.sender));

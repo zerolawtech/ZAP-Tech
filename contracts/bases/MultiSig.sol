@@ -88,7 +88,7 @@ contract MultiSig {
 	function _onlySelfAuthority(bytes32 _id) internal view {
 		require (_id != 0);
 		if (idMap[msg.sender].id != ownerID) {
-			require(idMap[msg.sender].id == _id, "dev: wrong authority");
+			require(idMap[msg.sender].id == _id); // dev: wrong authority
 		}
 	}
 
@@ -111,7 +111,7 @@ contract MultiSig {
 			} else if (idMap[_addr[i]].id == 0) {
 				idMap[_addr[i]].id = _id;
 			} else {
-				revert("dev: known address");
+				revert(); // dev: known address
 			}
 		}
 		_count = uint32(_addr.length);
@@ -187,12 +187,12 @@ contract MultiSig {
 	{
 		require(!idMap[_sender].restricted);
 		if (_authID != ownerID) {
-			require(authorityData[_authID].signatures[_sig], "dev: not permitted");
-			require(authorityData[_authID].approvedUntil >= now, "dev: expired");
+			require(authorityData[_authID].signatures[_sig]); // dev: not permitted
+			require(authorityData[_authID].approvedUntil >= now); // dev: expired
 		}
 		Authority storage a = authorityData[_authID];
 		for (uint256 i; i < a.multiSigAuth[_callHash].length; i++) {
-			require(a.multiSigAuth[_callHash][i] != _sender, "dev: repeat caller");
+			require(a.multiSigAuth[_callHash][i] != _sender); // dev: repeat caller
 		}
 		if (a.multiSigAuth[_callHash].length + 1 >= a.multiSigThreshold) {
 			delete a.multiSigAuth[_callHash];
@@ -303,16 +303,16 @@ contract MultiSig {
 	{
 		_onlyOwner();
 		if (!_checkMultiSig()) return false;
-		require (_threshold > 0, "dev: threshold zero");
+		require (_threshold > 0); // dev: threshold zero
 		bytes32 _authID = keccak256(abi.encodePacked(_addr));
 		Authority storage a = authorityData[_authID];
-		require(a.addressCount == 0, "dev: known authority");
+		require(a.addressCount == 0); // dev: known authority
 		for (uint256 i; i < _signatures.length; i++) {
 			a.signatures[_signatures[i]] = true;
 		}
 		a.approvedUntil = _approvedUntil;
 		a.addressCount = _addAddresses(_authID, _addr);
-		require (a.addressCount >= _threshold, "dev: treshold > count");
+		require (a.addressCount >= _threshold); // dev: treshold > count
 		a.multiSigThreshold = _threshold;
 		emit NewAuthority(_authID, _threshold, _approvedUntil);
 		emit NewAuthorityPermissions(_authID, _signatures);
@@ -335,7 +335,7 @@ contract MultiSig {
 	{
 		_onlyOwner();
 		if (!_checkMultiSig()) return false;
-		require(authorityData[_authID].addressCount > 0, "dev: unknown ID");
+		require(authorityData[_authID].addressCount > 0); // dev: unknown ID
 		authorityData[_authID].approvedUntil = _approvedUntil;
 		emit ApprovedUntilSet(_authID, _approvedUntil);
 		return true;
@@ -386,9 +386,9 @@ contract MultiSig {
 	{
 		_onlySelfAuthority(_authID);
 		if (!_checkMultiSig()) return false;
-		require (_threshold > 0, "dev: threshold zero");
+		require (_threshold > 0); // dev: threshold zero
 		Authority storage a = authorityData[_authID];
-		require(a.addressCount >= _threshold, "dev: threshold too high");
+		require(a.addressCount >= _threshold); // dev: threshold too high
 		a.multiSigThreshold = _threshold;
 		emit ThresholdSet(_authID, _threshold);
 		return true;
@@ -410,7 +410,7 @@ contract MultiSig {
 		_onlySelfAuthority(_authID);
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_authID];
-		require(a.addressCount > 0, "dev: unknown ID");
+		require(a.addressCount > 0); // dev: unknown ID
 		a.addressCount = a.addressCount.add(_addAddresses(_authID, _addr));
 		return true;
 	}
@@ -433,12 +433,12 @@ contract MultiSig {
 		if (!_checkMultiSig()) return false;
 		Authority storage a = authorityData[_authID];
 		for (uint256 i; i < _addr.length; i++) {
-			require(idMap[_addr[i]].id == _authID, "dev: wrong ID");
-			require(!idMap[_addr[i]].restricted, "dev: already restricted");
+			require(idMap[_addr[i]].id == _authID); // dev: wrong ID
+			require(!idMap[_addr[i]].restricted); // dev: already restricted
 			idMap[_addr[i]].restricted = true;
 		}
 		a.addressCount = a.addressCount.sub(uint32(_addr.length));
-		require (a.addressCount >= a.multiSigThreshold, "dev: count below threshold");
+		require (a.addressCount >= a.multiSigThreshold); // dev: count below threshold
 		emit RemovedAuthorityAddresses(_authID, _addr, a.addressCount);
 		return true;
 	}

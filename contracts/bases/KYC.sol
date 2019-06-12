@@ -95,7 +95,7 @@ contract KYCBase is KYCBaseABC {
 		if (i.rating != _rating) {
 			i.rating = _rating;
 		}
-		require(i.rating > 0, "dev: rating 0");
+		require(i.rating > 0); // dev: rating 0
 		if (i.region != _region) {
 			i.region = _region;
 		}

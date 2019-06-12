@@ -205,8 +205,8 @@ contract IssuingEntity is MultiSig {
 	function addToken(address _token) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		SecurityToken token = SecurityToken(_token);
-		require(!tokens[_token].set, "dev: already set");
-		require(token.ownerID() == ownerID, "dev: wrong owner");
+		require(!tokens[_token].set); // dev: already set
+		require(token.ownerID() == ownerID); // dev: wrong owner
 		require(token.circulatingSupply() == 0);
 		if (address(governance) != 0x00) {
 			require(governance.addToken(_token), "Action has not been approved");
@@ -233,7 +233,7 @@ contract IssuingEntity is MultiSig {
 		public
 		returns (bool)
 	{
-		require(!accounts[keccak256(abi.encodePacked(_addr))].set, "dev: known ID");
+		require(!accounts[keccak256(abi.encodePacked(_addr))].set); // dev: known ID
 		super.addAuthority(_addr, _signatures, _approvedUntil, _threshold);
 		return true;
 	}
@@ -250,10 +250,10 @@ contract IssuingEntity is MultiSig {
 	function addCustodian(address _custodian) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		bytes32 _id = IBaseCustodian(_custodian).ownerID();
-		require(_id != 0, "dev: zero ID");
-		require(idMap[_custodian].id == 0, "dev: known address");
-		require(!accounts[_id].set, "dev: known ID");
-		require(authorityData[_id].addressCount == 0, "dev: authority ID");
+		require(_id != 0); // dev: zero ID
+		require(idMap[_custodian].id == 0); // dev: known address
+		require(!accounts[_id].set); // dev: known ID
+		require(authorityData[_id].addressCount == 0); // dev: authority ID
 		idMap[_custodian].id = _id;
 		accounts[_id].custodian = _custodian;
 		accounts[_id].set = true;
@@ -270,7 +270,7 @@ contract IssuingEntity is MultiSig {
 	function setGovernance(IGovernance _governance) external returns (bool) {
 		if (!_checkMultiSig()) return false;
 		if (address(_governance) != 0x00) {
-			require (_governance.issuer() == address(this), "dev: wrong issuer");
+			require (_governance.issuer() == address(this)); // dev: wrong issuer
 		}
 		governance = _governance;
 		emit GovernanceSet(_governance);
@@ -394,7 +394,7 @@ contract IssuingEntity is MultiSig {
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
-		require(authorityData[_id].addressCount == 0, "dev: authority");
+		require(authorityData[_id].addressCount == 0); // dev: authority
 		accounts[_id].restricted = _restricted;
 		emit EntityRestriction(_id, _restricted);
 		return true;
@@ -789,7 +789,7 @@ contract IssuingEntity is MultiSig {
 		if (_owner == address(this)) {
 			_id = ownerID;
 		} else {
-			require(accounts[idMap[_owner].id].custodian == 0, "dev: custodian");
+			require(accounts[idMap[_owner].id].custodian == 0); // dev: custodian
 			uint8 _key = accounts[idMap[_owner].id].regKey;
 			(_id, , _rating, _country) = registrars[_key].addr.getInvestor(_owner);
 		}
@@ -893,8 +893,8 @@ contract IssuingEntity is MultiSig {
 	{
 		if (!_checkMultiSig()) return false;
 		address _owner = _module.getOwner();
-		require(tokens[_target].set, "dev: unknown target");
-		require (_owner == _target || _owner == address(this), "dev: wrong owner");
+		require(tokens[_target].set); // dev: unknown target
+		require (_owner == _target || _owner == address(this)); // dev: wrong owner
 		require(SecurityToken(_target).attachModule(_module));
 		return true;
 	}
@@ -914,7 +914,7 @@ contract IssuingEntity is MultiSig {
 		returns (bool)
 	{
 		if (!_checkMultiSig()) return false;
-		require(tokens[_target].set, "dev: unknown target");
+		require(tokens[_target].set); // dev: unknown target
 		require(SecurityToken(_target).detachModule(_module));
 		return true;
 	}

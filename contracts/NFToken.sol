@@ -348,10 +348,10 @@ contract NFToken is TokenBase  {
 	{
 		/* msg.sig = 0x15077ec8 */
 		if (!_checkPermitted()) return false;
-		require(_value > 0, "dev: mint 0");
-		require(upperBound + _value > upperBound, "dev: overflow");
-		require(upperBound + _value <= 2**48 - 2, "dev: upper bound");
-		require(_time == 0 || _time > now, "dev: time");
+		require(_value > 0); // dev: mint 0
+		require(upperBound + _value > upperBound); // dev: overflow
+		require(upperBound + _value <= 2**48 - 2); // dev: upper bound
+		require(_time == 0 || _time > now); // dev: time
 		issuer.checkTransfer(address(issuer), address(issuer), _owner, false);
 		uint48 _start = uint48(upperBound + 1);
 		uint48 _stop = _start + _value;
@@ -368,7 +368,7 @@ contract NFToken is TokenBase  {
 		balances[_owner].balance += _value;
 		totalSupply += _value;
 		upperBound += _value;
-		require(totalSupply <= authorizedSupply, "dev: exceed auth");
+		require(totalSupply <= authorizedSupply); // dev: exceed auth
 		emit RangeSet(_tag, _start, _stop, _time);
 		emit Transfer(0x00, msg.sender, _value);
 		emit TransferRange(0x00, msg.sender, _start, _stop, _value);
@@ -386,12 +386,12 @@ contract NFToken is TokenBase  {
 	function burn(uint48 _start, uint48 _stop) external returns (bool) {
 		/* msg.sig = 0x9a0d378b */
 		if (!_checkPermitted()) return false;
-		require(_stop > _start, "dev: burn 0");
+		require(_stop > _start); // dev: burn 0
 		uint48 _pointer = _getPointer(_stop-1);
-		require(_pointer <= _start, "dev: multiple ranges");
-		require(rangeMap[_pointer].custodian == 0, "dev: custodian");
+		require(_pointer <= _start); // dev: multiple ranges
+		require(rangeMap[_pointer].custodian == 0); // dev: custodian
 		address _owner = rangeMap[_pointer].owner;
-		require(_owner != 0x00, "dev: already burnt");
+		require(_owner != 0x00); // dev: already burnt
 		if (rangeMap[_pointer].stop > _stop) {
 			_splitRange(_stop);
 		}
@@ -806,11 +806,11 @@ contract NFToken is TokenBase  {
 	{
 		_checkBounds(_start);
 		_checkBounds(_stop-1);
-		require(_start < _stop, "dev: stop < start");
+		require(_start < _stop); // dev: stop < start
 		uint48 _pointer = _getPointer(_stop-1);
-		require(rangeMap[_pointer].custodian == 0x00, "dev: custodian");
-		require(_pointer <= _start, "dev: multiple ranges");
-		require(_checkTime(_pointer), "dev: time");
+		require(rangeMap[_pointer].custodian == 0x00); // dev: custodian
+		require(_pointer <= _start); // dev: multiple ranges
+		require(_checkTime(_pointer)); // dev: time
 
 		address[2] memory _addr = [msg.sender, _to];
 		uint48[2] memory _range = [_start, _stop];
@@ -1136,7 +1136,7 @@ contract NFToken is TokenBase  {
 			if (tokens[i] != 0x00) return tokens[i];
 			if (i % (_increment * 16) == 0) {
 				_increment *= 16;
-				require(i <= upperBound, "dev: exceeds upper bound");
+				require(i <= upperBound); // dev: exceeds upper bound
 			}
 			i += _increment;
 		}

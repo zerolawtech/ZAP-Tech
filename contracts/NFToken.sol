@@ -10,6 +10,9 @@ import "./bases/Token.sol";
  */
 contract NFToken is TokenBase  {
 
+	uint256 constant SENDER = 0;
+	uint256 constant RECEIVER = 1;
+
 	uint48 upperBound;
 	uint48[281474976710656] tokens;
 	mapping (uint48 => Range) rangeMap;
@@ -233,26 +236,26 @@ contract NFToken is TokenBase  {
 		require(uint48(_value) == _value, "Value too large");
 
 		/* Issuer tokens are held at the IssuingEntity contract address */
-		if (_id[0] == ownerID) {
-			_addr[0] = address(issuer);
+		if (_id[SENDER] == ownerID) {
+			_addr[RECEIVER] = address(issuer);
 		}
-		if (_id[1] == ownerID) {
-			_addr[1] = address(issuer);
+		if (_id[RECEIVER] == ownerID) {
+			_addr[SENDER] = address(issuer);
 		}
-		require(_addr[0] != _addr[1], "Cannot send to self");
+		require(_addr[SENDER] != _addr[RECEIVER], "Cannot send to self");
 		
-		if (_rating[0] == 0 && _id[0] != ownerID) {
+		if (_rating[SENDER] == 0 && _id[SENDER] != ownerID) {
 			/* if sender is custodian, look at custodied ranges */
-			_cust = _addr[0];
-			_range = balances[_addr[1]].ranges;
+			_cust = _addr[SENDER];
+			_range = balances[_addr[RECEIVER]].ranges;
 		} else {
-			_range = balances[_addr[0]].ranges;
+			_range = balances[_addr[SENDER]].ranges;
 		}
-		if (_cust == 0x00 || (_rating[0] == 0 && _id[0] != ownerID)) {
-			require(balances[_addr[0]].balance >= _value, "Insufficient Balance");
+		if (_cust == 0x00 || (_rating[SENDER] == 0 && _id[SENDER] != ownerID)) {
+			require(balances[_addr[SENDER]].balance >= _value, "Insufficient Balance");
 		} else {
 			require(
-				custBalances[_addr[0]][_cust] >= _value,
+				custBalances[_addr[SENDER]][_cust] >= _value,
 				"Insufficient Custodial Balance"
 			);
 		}
@@ -583,10 +586,10 @@ contract NFToken is TokenBase  {
 		internal
 	{
 		bool[4] memory _zero = [
-		 	balances[_addr[0]].balance == _value,
-		 	balances[_addr[1]].balance == 0,
-			custBalances[_addr[1]][_addr[0]] == _value,
-			custBalances[_addr[0]][_addr[1]] == 0
+		 	balances[_addr[SENDER]].balance == _value,
+		 	balances[_addr[RECEIVER]].balance == 0,
+			custBalances[_addr[RECEIVER]][_addr[SENDER]] == _value,
+			custBalances[_addr[SENDER]][_addr[RECEIVER]] == 0
 		];
 		(
 			bytes32 _authID,
@@ -595,8 +598,8 @@ contract NFToken is TokenBase  {
 			uint16[2] memory _country
 		) = issuer.transferTokens(
 			_auth,
-			_addr[0],
-			_addr[1],
+			_addr[SENDER],
+			_addr[RECEIVER],
 			_zero
 		);
 
@@ -612,16 +615,16 @@ contract NFToken is TokenBase  {
 			_value
 		);
 
-		if (_authID != _id[0] && _id[0] != _id[1] && _authID != ownerID) {
+		if (_authID != _id[SENDER] && _id[SENDER] != _id[RECEIVER] && _authID != ownerID) {
 			/**
 				If the call was not made by the issuer or the sender and involves
 				a change in ownership, subtract from the allowed mapping.
 			*/
 			require(
-				allowed[_addr[0]][_auth] >= _value,
+				allowed[_addr[SENDER]][_auth] >= _value,
 				"Insufficient allowance"
 			);
-			allowed[_addr[0]][_auth] -= _value;
+			allowed[_addr[SENDER]][_auth] -= _value;
 		}
 
 		address _cust;
@@ -652,20 +655,20 @@ contract NFToken is TokenBase  {
 			address[2]
 		)
 	{
-		require(_value <= balances[_addr[0]].balance);
-		balances[_addr[0]].balance -= _value;
-		balances[_addr[1]].balance += _value;
+		require(_value <= balances[_addr[SENDER]].balance);
+		balances[_addr[SENDER]].balance -= _value;
+		balances[_addr[RECEIVER]].balance += _value;
 
-		if (_rating[0] == 0 && _id[0] != ownerID) {
+		if (_rating[SENDER] == 0 && _id[SENDER] != ownerID) {
 			/* sender is custodian, reduce custodian balance */
-			custBalances[_addr[1]][_addr[0]] -= _value;
-			_addr[0] = _addr[1];
-		} else if (_rating[1] == 0 && _id[1] != ownerID) {
+			custBalances[_addr[RECEIVER]][_addr[SENDER]] -= _value;
+			_addr[SENDER] = _addr[RECEIVER];
+		} else if (_rating[RECEIVER] == 0 && _id[RECEIVER] != ownerID) {
 			/* receiver is custodian, increase and notify */
-			_cust = _addr[1];
-			_addr[1] = _addr[0];
-			custBalances[_addr[0]][_cust] += _value;
-			require(IBaseCustodian(_cust).receiveTransfer(_addr[0], _value));
+			_cust = _addr[RECEIVER];
+			_addr[RECEIVER] = _addr[SENDER];
+			custBalances[_addr[SENDER]][_cust] += _value;
+			require(IBaseCustodian(_cust).receiveTransfer(_addr[SENDER], _value));
 		}
 		/* bytes4 signature for token module transferTokens() */
 		require(_callModules(
@@ -693,8 +696,8 @@ contract NFToken is TokenBase  {
 		returns (bool)
 	{
 		bool[4] memory _zero = [
-			custBalances[_addr[0]][msg.sender] == _value,
-			custBalances[_addr[1]][msg.sender] == 0,
+			custBalances[_addr[SENDER]][msg.sender] == _value,
+			custBalances[_addr[RECEIVER]][msg.sender] == 0,
 			false,
 			false
 		];
@@ -703,7 +706,7 @@ contract NFToken is TokenBase  {
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.transferTokens(msg.sender, _addr[0], _addr[1], _zero);
+		) = issuer.transferTokens(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
 
 		uint48[] memory _range;
 		(_addr, _range) = _checkTransfer(
@@ -716,8 +719,8 @@ contract NFToken is TokenBase  {
 			_value
 		);
 
-		custBalances[_addr[0]][msg.sender] -= _value;
-		custBalances[_addr[1]][msg.sender] += _value;
+		custBalances[_addr[SENDER]][msg.sender] -= _value;
+		custBalances[_addr[RECEIVER]][msg.sender] += _value;
 		/* bytes4 signature for token module transferTokensCustodian() */
 		require(_callModules(
 			0x8b5f1240,
@@ -758,7 +761,7 @@ contract NFToken is TokenBase  {
 	)
 		internal
 	{
-		emit Transfer(_addr[0], _addr[1], _value);
+		emit Transfer(_addr[SENDER], _addr[RECEIVER], _value);
 		for (uint256 i; i < _range.length; i++) {
 			if (_range[i] == 0) continue;
 			uint48 _start = _range[i];
@@ -771,7 +774,7 @@ contract NFToken is TokenBase  {
 			else {
 				_value -= _amount;
 			}
-			_transferSingleRange(_start, _addr[0], _addr[1], _start, _stop, _custodian);
+			_transferSingleRange(_start, _addr[SENDER], _addr[RECEIVER], _start, _stop, _custodian);
 			/** hook point for NFToken.transferTokenRange() */
 			require(_callModules(
 				0xead529f5,
@@ -815,33 +818,33 @@ contract NFToken is TokenBase  {
 		uint48 _value = _stop - _start;
 		bool[4] memory _zero = [
 			balances[msg.sender].balance == _value,
-			balances[_addr[1]].balance == 0,
-			custBalances[_addr[1]][_addr[0]] == _value,
-			custBalances[_addr[0]][_addr[1]] == 0
+			balances[_addr[RECEIVER]].balance == 0,
+			custBalances[_addr[RECEIVER]][_addr[SENDER]] == _value,
+			custBalances[_addr[SENDER]][_addr[RECEIVER]] == 0
 		];
 		(
 			bytes32 _authID,
 			bytes32[2] memory _id,
 			uint8[2] memory _rating,
 			uint16[2] memory _country
-		) = issuer.transferTokens(_addr[0], _addr[0], _addr[1], _zero);
+		) = issuer.transferTokens(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
 
 		/* Issuer tokens are held at the IssuingEntity contract address */
-		if (_id[0] == ownerID) {
-			_addr[0] = address(issuer);
+		if (_id[SENDER] == ownerID) {
+			_addr[SENDER] = address(issuer);
 		} else {
 			/* prevent send from custodian */
-			require(_rating[0] > 0);
+			require(_rating[SENDER] > 0);
 		}
-		if (_id[1] == ownerID) {
-			_addr[1] = address(issuer);
+		if (_id[RECEIVER] == ownerID) {
+			_addr[RECEIVER] = address(issuer);
 		}
 
 		require(
-			_addr[0] == rangeMap[_pointer].owner,
+			_addr[SENDER] == rangeMap[_pointer].owner,
 			"Sender does not own range"
 		);
-		require(_addr[0] != _addr[1], "Cannot send to self");
+		require(_addr[SENDER] != _addr[RECEIVER], "Cannot send to self");
 
 		/* hook point for NFTModule.checkTransfer() */
 		require(_callModules(
@@ -860,7 +863,7 @@ contract NFToken is TokenBase  {
 		address _cust;
 		(_cust, _addr) = _adjustBalances(_id, _addr, _rating, _country, _value);
 
-		_transferSingleRange(_pointer, _addr[0], _addr[1], _range[0], _range[1], _cust);
+		_transferSingleRange(_pointer, _addr[SENDER], _addr[RECEIVER], _range[0], _range[1], _cust);
 		/* hook point for NFToken.transferTokenRange() */
 		require(_callModules(
 			0xead529f5,

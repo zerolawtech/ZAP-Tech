@@ -432,6 +432,7 @@ contract KYCRegistrar is KYCBase {
 			/* Only the owner can unregister addresses for an authority. */
 			require(idMap[msg.sender].id == ownerID, "dev: not owner");
 			Authority storage a = authorityData[_id];
+			require(a.addressCount >= _addr.length); // dev: addressCount underflow
 			a.addressCount -= uint32(_addr.length);
 			require(a.addressCount >= a.multiSigThreshold, "dev: below threshold");
 		} else {

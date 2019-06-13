@@ -16,7 +16,7 @@ def deploy_contracts(token_contract=SecurityToken):
     issuer = accounts[0].deploy(IssuingEntity, [accounts[0]], 1)
     token = accounts[0].deploy(token_contract, issuer, "Test Token", "TST", 1000000)
     issuer.addToken(token, {'from': accounts[0]})
-    issuer.setRegistrar(kyc, True, {'from': accounts[0]})
+    issuer.setRegistrar(kyc, False, {'from': accounts[0]})
     return token, issuer, kyc
 
 

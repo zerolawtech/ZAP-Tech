@@ -12,7 +12,7 @@ def setup():
     token.transfer(a[2], 1000, {'from': a[0]})
     token.transfer(cust, 500, {'from': a[0]})
     token.transfer(cust, 500, {'from': a[2]})
-    issuer.setEntityRestriction(cust.ownerID(), False, {'from': a[0]})
+    issuer.setEntityRestriction(cust.ownerID(), True, {'from': a[0]})
 
 
 def from_issuer():

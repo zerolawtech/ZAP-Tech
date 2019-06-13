@@ -117,9 +117,9 @@ def restricted():
     '''restrict authority'''
     kyc.setAuthorityCountries(auth_id, (1,), True, {'from': a[0]})
     check.true(kyc.isApprovedAuthority(a[-1], 1))
-    kyc.setAuthorityRestriction(auth_id, False, {'from': a[0]})
-    check.false(kyc.isApprovedAuthority(a[-1], 1))
     kyc.setAuthorityRestriction(auth_id, True, {'from': a[0]})
+    check.false(kyc.isApprovedAuthority(a[-1], 1))
+    kyc.setAuthorityRestriction(auth_id, False, {'from': a[0]})
     check.true(kyc.isApprovedAuthority(a[-1], 1))
 
 
@@ -127,7 +127,7 @@ def restricted_not_authority():
     '''restrict - not authority'''
     check.reverts(
         kyc.setAuthorityRestriction,
-        ("0x1234", True, {'from': a[0]}),
+        ("0x1234", False, {'from': a[0]}),
         "dev: not authority"
     )
 

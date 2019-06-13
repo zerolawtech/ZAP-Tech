@@ -6,13 +6,13 @@ from scripts.deployment import main, deploy_custodian
 
 def setup():
     global token, issuer, cust
-    token, issuer, _ = main(NFToken, (1,2,3), (1,))
+    token, issuer, _ = main(NFToken, (1, 2, 3), (1,))
     cust = deploy_custodian()
     token.mint(issuer, 100000, 0, "0x00", {'from': a[0]})
     token.transfer(a[2], 1000, {'from': a[0]})
     token.transfer(cust, 500, {'from': a[0]})
     token.transfer(cust, 500, {'from': a[2]})
-    issuer.setEntityRestriction(cust.ownerID(), False, {'from': a[0]})
+    issuer.setEntityRestriction(cust.ownerID(), True, {'from': a[0]})
 
 
 def from_issuer():
@@ -58,6 +58,7 @@ def to_investor():
         (token, a[2], 500, {'from': a[0]}),
         "Sender restricted: Issuer"
     )
+
 
 def issuer_transferFrom():
     '''restricted custodian - issuer transfer out with transferFrom'''

@@ -31,7 +31,7 @@ def set_checkpoint_time():
 
 def set_checkpoint_restricted_token():
     '''set a checkpoint - restricted token'''
-    issuer.setTokenRestriction(token, False, {'from': a[0]})
+    issuer.setTokenRestriction(token, True, {'from': a[0]})
     check.reverts(
         cp.newCheckpoint,
         (token, rpc.time()+100, {'from': a[0]}),

@@ -43,8 +43,6 @@ def nft_modifyRanges():
     _multisig(nft.modifyRanges, 30, 800, 0, "0xff")
 
 
-
-
 def _multisig(fn, *args):
     args = list(args)+[{'from':a[-6]}]
     # check for failed call, no permission
@@ -64,5 +62,3 @@ def _multisig(fn, *args):
     check.reverts(fn, args, "dev: repeat caller")
     args[-1]['from'] = a[-4]
     check.event_fired(fn(*args),'MultiSigCallApproved')
-    
-    

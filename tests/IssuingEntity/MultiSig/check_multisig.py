@@ -30,7 +30,7 @@ def setDocumentHash():
     _multisig(issuer.setDocumentHash, "blah blah", "0x1234")
 
 def setRegistrar():
-    _multisig(issuer.setRegistrar, a[9], True)
+    _multisig(issuer.setRegistrar, a[9], False)
 
 def addCustodian():
     _multisig(issuer.addCustodian, OwnedCustodian[0])
@@ -39,13 +39,13 @@ def addToken():
     _multisig(issuer.addToken, SecurityToken[1])
 
 def setEntityRestriction():
-    _multisig(issuer.setEntityRestriction, "0x11", False)
+    _multisig(issuer.setEntityRestriction, "0x11", True)
 
 def setTokenRestriction():
-    _multisig(issuer.setTokenRestriction, token, True)
+    _multisig(issuer.setTokenRestriction, token, False)
 
 def setGlobalRestriction():
-    _multisig(issuer.setGlobalRestriction, False)
+    _multisig(issuer.setGlobalRestriction, True)
 
 def attachModule(skip=True):
     _multisig(issuer.attachModule)

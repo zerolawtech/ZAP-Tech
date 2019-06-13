@@ -302,7 +302,7 @@ contract IssuingEntity is MultiSig {
 			registrars.push(RegistrarContract(_registrar, _restricted));
 			return true;
 		}
-		revert();
+		revert(); // dev: unknown registrar
 	}
 
 	/**

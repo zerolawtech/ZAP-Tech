@@ -237,10 +237,10 @@ contract NFToken is TokenBase  {
 
 		/* Issuer tokens are held at the IssuingEntity contract address */
 		if (_id[SENDER] == ownerID) {
-			_addr[RECEIVER] = address(issuer);
+			_addr[SENDER] = address(issuer);
 		}
 		if (_id[RECEIVER] == ownerID) {
-			_addr[SENDER] = address(issuer);
+			_addr[RECEIVER] = address(issuer);
 		}
 		require(_addr[SENDER] != _addr[RECEIVER], "Cannot send to self");
 		

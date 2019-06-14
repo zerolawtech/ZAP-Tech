@@ -20,14 +20,21 @@ contract VestedOptions is STModuleBase {
     uint32 public terminationGracePeriod;
     address public receiver;
 
-    mapping (bytes32 => Option[]) optionData;
     mapping (bytes32 => uint256) public options;
+    mapping (bytes32 => Option[]) optionData;
+
+    mapping (uint256 => ExercisePrice) public totalAtExercisePrice;
+    uint256[] public exercisePrices;
 
     struct Option {
         uint96 amount;
         uint96 exercisePrice;
         uint32 creationDate;
         uint32 vestDate;
+    }
+    struct ExercisePrice {
+        uint248 total;
+        uint8 index;
     }
 
     event NewOptions(
@@ -105,6 +112,36 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
+        @notice view function to get total in money options
+        @param _consideration common consideration, options with an exercise price
+                              above this value will not be returned
+        @return dynamic array of (exercise price, options at price)
+     */
+    function getInMoneyOptions(
+        uint256 _consideration
+    )
+        external
+        view
+        returns (uint256[2][])
+    {
+        uint256 _idx = 0;
+        for (uint256 i; i < exercisePrices.length; i++) {
+            if (exercisePrices[i] < _consideration) _idx += 1;
+        }
+        uint256[2][] memory _prices = new uint256[2][](_idx);
+        _idx = 0;
+        for (i = 0; i < exercisePrices.length; i++) {
+            if (exercisePrices[i] >= _consideration) continue;
+            _prices[_idx] = [
+                exercisePrices[i],
+                totalAtExercisePrice[exercisePrices[i]].total
+            ];
+            _idx += 1;
+        }
+        return _prices;
+    }
+
+    /**
         @notice Modify eth peg
         @dev
             The peg is multiplied by the exercise price to determine the amount
@@ -122,29 +159,28 @@ contract VestedOptions is STModuleBase {
     /**
         @notice issue new options
         @param _id investor ID
+        @param _exercisePrice exercise price for options being issued
         @param _amount array, quantities of options to issue
-        @param _exercisePrice array, exercise price per group of options
         @param _vestDate array, relative time for options to vest (seconds from now)
         @return bool success
      */
     function issueOptions(
         bytes32 _id,
+        uint96 _exercisePrice,
         uint96[] _amount,
-        uint96[] _exercisePrice,
         uint32[] _vestDate
     )
         external
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(_amount.length == _exercisePrice.length);
         require(_amount.length == _vestDate.length);
         uint256 _total;
         uint32 _now = uint32(now);
         for (uint256 i; i < _amount.length; i++) {
             optionData[_id].push(Option(
                 _amount[i],
-                _exercisePrice[i],
+                _exercisePrice,
                 _now,
                 _now.add(_vestDate[i])
             ));
@@ -153,7 +189,7 @@ contract VestedOptions is STModuleBase {
                 _id,
                 optionData[_id].length-1,
                 _amount[i],
-                _exercisePrice[i],
+                _exercisePrice,
                 _now,
                 _now.add(_vestDate[i]),
                 _now.add(expiryDate)
@@ -161,6 +197,15 @@ contract VestedOptions is STModuleBase {
         }
         options[_id] = options[_id].add(_total);
         totalOptions = totalOptions.add(_total);
+
+        ExercisePrice storage t = totalAtExercisePrice[_exercisePrice];
+        if (t.total == 0) {
+            exercisePrices.push(_exercisePrice);
+            t.index = uint8(exercisePrices.length) - 1;
+        }
+        require(t.total + _total > t.total);
+        t.total = t.total + uint248(_total);
+
         return true;
     }
 
@@ -193,6 +238,25 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
+        @notice reduces values of totalAtExercisePrice and exercisePrices
+        @param _price exercise price to modify
+        @param _amount amount to reduce total by
+     */
+    function _reduceTotal(uint256 _price, uint248 _amount) internal {
+        ExercisePrice storage t = totalAtExercisePrice[_price];
+        require(t.total - _amount < t.total);
+        if (t.total > _amount) {
+            t.total -= _amount;
+            return;
+        }
+        if (t.index != exercisePrices.length - 1) {
+            exercisePrices[t.index] = exercisePrices[exercisePrices.length -= 1];
+        }
+        exercisePrices.length -= 1;
+        delete totalAtExercisePrice[_price];
+    }
+
+    /**
         @notice exercise vested options
         @dev payable method, payment must exactly equal:
             exercise price * number of options * eth peg
@@ -209,6 +273,7 @@ contract VestedOptions is STModuleBase {
             require(o.creationDate.add(expiryDate) > now, "Options have expired");
             _amount = _amount.add(o.amount);
             _price = _price.add(uint256(o.exercisePrice).mul(o.amount));
+            _reduceTotal(o.exercisePrice, o.amount);
             emit ClaimedOptions(_id, _idx[i], o.amount, o.exercisePrice);
             delete optionData[_id][_idx[i]];
         }
@@ -259,6 +324,7 @@ contract VestedOptions is STModuleBase {
         for (uint256 i; i < o.length; i++) {
             if (o[i].vestDate > now) {
                 _amount = _amount.add(o[i].amount);
+                _reduceTotal(o[i].exercisePrice, o[i].amount);
                 delete o[i];
             } else {
                 o[i].creationDate = uint32(now).sub(expiryDate).add(terminationGracePeriod);

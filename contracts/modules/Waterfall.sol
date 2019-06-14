@@ -103,19 +103,17 @@ contract WaterfallModule is IssuerModuleBase {
         uint256 total = 0;
         uint remaining = address(this).balance;
         for (uint256 i = pariPasu; i+1 != 0; i--) {
-            considerations.length++;
-            SeriesConsideration storage c = considerations[considerations.length-1];
+            Preferred storage p = preferredTokens[i];
 
-            c.token = preferredTokens[i].token;
-            preferredTokens[i].token.circulatingSupply();
-            c.dividendAmount = dividendAmounts[i];
-
-            uint256 _supply = c.token.circulatingSupply();
-            c.totalPerShareConsideration = (
-                preferredTokens[i].liquidationPrefPerShare.add(c.dividendAmount.div(_supply))
-            );
-            total += _supply * c.totalPerShareConsideration;
-            if (preferredTokens[i].senior) {
+            uint256 _supply = p.token.circulatingSupply();
+            uint256 _prefPerShare = p.liquidationPrefPerShare.add(dividendAmounts[i].div(_supply));
+            considerations.push(SeriesConsideration(
+                p.token,
+                dividendAmounts[i],
+                _prefPerShare
+            ));
+            total += _supply * _prefPerShare;
+            if (p.senior) {
                 if (total > remaining) {
                     _reduceConsideration(pariPasu, remaining.mul(1000).div(total));
                     return true; // rekt

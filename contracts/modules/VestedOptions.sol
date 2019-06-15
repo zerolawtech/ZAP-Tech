@@ -20,21 +20,25 @@ contract VestedOptions is STModuleBase {
     uint32 public terminationGracePeriod;
     address public receiver;
 
+    uint96[2] exercisePriceLimits;
+    uint64 exercisePriceLength;
+    mapping (uint96 => ExercisePrice) public totalAtExercisePrice;
+
     mapping (bytes32 => uint256) public options;
     mapping (bytes32 => Option[]) optionData;
 
-    mapping (uint256 => ExercisePrice) public totalAtExercisePrice;
-    uint256[] public exercisePrices;
+
+    struct ExercisePrice {
+        uint256 total;
+        uint96 prev;
+        uint96 next;
+    }
 
     struct Option {
         uint96 amount;
         uint96 exercisePrice;
         uint32 creationDate;
         uint32 vestDate;
-    }
-    struct ExercisePrice {
-        uint248 total;
-        uint8 index;
     }
 
     event NewOptions(
@@ -115,30 +119,16 @@ contract VestedOptions is STModuleBase {
         @notice view function to get total in money options
         @param _consideration common consideration, options with an exercise price
                               above this value will not be returned
-        @return dynamic array of (exercise price, options at price)
+        @return dynamic array of (exercise price, total options at price)
      */
-    function getInMoneyOptions(
-        uint256 _consideration
-    )
-        external
-        view
-        returns (uint256[2][])
-    {
-        uint256 _idx = 0;
-        for (uint256 i; i < exercisePrices.length; i++) {
-            if (exercisePrices[i] < _consideration) _idx += 1;
+    function getOptions() external view returns (uint256[2][]) {
+        uint256[2][] memory _options = new uint256[2][](exercisePriceLength);
+        uint96 _index = exercisePriceLimits[0];
+        for (uint256 i = 0; i < exercisePriceLength; i++) {
+            _options[i] = [_index, totalAtExercisePrice[_index].total];
+            _index = totalAtExercisePrice[_index].next;
         }
-        uint256[2][] memory _prices = new uint256[2][](_idx);
-        _idx = 0;
-        for (i = 0; i < exercisePrices.length; i++) {
-            if (exercisePrices[i] >= _consideration) continue;
-            _prices[_idx] = [
-                exercisePrices[i],
-                totalAtExercisePrice[exercisePrices[i]].total
-            ];
-            _idx += 1;
-        }
-        return _prices;
+        return _options;
     }
 
     /**
@@ -199,14 +189,45 @@ contract VestedOptions is STModuleBase {
         totalOptions = totalOptions.add(_total);
 
         ExercisePrice storage t = totalAtExercisePrice[_exercisePrice];
-        if (t.total == 0) {
-            exercisePrices.push(_exercisePrice);
-            t.index = uint8(exercisePrices.length) - 1;
-        }
+        _addExercisePrice(_exercisePrice);
         require(t.total + _total > t.total);
         t.total = t.total + uint248(_total);
 
         return true;
+    }
+
+
+    function _addExercisePrice(uint96 _price) internal {
+        if (totalAtExercisePrice[_price].total > 0) return;
+        exercisePriceLength += 1;
+        if (exercisePriceLimits[0] == 0) {
+            exercisePriceLimits = [_price, _price];
+            return;
+        }
+        if (_price > exercisePriceLimits[1]) {
+            totalAtExercisePrice[exercisePriceLimits[1]].next = _price;
+            totalAtExercisePrice[_price].prev = exercisePriceLimits[1];
+            exercisePriceLimits[1] = _price;
+            return;
+        }
+        if (_price < exercisePriceLimits[0]) {
+            totalAtExercisePrice[exercisePriceLimits[0]].prev = _price;
+            totalAtExercisePrice[_price].next = exercisePriceLimits[0];
+            exercisePriceLimits[0] = _price;
+            return;
+        }
+        uint96 i = exercisePriceLimits[0];
+        while (true) {
+            if (totalAtExercisePrice[i].next < _price) {
+                i = totalAtExercisePrice[i].next;
+                continue;
+            }
+            totalAtExercisePrice[_price].prev = i;
+            totalAtExercisePrice[_price].next = totalAtExercisePrice[i].next;
+            totalAtExercisePrice[totalAtExercisePrice[i].next].prev = _price;
+            totalAtExercisePrice[i].next = _price;
+            return;
+        }
     }
 
     /**
@@ -242,17 +263,26 @@ contract VestedOptions is STModuleBase {
         @param _price exercise price to modify
         @param _amount amount to reduce total by
      */
-    function _reduceTotal(uint256 _price, uint248 _amount) internal {
+    function _reduceTotal(uint96 _price, uint256 _amount) internal {
         ExercisePrice storage t = totalAtExercisePrice[_price];
-        require(t.total - _amount < t.total);
+        assert(t.total >= _amount); // TODO: remove me eventually, this should never happen
         if (t.total > _amount) {
-            t.total -= _amount;
+            t.total = t.total.sub(_amount);
             return;
         }
-        if (t.index != exercisePrices.length - 1) {
-            exercisePrices[t.index] = exercisePrices[exercisePrices.length -= 1];
+        exercisePriceLength -= 1;
+        if (exercisePriceLimits[0] == _price) {
+            exercisePriceLimits[0] = t.next;
         }
-        exercisePrices.length -= 1;
+        if (exercisePriceLimits[1] == _price) {
+            exercisePriceLimits[1] = t.prev;
+        }
+        if (t.prev != 0) {
+            totalAtExercisePrice[t.prev].next = t.next;
+        }
+        if (t.next != 0) {
+            totalAtExercisePrice[t.next].prev = t.prev;
+        }
         delete totalAtExercisePrice[_price];
     }
 

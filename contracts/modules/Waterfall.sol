@@ -148,12 +148,17 @@ contract WaterfallModule is IssuerModuleBase {
                 continue;
             }
 
-            for (x = _idx - _tier.length; x == _idx; x++) {
+            for (x = _idx -1; x + 1 != 0; x--) {
                 p = _preferred[x];
-                p.perShare = p.perShare.mul(_remainingTotal).div(_tierTotal);
+                if (x >= _idx-_tier.length) {
+                    perShareConsideration[p.token] = (
+                        p.perShare.mul(_remainingTotal).div(_tierTotal)
+                    );
+                } else {
+                    perShareConsideration[p.token] = p.perShare;
+                }
             }
-
-            return; // TODO - we ran out of moneys
+            return;
         }
 
         bool[] memory _convertDecisions = new bool[](dividendAmounts.length);

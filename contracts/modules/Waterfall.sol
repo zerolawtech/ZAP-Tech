@@ -36,8 +36,14 @@ contract WaterfallModule is IssuerModuleBase {
         uint256 perShare;
         uint256 totalSupply;
         IToken token;
-        uint8 converting; // 0: unset, 1: no, 2: yes
+        bool notConverting;
         bool participating;
+    }
+
+    function _checkToken(IToken _token) internal {
+        require(_token.ownerID() == ownerID);
+        require(perShareConsideration[_token] == 0);
+        perShareConsideration[_token] = ~uint256(0);
     }
 
     /**
@@ -57,12 +63,6 @@ contract WaterfallModule is IssuerModuleBase {
         require(_options.ownerID() == ownerID);
         commonOptions = _options;
 
-    }
-
-    function _checkToken(IToken _token) internal view {
-        require(_token.ownerID() == ownerID);
-        require(perShareConsideration[_token] == 0);
-        perShareConsideration[_token] = ~uint256(0);
     }
 
     function getPerShare(
@@ -134,13 +134,17 @@ contract WaterfallModule is IssuerModuleBase {
                 p.perShare = _tier[x].prefPerShare.add(
                     dividendAmounts[_idx].div(p.totalSupply)
                 );
-                if (_tier[x].participating) {
-                    p.participating = true;
-                    p.converting = 1;
-                    _commonTotalSupply = _commonTotalSupply.add(p.totalSupply);
-                }
                 _tierTotal = _tierTotal.add(p.totalSupply.mul(p.perShare));
                 _idx += 1;
+                if (_tier[x].convertible && !_tier[x].participating) continue;
+
+                /** if participating or non-convertible, do not convert to common */
+                p.notConverting = true;
+                if (_tier[x].participating) {
+                    /** if preferred participating, increase common total supply */
+                    p.participating = true;
+                    _commonTotalSupply = _commonTotalSupply.add(p.totalSupply);
+                }
             }
 
             if (_tierTotal <= _remainingTotal) {
@@ -208,7 +212,7 @@ contract WaterfallModule is IssuerModuleBase {
         internal
     {
         Consideration memory p = _preferred[_idx];
-        if (p.converting == 1) {
+        if (p.notConverting) {
             /** series is preferred participating - already decided not to convert */
             if (_idx < _preferred.length - 1) {
                 _wouldConvert(

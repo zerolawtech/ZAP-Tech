@@ -166,8 +166,6 @@ def run(payout, common, options, preferred):
     converts = preferred[-1].would_convert(payout, common, options, preferred[-2::-1])
     converts.reverse()
 
-    ## finished up to here
-
     for i in range(len(converts)):
         if preferred[i].converts is not None:
             continue

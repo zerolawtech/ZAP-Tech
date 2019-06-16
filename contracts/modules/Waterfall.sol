@@ -26,12 +26,13 @@ contract WaterfallModule is IssuerModuleBase {
         bool senior;
     }
 
-    VestedOptions options;
+    VestedOptions commonOptions;
     IToken commonToken;
 
     Preferred[][] preferredTokens;
     uint256 public preferredTokenCount;
 
+    mapping (address => uint256) perShareConsiderations;
 
     /**
         @notice Base constructor
@@ -47,16 +48,20 @@ contract WaterfallModule is IssuerModuleBase {
     {
         _checkToken(_common);
         commonToken = _common;
-        //_checkToken(_options); TODO
-        options = _options;
+        require(_options.ownerID() == ownerID);
+        commonOptions = _options;
 
     }
 
     function _checkToken(IToken _token) internal view {
-        bytes32 _id = _token.ownerID();
-        require (_id == ownerID);
-        require(_token != commonToken);
-        require (address(_token) != address(options));
+        require(_token.ownerID() == ownerID);
+        require(perShareConsiderations[_token] == 0);
+        perShareConsiderations[_token] = ~uint256(0);
+    }
+
+    function getPerShareConsideration(address _token) external view returns (uint256) {
+        require(perShareConsiderations[_token] != ~uint256(0));
+        return perShareConsiderations[_token];
     }
 
     function addToken(
@@ -71,17 +76,13 @@ contract WaterfallModule is IssuerModuleBase {
     {
         if (!_onlyAuthority()) return false;
         _checkToken(_token);
-        for (uint256 i; i < preferredTokens.length; i++) {
-            for (uint256 x; x < preferredTokens[i].length; x++) {
-                require(_token != preferredTokens[i][x].token);
-            }
-        }
         preferredTokenCount += 1;
         if (_senior) {
             preferredTokens.length += 1;
         }
-        preferredTokens.length += 1;
-        Preferred storage t = preferredTokens[preferredTokens.length-1];
+        uint256 i = preferredTokens.length-1;
+        preferredTokens[i].length += 1;
+        Preferred storage t = preferredTokens[i][preferredTokens[i].length-1];
         t.liquidationPrefPerShare = _liquidationPrefPerShare;
         t.token = _token;
         t.convertible = _convertible;
@@ -115,7 +116,7 @@ contract WaterfallModule is IssuerModuleBase {
         uint256 _commonTotalSupply = commonToken.circulatingSupply();
         uint256 _remaining = address(this).balance;
         uint256 _idx;
-        SeriesConsideration[] memory _preferredConsiderations = new SeriesConsideration[](preferredTokenCount);
+        SeriesConsideration[] memory _preferredConsiderations = new SeriesConsideration[](dividendAmounts.length);
         for (uint256 i = preferredTokens.length - 1; i+1 != 0; i--) {
             Preferred[] storage _tier = preferredTokens[i];
             uint256 _tierTotalSupply = 0;
@@ -146,15 +147,36 @@ contract WaterfallModule is IssuerModuleBase {
             return; // TODO - we ran out of moneys
         }
 
-    bool[] memory _convertDecisions = new bool[](preferredTokenCount);
+    bool[] memory _convertDecisions = new bool[](dividendAmounts.length);
+    uint256[2][] memory _options = commonOptions.getOptions();
     _wouldConvert(
         _remaining,
         _commonTotalSupply,
         _preferredConsiderations,
-        options.getOptions(),
+        _options,
         0,
         _convertDecisions
     );
+
+    for (i = 0; i < _convertDecisions.length; i++) {
+        if (!_convertDecisions[i]) continue;
+        p = _preferredConsiderations[i];
+        _commonTotalSupply = _commonTotalSupply.add(p.totalSupply);
+        _remaining = _remaining.add(p.perShareConsideration.mul(p.totalSupply));
+        p.perShareConsideration = 0;
+    }
+    (_remaining, _commonTotalSupply) = _adjustOptions(_remaining, _commonTotalSupply, _options);
+    uint256 _commonPerShareConsideration = _remaining.div(_commonTotalSupply);
+
+    for (i = 0; i < _preferredConsiderations.length; i++) {
+        p = _preferredConsiderations[i];
+        if (p.participating) {
+            perShareConsiderations[p.token] = p.perShareConsideration + _commonPerShareConsideration;
+        } else {
+            perShareConsiderations[p.token] = p.perShareConsideration;
+        }
+    }
+    perShareConsiderations[commonToken] = _commonPerShareConsideration;
 
     }
 

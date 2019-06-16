@@ -28,7 +28,9 @@ contract WaterfallModule is IssuerModuleBase {
     address options;
     IToken commonToken;
 
-    Preferred[] preferredTokens;
+    Preferred[][] preferredTokens;
+    uint256 public preferredTokenCount;
+
 
     /**
         @notice Base constructor
@@ -46,7 +48,7 @@ contract WaterfallModule is IssuerModuleBase {
         commonToken = _common;
         //_checkToken(_options); TODO
         options = _options;
-        
+
     }
 
     function _checkToken(IToken _token) internal view {
@@ -69,7 +71,13 @@ contract WaterfallModule is IssuerModuleBase {
         if (!_onlyAuthority()) return false;
         _checkToken(_token);
         for (uint256 i; i < preferredTokens.length; i++) {
-            require(_token != preferredTokens[i].token);
+            for (uint256 x; x < preferredTokens[i].length; x++) {
+                require(_token != preferredTokens[i][x].token);
+            }
+        }
+        preferredTokenCount += 1;
+        if (_senior) {
+            preferredTokens.length += 1;
         }
         preferredTokens.length += 1;
         Preferred storage t = preferredTokens[preferredTokens.length-1];
@@ -81,11 +89,12 @@ contract WaterfallModule is IssuerModuleBase {
         return true;
     }
 
-    SeriesConsideration[] considerations;
     struct SeriesConsideration {
+        uint256 perShareConsideration;
+        uint256 totalSupply;
         IToken token;
-        uint256 dividendAmount;
-        uint256 totalPerShareConsideration;
+        bool converting;
+        bool participating;
     }
 
     function calculateConsiderations(
@@ -97,35 +106,42 @@ contract WaterfallModule is IssuerModuleBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(dividendAmounts.length == preferredTokens.length);
+        require (dividendAmounts.length == preferredTokenCount);
 
-        uint256 pariPasu = 0;
-        uint256 total = 0;
-        uint remaining = address(this).balance;
-        for (uint256 i = pariPasu; i+1 != 0; i--) {
-            Preferred storage p = preferredTokens[i];
+        // * flatten preferredTokens as _preferredConsiderations
+        // * calculate preferred considerations
+        // * get aggregate total supply
+        uint256 _aggTotalSupply = 0;
+        uint256 _remaining = address(this).balance;
+        uint256 _idx;
+        SeriesConsideration[] memory _preferredConsiderations = new SeriesConsideration[](preferredTokenCount);
+        for (uint256 i = preferredTokens.length - 1; i+1 != 0; i--) {
+            Preferred[] storage _tier = preferredTokens[i];
+            uint256 _tierTotalSupply = 0;
+            uint256 _tierTotalPreference = 0;
 
-            uint256 _supply = p.token.circulatingSupply();
-            uint256 _prefPerShare = p.liquidationPrefPerShare.add(dividendAmounts[i].div(_supply));
-            considerations.push(SeriesConsideration(
-                p.token,
-                dividendAmounts[i],
-                _prefPerShare
-            ));
-            total += _supply * _prefPerShare;
-            if (p.senior) {
-                if (total > remaining) {
-                    _reduceConsideration(pariPasu, remaining.mul(1000).div(total));
-                    return true; // rekt
+            for (uint256 x = 0; x == _tier.length; x++) {
+                SeriesConsideration memory p = _preferredConsiderations[_idx];
+                p.totalSupply = _tier[x].token.circulatingSupply();
+                _tierTotalSupply = _tierTotalSupply.add(p.totalSupply);
+                p.perShareConsideration = _tier[x].liquidationPrefPerShare.add(dividendAmounts[_idx].div(p.totalSupply));
+                if (_tier[x].participating) {
+                    p.participating = true;
                 }
-                pariPasu = considerations.length;
+                _tierTotalPreference = _tierTotalPreference.add(p.totalSupply.mul(p.perShareConsideration));
+                _idx += 1;
             }
-        }
-    }
+            if (_tierTotalPreference <= _remaining) {
+                _aggTotalSupply = _aggTotalSupply.add(p.totalSupply);
+                _remaining = _remaining.sub(_tierTotalPreference);
+                continue;
+            }
 
-    function _reduceConsideration(uint256 i, uint256 _pct) internal {
-        for (; i < considerations.length; i++) {
-            considerations[i].totalPerShareConsideration = considerations[i].totalPerShareConsideration.mul(_pct).div(1000);
+            for (x = _idx - _tier.length; x == _idx; x++) {
+                p = _preferredConsiderations[x];
+                p.perShareConsideration = p.perShareConsideration.mul(_remaining).div(_tierTotalPreference);
+            }
+            return; // TODO - we ran out of moneys
         }
     }
 

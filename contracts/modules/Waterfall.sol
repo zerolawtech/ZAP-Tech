@@ -40,6 +40,10 @@ contract WaterfallModule is IssuerModuleBase {
         bool participating;
     }
 
+    /**
+        @dev check validity and uniqueness of token
+        @param _token token address
+     */
     function _checkToken(IToken _token) internal {
         require(_token.ownerID() == ownerID);
         require(perShareConsideration[_token] == 0);
@@ -49,6 +53,8 @@ contract WaterfallModule is IssuerModuleBase {
     /**
         @notice Base constructor
         @param _owner IssuingEntity contract address
+        @param _common "Common stock" token contract address
+        @param _options "Common stock options" token contract address
      */
     constructor(
         address _owner,
@@ -62,9 +68,13 @@ contract WaterfallModule is IssuerModuleBase {
         commonToken = _common;
         require(_options.ownerID() == ownerID);
         commonOptions = _options;
-
     }
 
+    /**
+        @notice Get the calculated per-share consideration for a token
+        @param _token token contract address
+        @return uint256 per-share consideration
+     */
     function getPerShare(
         address _token
     )
@@ -76,6 +86,16 @@ contract WaterfallModule is IssuerModuleBase {
         return perShareConsideration[_token];
     }
 
+    /**
+        @notice add a new preferred token
+        @dev tokens must be added in order of seniority
+        @param _token token contract address
+        @param _prefPerShare per-share liquidation preference
+        @param _convertible is token convertible to common?
+        @param _participating is token participating?
+        @param _senior is token senior to previous series?
+        @return bool success
+     */
     function addToken(
         IToken _token,
         uint256 _prefPerShare,
@@ -87,6 +107,7 @@ contract WaterfallModule is IssuerModuleBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
+        require(mergerConsideration == 0);
         _checkToken(_token);
         preferredTokenCount += 1;
         if (_senior) {
@@ -103,25 +124,30 @@ contract WaterfallModule is IssuerModuleBase {
         return true;
     }
 
+    /**
+        @notice calculate token waterfall
+        @param _mergerConsideration Total amount of merger consideration
+        @param _dividendAmounts Array of dividend total amounts, descending seniority
+        @return bool success
+     */
     function calculateConsiderations(
-        // uint256 escrowAmount, todo
-        uint256[] dividendAmounts
+        uint256 _mergerConsideration,
+        uint256[] _dividendAmounts
     )
         external
-        payable
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(dividendAmounts.length == preferredTokenCount);
+        require(mergerConsideration == 0);
+        require(_dividendAmounts.length == preferredTokenCount);
 
-        // * flatten preferredTokens as _preferred
-        // * calculate preferred considerations
-        // * get aggregate total supply
+        mergerConsideration = _mergerConsideration;
+        uint256 _remainingTotal = _mergerConsideration;
         uint256 _commonTotalSupply = commonToken.circulatingSupply();
-        uint256 _remainingTotal = address(this).balance;
-        mergerConsideration = _remainingTotal;
         uint256 _idx;
-        Consideration[] memory _preferred = new Consideration[](dividendAmounts.length);
+        Consideration[] memory _preferred = new Consideration[](_dividendAmounts.length);
+
+        /** calculate preferred considerations */
         for (uint256 i = preferredTokens.length - 1; i+1 != 0; i--) {
             PreferredSeries[] storage _tier = preferredTokens[i];
             uint256 _tierSupply = 0;
@@ -132,7 +158,7 @@ contract WaterfallModule is IssuerModuleBase {
                 p.totalSupply = _tier[x].token.circulatingSupply();
                 _tierSupply = _tierSupply.add(p.totalSupply);
                 p.perShare = _tier[x].prefPerShare.add(
-                    dividendAmounts[_idx].div(p.totalSupply)
+                    _dividendAmounts[_idx].div(p.totalSupply)
                 );
                 _tierTotal = _tierTotal.add(p.totalSupply.mul(p.perShare));
                 _idx += 1;
@@ -148,13 +174,16 @@ contract WaterfallModule is IssuerModuleBase {
             }
 
             if (_tierTotal <= _remainingTotal) {
+                /** total preference for tier is < remaining consideration */
                 _remainingTotal = _remainingTotal.sub(_tierTotal);
                 continue;
             }
 
+            /** no consideration left - save results to storage */
             for (x = _idx -1; x + 1 != 0; x--) {
                 p = _preferred[x];
                 if (x >= _idx-_tier.length) {
+                    /** distrubte remaining consideration pro-rata across tier */
                     perShareConsideration[p.token] = (
                         p.perShare.mul(_remainingTotal).div(_tierTotal)
                     );
@@ -165,9 +194,10 @@ contract WaterfallModule is IssuerModuleBase {
             return;
         }
 
-        bool[] memory _convertDecisions = new bool[](dividendAmounts.length);
+        /** determine rational choices for non-participating convertible */
+        bool[] memory _convertDecisions = new bool[](_dividendAmounts.length);
         uint256[2][] memory _options = commonOptions.getOptions();
-        _wouldConvert(
+        _recursiveConversionCheck(
             _remainingTotal,
             _commonTotalSupply,
             _preferred,
@@ -176,6 +206,7 @@ contract WaterfallModule is IssuerModuleBase {
             _convertDecisions
         );
 
+        /** calculate final in-money options and common per-share condsideration */
         for (i = 0; i < _convertDecisions.length; i++) {
             if (!_convertDecisions[i]) continue;
             p = _preferred[i];
@@ -189,6 +220,7 @@ contract WaterfallModule is IssuerModuleBase {
             _options
         );
 
+        /** save results to storage */
         uint256 _commonPerShare = _remainingTotal.div(_commonTotalSupply);
         perShareConsideration[commonToken] = _commonPerShare;
         for (i = 0; i < _preferred.length; i++) {
@@ -201,7 +233,17 @@ contract WaterfallModule is IssuerModuleBase {
         }
     }
 
-    function _wouldConvert(
+    /**
+        @notice Determine whether or not to convert a preferred series
+        @dev Called recursively, modifies _converts in place to pass results
+        @param _remainingTotal remaining merger consideration
+        @param _commonTotalSupply aggregate total common shares
+        @param _preferred array of preferred series data
+        @param _options options data array from VestedOptions.getOptions()
+        @param _idx index of _preferred this call is looking at
+        @param _converts boolean array of conversion decisions
+     */
+    function _recursiveConversionCheck(
         uint256 _remainingTotal,
         uint256 _commonTotalSupply,
         Consideration[] memory _preferred,
@@ -215,7 +257,7 @@ contract WaterfallModule is IssuerModuleBase {
         if (p.notConverting) {
             /** series is preferred participating - already decided not to convert */
             if (_idx < _preferred.length - 1) {
-                _wouldConvert(
+                _recursiveConversionCheck(
                     _remainingTotal,
                     _commonTotalSupply,
                     _preferred,
@@ -245,7 +287,7 @@ contract WaterfallModule is IssuerModuleBase {
         }
 
         /** get results if this series converts */
-        _wouldConvert(
+        _recursiveConversionCheck(
             _remainingTotal.add(p.perShare.mul(p.totalSupply)),
             _commonTotalSupply.add(p.totalSupply),
             _preferred,
@@ -278,7 +320,7 @@ contract WaterfallModule is IssuerModuleBase {
         }
         /** does not convert, need to reset convert booleans */
         _converts[_idx] = false;
-        _wouldConvert(
+        _recursiveConversionCheck(
             _remainingTotal,
             _commonTotalSupply,
             _preferred,
@@ -288,10 +330,18 @@ contract WaterfallModule is IssuerModuleBase {
         );
     }
 
+    /**
+        @notice Calculate adjusted consideration and supply from in-money options
+        @param _remainingTotal remaining merger consideration
+        @param _commonTotalSupply aggregate total common shares
+        @param _options options data array from VestedOptions.getOptions()
+                        [(exercise price, total options at price), .. ]
+        @return adjusted consideration, adjusted total common shares
+     */
     function _adjustOptions(
         uint256 _remainingTotal,
         uint256 _commonTotalSupply,
-        uint256[2][] memory _options // [(exercise price, total options at price), .. ]
+        uint256[2][] memory _options
     )
         internal
         returns (uint256, uint256)
@@ -299,7 +349,7 @@ contract WaterfallModule is IssuerModuleBase {
         for (uint256 i; i < _options.length; i++) {
             uint256[2] memory o = _options[i];
             if (_remainingTotal.div(o[1].add(_commonTotalSupply)) <= o[0]) {
-                // option is not in the money
+                /** options >= this price are not in the money */
                 break;
             }
             _remainingTotal = _remainingTotal.add(o[0].mul(o[1]));

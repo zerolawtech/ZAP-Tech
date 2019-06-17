@@ -20,13 +20,13 @@ contract VestedOptions is STModuleBase {
     uint32 public terminationGracePeriod;
     address public receiver;
 
+    /** linked list */
     uint96[2] exercisePriceLimits;
     uint64 exercisePriceLength;
     mapping (uint96 => ExercisePrice) public totalAtExercisePrice;
 
     mapping (bytes32 => uint256) public options;
     mapping (bytes32 => Option[]) optionData;
-
 
     struct ExercisePrice {
         uint256 total;
@@ -117,8 +117,6 @@ contract VestedOptions is STModuleBase {
 
     /**
         @notice view function to get total in money options
-        @param _consideration common consideration, options with an exercise price
-                              above this value will not be returned
         @return dynamic array of (exercise price, total options at price)
      */
     function getOptions() external view returns (uint256[2][]) {
@@ -164,7 +162,7 @@ contract VestedOptions is STModuleBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(_amount.length == _vestDate.length);
+        require(_amount.length == _vestDate.length); // dev: length mismatch
         uint256 _total;
         uint32 _now = uint32(now);
         for (uint256 i; i < _amount.length; i++) {
@@ -189,45 +187,45 @@ contract VestedOptions is STModuleBase {
         totalOptions = totalOptions.add(_total);
 
         ExercisePrice storage t = totalAtExercisePrice[_exercisePrice];
-        _addExercisePrice(_exercisePrice);
-        require(t.total + _total > t.total);
-        t.total = t.total + uint248(_total);
+        if (t.total == 0) {
+            _addExercisePrice(_exercisePrice);
+        }
+        t.total = t.total.add(_total);
 
         return true;
     }
 
-
+    /**
+        @notice Add an exercise price to totalAtExercisePrice linked list
+        @param _price exercise price to add
+     */
     function _addExercisePrice(uint96 _price) internal {
-        if (totalAtExercisePrice[_price].total > 0) return;
         exercisePriceLength += 1;
         if (exercisePriceLimits[0] == 0) {
             exercisePriceLimits = [_price, _price];
             return;
         }
+        ExercisePrice storage t = totalAtExercisePrice[_price];
         if (_price > exercisePriceLimits[1]) {
             totalAtExercisePrice[exercisePriceLimits[1]].next = _price;
-            totalAtExercisePrice[_price].prev = exercisePriceLimits[1];
+            t.prev = exercisePriceLimits[1];
             exercisePriceLimits[1] = _price;
             return;
         }
         if (_price < exercisePriceLimits[0]) {
             totalAtExercisePrice[exercisePriceLimits[0]].prev = _price;
-            totalAtExercisePrice[_price].next = exercisePriceLimits[0];
+            t.next = exercisePriceLimits[0];
             exercisePriceLimits[0] = _price;
             return;
         }
         uint96 i = exercisePriceLimits[0];
-        while (true) {
-            if (totalAtExercisePrice[i].next < _price) {
-                i = totalAtExercisePrice[i].next;
-                continue;
-            }
-            totalAtExercisePrice[_price].prev = i;
-            totalAtExercisePrice[_price].next = totalAtExercisePrice[i].next;
-            totalAtExercisePrice[totalAtExercisePrice[i].next].prev = _price;
-            totalAtExercisePrice[i].next = _price;
-            return;
+        while (totalAtExercisePrice[i].next < _price) {
+            i = totalAtExercisePrice[i].next;
         }
+        t.prev = i;
+        t.next = totalAtExercisePrice[i].next;
+        totalAtExercisePrice[t.next].prev = _price;
+        totalAtExercisePrice[i].next = _price;
     }
 
     /**

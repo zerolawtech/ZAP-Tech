@@ -65,8 +65,7 @@ contract VestedOptions is STModuleBase {
         @notice supply permissions and hook points when attaching module
         @dev
             permissions: 0x40c10f19 - mint
-            hooks: 0xb1a1a455 - modifyAuthorizedSupply
-                   0x741b5078 - totalSupplyChanged
+            hooks: 0x741b5078 - totalSupplyChanged
             hookBools - all true
      */
     function getPermissions()
@@ -81,9 +80,8 @@ contract VestedOptions is STModuleBase {
     {
         permissions = new bytes4[](1);
         permissions[0] = 0x40c10f19;
-        hooks = new bytes4[](2);
-        hooks[0] = 0xb1a1a455;
-        hooks[1] = 0x741b5078;
+        hooks = new bytes4[](1);
+        hooks[0] = 0x741b5078;
         return (permissions, hooks, ~uint256(0));
     }
 
@@ -385,25 +383,6 @@ contract VestedOptions is STModuleBase {
         }
         return true;
         
-    }
-
-    /**
-        @notice Authorized supply hook point method
-        @dev Prevents totalSupply + totalOptions from exceeding authorizedSupply
-     */
-    function modifyAuthorizedSupply(
-        address,
-        uint256 _oldSupply,
-        uint256 _newSupply
-    )
-        external
-        view
-        returns (bool)
-    {
-        if (_oldSupply > _newSupply) {
-            require(_newSupply.sub(token.totalSupply()) >= totalOptions);
-        }
-        return true;
     }
 
 }

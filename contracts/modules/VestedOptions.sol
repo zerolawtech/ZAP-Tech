@@ -25,7 +25,6 @@ contract VestedOptions is STModuleBase {
     uint64 exercisePriceLength;
     mapping (uint96 => ExercisePrice) public totalAtExercisePrice;
 
-    mapping (bytes32 => uint256) public options;
     mapping (bytes32 => Option[]) optionData;
 
     struct ExercisePrice {
@@ -117,7 +116,7 @@ contract VestedOptions is STModuleBase {
         @notice view function to get total in money options
         @return dynamic array of (exercise price, total options at price)
      */
-    function getOptions() external view returns (uint256[2][]) {
+    function sortedTotals() external view returns (uint256[2][]) {
         uint256[2][] memory _options = new uint256[2][](exercisePriceLength);
         uint96 _index = exercisePriceLimits[0];
         for (uint256 i = 0; i < exercisePriceLength; i++) {
@@ -125,6 +124,51 @@ contract VestedOptions is STModuleBase {
             _index = totalAtExercisePrice[_index].next;
         }
         return _options;
+    }
+
+    function getInMoneyOptions(
+        bytes32 _id,
+        uint256 _perShareConsideration
+    )
+        external
+        view
+        returns (
+            uint256 _optionCount,
+            uint256 _totalExercicePrice
+        )
+    {
+        Option[] storage o = optionData[_id];
+        for (uint i; i < o.length; i++) {
+            if (o[i].exercisePrice >= _perShareConsideration) continue;
+            uint256 _price = uint256(o[i].amount).mul(o[i].exercisePrice);
+            _totalExercicePrice = _totalExercicePrice.add(_price);
+            _optionCount = _optionCount.add(o[i].amount);
+        }
+        return (_optionCount, _totalExercicePrice);
+    }
+
+    function getOptions(
+        bytes32 _id,
+        uint256 _index
+    )
+        external
+        view
+        returns (
+            uint256 _amount,
+            uint256 _exercisePrice,
+            uint256 _creationDate,
+            uint256 _vestDate,
+            uint256 _expiryDate
+        )
+    {
+        Option storage o = optionData[_id][_index];
+        return (
+            o.amount,
+            o.exercisePrice,
+            o.creationDate,
+            o.vestDate,
+            uint256(o.creationDate).add(expiryDate)
+        );
     }
 
     /**
@@ -160,6 +204,7 @@ contract VestedOptions is STModuleBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
+        require(_exercisePrice > 0); // dev: exercise price == 0
         require(_amount.length == _vestDate.length); // dev: length mismatch
         uint256 _total;
         uint32 _now = uint32(now);
@@ -181,7 +226,6 @@ contract VestedOptions is STModuleBase {
                 _now.add(expiryDate)
             );
         }
-        options[_id] = options[_id].add(_total);
         totalOptions = totalOptions.add(_total);
 
         ExercisePrice storage t = totalAtExercisePrice[_exercisePrice];
@@ -306,7 +350,6 @@ contract VestedOptions is STModuleBase {
         require(msg.value == _price.mul(ethPeg), "Incorrect payment amount");
         receiver.transfer(address(this).balance);
         totalOptions = totalOptions.sub(_amount);
-        options[_id] = options[_id].sub(_amount);
         require(token.mint(msg.sender, _amount));
         return true;
     }
@@ -330,7 +373,6 @@ contract VestedOptions is STModuleBase {
             delete o[i];
         }
         totalOptions = totalOptions.sub(_amount);
-        options[_id] = options[_id].sub(_amount);
         return true;
     }
 
@@ -357,7 +399,6 @@ contract VestedOptions is STModuleBase {
             }
         }
         totalOptions = totalOptions.sub(_amount);
-        options[_id] = options[_id].sub(_amount);
         emit TerminatedOptions(_id, _amount);
         return true;
     }

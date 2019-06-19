@@ -800,7 +800,7 @@ contract IssuingEntity is MultiSig {
 		)
 	{
 		require(tokens[msg.sender].set);
-		require(!tokens[msg.sender].restricted);
+		require(!tokens[msg.sender].restricted); // dev: token locked
 		if (_owner == address(this)) {
 			_id = ownerID;
 		} else {

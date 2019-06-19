@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
 from brownie import *
-from scripts.deployment import deploy_contracts, deploy_custodian
+from scripts.deployment import main, deploy_custodian
 
 
 def setup():
     global token, issuer, cust
-    token, issuer, _ = deploy_contracts(SecurityToken)
+    token, issuer, _ = main(SecurityToken, (1,), (1,))
     cust = deploy_custodian()
 
 def mint_zero():
@@ -100,4 +100,14 @@ def burn_from_custodian():
         token.burn,
         (cust, 5000, {'from': a[0]}),
         "dev: custodian"
+    )
+
+
+def global_lock():
+    '''mint - token lock'''
+    issuer.setTokenRestriction(token, True, {'from': a[0]})
+    check.reverts(
+        token.mint,
+        (a[1], 1, {'from': a[0]}),
+        "dev: token locked"
     )

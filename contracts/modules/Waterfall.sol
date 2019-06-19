@@ -196,7 +196,7 @@ contract WaterfallModule is IssuerModuleBase {
 
         /** determine rational choices for non-participating convertible */
         bool[] memory _convertDecisions = new bool[](_dividendAmounts.length);
-        uint256[2][] memory _options = commonOptions.getOptions();
+        uint256[2][] memory _options = commonOptions.sortedTotals();
         _recursiveConversionCheck(
             _remainingTotal,
             _commonTotalSupply,
@@ -239,7 +239,7 @@ contract WaterfallModule is IssuerModuleBase {
         @param _remainingTotal remaining merger consideration
         @param _commonTotalSupply aggregate total common shares
         @param _preferred array of preferred series data
-        @param _options options data array from VestedOptions.getOptions()
+        @param _options options data array from VestedOptions.sortedTotals()
         @param _idx index of _preferred this call is looking at
         @param _converts boolean array of conversion decisions
      */
@@ -334,7 +334,7 @@ contract WaterfallModule is IssuerModuleBase {
         @notice Calculate adjusted consideration and supply from in-money options
         @param _remainingTotal remaining merger consideration
         @param _commonTotalSupply aggregate total common shares
-        @param _options options data array from VestedOptions.getOptions()
+        @param _options options data array from VestedOptions.sortedTotals()
                         [(exercise price, total options at price), .. ]
         @return adjusted consideration, adjusted total common shares
      */

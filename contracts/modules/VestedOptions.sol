@@ -30,13 +30,17 @@ contract VestedOptions is STModuleBase {
 
     mapping (bytes32 => Option[]) optionData;
 
+    /**
+        vestMap is a dynamic array of [vested total, expired total] where
+        each entry corresponds to a 30 day period, descending from FINAL_MONTH
+     */
     struct ExercisePrice {
         uint64 vestedTotal;
         uint64 unvestedTotal;
         uint32 prev;
         uint32 next;
         bool set;
-        uint64[2][] vestMap; // (vested total, expired total)
+        uint64[2][] vestMap;
     }
 
     struct Option {
@@ -118,8 +122,9 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
-        @notice view function to get total in money options
-        @return dynamic array of (exercise price, total options at price)
+        @notice get total amount of vested options at each exercise price
+        @dev array is sorted by exercise price ascending
+        @return dynamic array of (exercise price, total vested options at price)
      */
     function sortedTotals() external view returns (uint256[2][]) {
         uint256[2][] memory _options = new uint256[2][](exercisePriceLength);
@@ -132,6 +137,13 @@ contract VestedOptions is STModuleBase {
         return _options;
     }
 
+    /**
+        @notice Get information about in-money options for a given investor
+        @param _id investor ID
+        @param _perShareConsideration per-share consideration to be paid
+        @return number of options that are in the money
+        @return aggregate exercise price for in-money options
+     */
     function getInMoneyOptions(
         bytes32 _id,
         uint256 _perShareConsideration
@@ -140,7 +152,7 @@ contract VestedOptions is STModuleBase {
         view
         returns (
             uint256 _optionCount,
-            uint256 _totalExercicePrice
+            uint256 _totalExercisePrice
         )
     {
         Option[] storage o = optionData[_id];
@@ -149,10 +161,10 @@ contract VestedOptions is STModuleBase {
             if (o[i].vestDate > now) continue;
             if (o[i].expiryDate < now) continue;
             uint256 _price = uint256(o[i].amount).mul(o[i].exercisePrice);
-            _totalExercicePrice = _totalExercicePrice.add(_price);
+            _totalExercisePrice = _totalExercisePrice.add(_price);
             _optionCount = _optionCount.add(o[i].amount);
         }
-        return (_optionCount, _totalExercicePrice);
+        return (_optionCount, _totalExercisePrice);
     }
 
     function getOptions(
@@ -197,7 +209,7 @@ contract VestedOptions is STModuleBase {
         @param _id investor ID
         @param _exercisePrice exercise price for options being issued
         @param _amount array, quantities of options to issue
-        @param _monthsToVest array, relative time for options to vest (seconds from now)
+        @param _monthsToVest array, relative time for options to vest (months from now)
         @return bool success
      */
     function issueOptions(
@@ -264,25 +276,25 @@ contract VestedOptions is STModuleBase {
         @param _vestDate new absolute time for options to vest
         @return bool success
      */
-    function accellerateVestingDate(
-        bytes32 _id,
-        uint256[] _idx,
-        uint32 _vestDate
-    )
-        external
-        returns (bool)
-    {
-        if (!_onlyAuthority()) return false;
-        for (uint256 i; i < _idx.length; i++) {
-            require(
-                optionData[_id][_idx[i]].vestDate >= _vestDate,
-                "Cannot extend vesting date"
-            );
-            optionData[_id][_idx[i]].vestDate = _vestDate;
-            emit VestDateModified(_id, _idx[i], _vestDate);
-        }
-        return true;
-    }
+    // function accellerateVestingDate(
+    //     bytes32 _id,
+    //     uint256[] _idx,
+    //     uint32 _vestDate
+    // )
+    //     external
+    //     returns (bool)
+    // {
+    //     if (!_onlyAuthority()) return false;
+    //     for (uint256 i; i < _idx.length; i++) {
+    //         require(
+    //             optionData[_id][_idx[i]].vestDate >= _vestDate,
+    //             "Cannot extend vesting date"
+    //         );
+    //         optionData[_id][_idx[i]].vestDate = _vestDate;
+    //         emit VestDateModified(_id, _idx[i], _vestDate);
+    //     }
+    //     return true;
+    // }
 
     /**
         @notice exercise vested options
@@ -367,17 +379,27 @@ contract VestedOptions is STModuleBase {
         
     }
 
+    /**
+        @notice update the option totals for a given ExercisePrice struct
+        @param _exercisePrice exercise price to update
+     */
     function _updateVestMap(uint32 _exercisePrice) internal {
+        /** if expected length == actual length, values are up to date */
         ExercisePrice storage t = totalAtExercisePrice[_exercisePrice];
         uint256 _length = FINAL_MONTH.sub(now).div(2592000);
         if (_length == t.vestMap.length) return;
 
+        /** sum expired and vested options for months that have passed */
         uint64 _expiredTotal;
         uint64 _vestedTotal;
         for (uint256 i = _length; i < t.vestMap.length; i++) {
+            if (t.vestMap[i][0] == 0 && t.vestMap[i][1] == 0) continue;
             _expiredTotal = _expiredTotal.add(t.vestMap[i][1]);
             _vestedTotal = _vestedTotal.add(t.vestMap[i][0]);
+            delete t.vestMap[i];
         }
+
+        /** adjust totals and remove previous months */
         totalOptions = totalOptions.sub(_expiredTotal);
         totalVestedOptions = totalVestedOptions.add(_vestedTotal).sub(_expiredTotal);
         t.vestedTotal = t.vestedTotal.add(_vestedTotal).sub( _expiredTotal);

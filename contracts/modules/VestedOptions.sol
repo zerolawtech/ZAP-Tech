@@ -135,7 +135,7 @@ contract VestedOptions is STModuleBase {
         uint256[2][] memory _options = new uint256[2][](totalLength);
         uint32 _price = totalLimits[0];
         for (uint256 i; i < totalLength; i++) {
-            _updateVestMap(_price);
+            _updateOptionTotal(_price);
             _options[i] = [uint256(_price), totalAtPrice[_price].vested];
             _price = totalAtPrice[_price].next;
         }
@@ -165,10 +165,10 @@ contract VestedOptions is STModuleBase {
             if (_price >= _perShareConsideration) break;
             Option[] storage o = optionData[_id][_price];
             if (o.length > 0) {
-                _updateVestMap(_price);
+                _updateOptionTotal(_price);
                 uint256 _total = 0;
                 for (uint256 x = 0; x < o.length; x++) {
-                    _updateOptionVestMap(o[x]);
+                    _updateOption(o[x]);
                     if (o[x].vested == 0) continue;
                     _total = _total.add(o[x].vested);
                     _totalExercisePrice = _totalExercisePrice.add(o[x].vested.mul(_price));
@@ -206,6 +206,7 @@ contract VestedOptions is STModuleBase {
     function issueOptions(
         bytes32 _id,
         uint32 _price,
+        bool _iso,
         uint64[] _amount,
         uint32[] _monthsToVest
     )
@@ -216,9 +217,9 @@ contract VestedOptions is STModuleBase {
         require(_price > 0); // dev: exercise price == 0
         require(_amount.length == _monthsToVest.length); // dev: length mismatch
 
-        _addExercisePrice(_price);
-        OptionTotal storage t = totalAtPrice[_price];
-        Option storage o = _saveOption(_id, _price);
+        /* get storage structs */
+        OptionTotal storage t = _addExercisePrice(_price);
+        Option storage o = _saveOption(_id, _price, _iso);
 
         uint64 _total;
         uint256 _tMax = t.vestMap.length - 1;
@@ -226,9 +227,10 @@ contract VestedOptions is STModuleBase {
 
         for (uint256 i; i < _amount.length; i++) {
             require(_monthsToVest[i] < expirationMonths);
+
+            /* add to Option and OptionTotal vestMaps */
             uint256 _idx = _tMax - _monthsToVest[i];
             t.vestMap[_idx][0] = t.vestMap[_idx][0].add(_amount[i]);
-
             _idx = _oMax - _monthsToVest[i];
             o.vestMap[_idx] = o.vestMap[_idx].add(_amount[i]);
 
@@ -244,9 +246,11 @@ contract VestedOptions is STModuleBase {
             // );
         }
 
+        /* store expiration amount */
         _idx = _tMax - expirationMonths;
         t.vestMap[_idx][1] = t.vestMap[_idx][1].add(_total);
         
+        /* increase totals, final check */
         o.unvested = o.unvested.add(_total);
         t.unvested = t.unvested.add(_total);
         totalOptions = totalOptions.add(_total);
@@ -258,51 +262,80 @@ contract VestedOptions is STModuleBase {
     /**
         @notice Add an exercise price to totalAtPrice linked list
         @param _price exercise price to add
+        @return OptionTotal struct
      */
-    function _addExercisePrice(uint32 _price) internal {
-        OptionTotal storage t = totalAtPrice[_price];
+    function _addExercisePrice(uint32 _price) internal returns (OptionTotal storage t) {
+        t = totalAtPrice[_price];
         if (t.set) {
-            _updateVestMap(_price);
-            return;
+            /* if exercise price already exists, update the vestMap */
+            _updateOptionTotal(_price);
+            return t;
         }
+
+        /* add new entry to totalAtPrice */
         totalLength = totalLength.add(1);
         t.set = true;
         t.length = uint16(FINAL_MONTH.sub(now).div(2592000));
-        if (totalLimits[0] == 0) {
+
+        if (totalLength == 1) {
+            /* length is 1, min and max are both the new entry */
             totalLimits = [_price, _price];
-            return;
+            return t;
         }
         if (_price > totalLimits[1]) {
+            /* new value is greater than previous upper limit */
             totalAtPrice[totalLimits[1]].next = _price;
             t.prev = totalLimits[1];
             totalLimits[1] = _price;
-            return;
+            return t;
         }
         if (_price < totalLimits[0]) {
+            /* new value is less than previous lower limit */
             totalAtPrice[totalLimits[0]].prev = _price;
             t.next = totalLimits[0];
             totalLimits[0] = _price;
-            return;
+            return t;
         }
+        /* iterate totalAtPrice to find where to insert new entry */
         uint32 i = totalLimits[0];
         while (totalAtPrice[i].next < _price) {
             i = totalAtPrice[i].next;
         }
+        /* add new entry */
         t.prev = i;
         t.next = totalAtPrice[i].next;
         totalAtPrice[t.next].prev = _price;
         totalAtPrice[i].next = _price;
+        return t;
     }
 
-    function _saveOption(bytes32 _id, uint32 _price) internal returns (Option storage) {
+    /**
+        @notice Extends an OptionData array if needed, and returns an Option struct
+        @param _id investor ID
+        @param _price exercise price to add
+        @return Option struct
+     */
+    function _saveOption(
+        bytes32 _id,
+        uint32 _price,
+        bool _iso
+    )
+        internal
+        returns (Option storage)
+    {
         uint32 _expires = _getEpoch(expirationMonths);
         uint256 i = optionData[_id][_price].length;
         if (i > 0 && optionData[_id][_price][i-1].expiryDate == _expires) {
+            /* struct exists for this expiration date */
+            require(_iso == optionData[_id][_price][i-1].iso); // dev: iso mismatch
             return optionData[_id][_price][i-1];
         }
+        /* add new struct to end of array */
         optionData[_id][_price].length++;
         Option storage o = optionData[_id][_price][i];
-        o.iso = true;
+        if (_iso) {
+            o.iso = _iso;
+        }
         o.expiryDate = _expires;
         o.length = expirationMonths;
         return o;
@@ -324,29 +357,32 @@ contract VestedOptions is STModuleBase {
         payable
         returns (bool)
     {
-        require (
-            ethPeg.mul(_amount).mul(_price) == msg.value,
-            "Incorrect Payment Amount"
-        );
-        bytes32 _id = issuer.getID(msg.sender);
+        require (ethPeg.mul(_amount).mul(_price) == msg.value, "Incorrect payment");
 
+        bytes32 _id = issuer.getID(msg.sender);
         Option[] storage o = optionData[_id][_price];
-        require(o.length > 1);
+        require(o.length > 0, "No options at this price");
+
         uint64 _remaining = _amount;
-        _updateVestMap(_price);
+        _updateOptionTotal(_price);
         for (uint256 i; i < o.length; i++) {
-            _updateOptionVestMap(o[i]);
+            /* iterate Options and reduce vested amounts */
+            _updateOption(o[i]);
             if (o[i].vested == 0) continue;
             if (o[i].vested < _remaining) {
                 _remaining = _remaining.sub(o[i].vested);
                 o[i].vested = 0;
                 continue;
             }
+            /* success! reduce totals */
             o[i].vested = o[i].vested.sub(_remaining);
             totalAtPrice[_price].vested = totalAtPrice[_price].vested.sub(_amount);
-            receiver.transfer(address(this).balance);
+            _removeOptionTotal(_price);
             totalOptions = totalOptions.sub(_amount);
             totalVestedOptions = totalVestedOptions.sub(_amount);
+
+            /* transfer eth, mint tokens */
+            receiver.transfer(address(this).balance);
             require(token.mint(msg.sender, _amount));
             return true;
         }
@@ -354,27 +390,30 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
-        @notice modify vesting date for one or more groups of options
-        @dev time to vest can only be shortened, not extended
+        @notice Immediately vest all options for a given investor ID
         @param _id investor ID
         @return bool success
      */
     function accellerateVesting(bytes32 _id) external returns (bool) {
         if (!_onlyAuthority()) return false;
-        
+
         uint64 _grandTotal;
         uint32 _price = totalLimits[0];
 
+        /* iterate exercise prices */
         for (uint256 i; i < totalLength; i++) {
             Option[] storage o = optionData[_id][_price];
             if (o.length > 0) {
                 uint64 _total = 0;
+                /* iterate Options, increase vested total by unvested total */
                 for (uint256 x = 0; x < o.length; x++) {
                     if (o[x].unvested == 0) continue;
                     o[x].vested = o[x].vested.add(o[x].unvested);
-                    _total = _total.add(_deleteUnvestedOptions(o, _price, 0));
                 }
+                /* remove unvested totals from Option vestMaps */
+                _total = _deleteUnvestedOptions(o, _price, 0);
                 if (_total > 0) {
+                    /* modify totals */
                     totalAtPrice[_price].vested = totalAtPrice[_price].vested.add(_total);
                     _grandTotal = _grandTotal.add(_total);
                 }
@@ -382,14 +421,15 @@ contract VestedOptions is STModuleBase {
             _price = totalAtPrice[_price].next;
         }
         totalVestedOptions = totalVestedOptions.add(_grandTotal);
+        return true;
     }
 
     /**
         @notice Terminate options
         @dev
-            Terminates all options associated with an investor ID. Any
-            groups that had already vested will still be available for
-            terminationGracePeriod seconds.
+            Terminates all unvested options associated with an investor ID.
+            Options that have already vested will have their expiration date
+            decreased to gracePeriodMonths * 2592000
         @param _id Investor ID
         @return bool success
      */
@@ -402,7 +442,9 @@ contract VestedOptions is STModuleBase {
         for (uint256 i; i < totalLength; i++) {
             Option[] storage o = optionData[_id][_price];
             if (o.length > 0) {
-                _grandTotal = _grandTotal.add(_deleteUnvestedOptions(o, _price, gracePeriodMonths));
+                _grandTotal = _grandTotal.add(
+                    _deleteUnvestedOptions(o, _price, gracePeriodMonths)
+                );
             }
             _price = totalAtPrice[_price].next;
         }
@@ -417,20 +459,21 @@ contract VestedOptions is STModuleBase {
         internal
         returns (uint64 _total)
     {
-        _updateVestMap(_price);
+        _updateOptionTotal(_price);
         uint64[2][1657] storage _vestMap = totalAtPrice[_price].vestMap;
         uint256 _tMax = totalAtPrice[_price].length - 1;
-        for (uint256 i; i < _tMax; i++) {
+        for (uint256 i; i <= o.length; i++) {
 
             // ensure vestMap is accurate
-            _updateOptionVestMap(o[i]);
+            _updateOption(o[i]);
+            if (o[i].length == 0) continue;
 
             // delete unvested options
             uint256 _oMax = o[i].length - 1;
-            _tMax = _tMax.sub(_oMax);
+            uint256 _tMin = _tMax.sub(_oMax);
             for (uint256 x = _oMax; x+1 == 0; x--) {
                 if (o[i].vestMap[x] == 0) continue;
-                _vestMap[_tMax+x][0] = _vestMap[_tMax+x][0].sub(o[i].vestMap[x]);
+                _vestMap[_tMin+x][0] = _vestMap[_tMin+x][0].sub(o[i].vestMap[x]);
             }
             _total = _total.add(o[i].unvested);
             o[i].unvested = 0;
@@ -465,20 +508,20 @@ contract VestedOptions is STModuleBase {
             require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions);
         }
         return true;
-        
     }
 
     /**
-        @notice update the option totals for a given OptionTotal struct
+        @notice advance vestMap and update totals for an OptionTotal struct
+        @dev also updates totalOptions and totalVestedOptions
         @param _price exercise price to update
      */
-    function _updateVestMap(uint32 _price) internal {
-        /** if expected length == actual length, values are up to date */
+    function _updateOptionTotal(uint32 _price) internal {
+        /* if expected length == actual length, values are up to date */
         OptionTotal storage t = totalAtPrice[_price];
         uint256 _length = FINAL_MONTH.sub(now).div(2592000);
         if (_length == t.length) return;
 
-        /** sum expired and vested options for months that have passed */
+        /* sum expired and vested options for months that have passed */
         uint64 _expiredTotal;
         uint64 _vestedTotal;
         for (uint256 i = _length; i < t.length; i++) {
@@ -488,39 +531,52 @@ contract VestedOptions is STModuleBase {
             delete t.vestMap[i];
         }
 
-        /** adjust totals and remove previous months */
+        /* adjust totals and remove previous months */
         totalOptions = totalOptions.sub(_expiredTotal);
         totalVestedOptions = totalVestedOptions.add(_vestedTotal).sub(_expiredTotal);
         t.vested = t.vested.add(_vestedTotal).sub( _expiredTotal);
         t.unvested = t.unvested.sub(_vestedTotal);
-        t.length = uint32(_length);
-        _removeExercisePrice(_price);
+
+        /* only store length if entry was not removed */
+        if (!_removeOptionTotal(_price)) {
+            t.length = uint32(_length);
+        }
     }
 
-    function _updateOptionVestMap(Option storage o) internal {
+    /**
+        @notice advance vestMap and update totals for an Option struct
+        @dev
+            this method does not update any totals outside of the struct, it
+            should only be called along with _updateOptionTotal
+        @param o Option storage pointer
+     */
+    function _updateOption(Option storage o) internal {
+        /* if expected length == actual length, values are up to date */
         uint32 _length = o.expiryDate.sub(uint32(now)).div(2592000);
         if (_length >= o.length) return;
 
-        uint64 _total;
+        /* sum vested options for months that have passed */
+        uint64 _vestedTotal;
         for (uint256 i = _length; i < o.length; i++) {
             if (o.vestMap[i] == 0) continue;
-            _total = _total.add(o.vestMap[i]);
+            _vestedTotal = _vestedTotal.add(o.vestMap[i]);
             delete o.vestMap[i];
         }
-        o.vested = o.vested.add(_total);
-        o.unvested = o.unvested.sub(_total);
+
+        /* adjust totals and remove previous months */
+        o.vested = o.vested.add(_vestedTotal);
+        o.unvested = o.unvested.sub(_vestedTotal);
         o.length = _length;
     }
 
-
-
-    function _getIndex(uint256 _epoch) internal pure returns (uint256) {
-        return FINAL_MONTH.sub(_epoch) / 2592000;
-    }
-
-    function _removeExercisePrice(uint32 _price) internal {
+    /**
+        @notice check if an OptionTotal is empty, and if yes remove it
+        @param _price exercise price to check / remove
+        @return bool was OptionTotal removed?
+     */
+    function _removeOptionTotal(uint32 _price) internal returns (bool) {
         OptionTotal storage t = totalAtPrice[_price];
-        if (t.vested > 0 || t.unvested > 0) return;
+        if (t.vested > 0 || t.unvested > 0) return false;
         totalLength = totalLength.sub(1);
         if (totalLimits[0] == _price) {
             totalLimits[0] = t.next;
@@ -534,9 +590,14 @@ contract VestedOptions is STModuleBase {
         if (t.next != 0) {
             totalAtPrice[t.next].prev = t.prev;
         }
-        delete totalAtPrice[_price];
+        t.set = false;
+        t.prev = 0;
+        t.next = 0;
+        t.length = 0;
+        return true;
     }
 
+    /** @dev generate an epoch time based on a number of months */
     function _getEpoch(uint32 _months) internal view returns (uint32) {
         uint32 _now = uint32(now.div(2592000).add(1).mul(2592000));
         return _now.add(_months.mul(2592000));

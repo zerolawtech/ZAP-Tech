@@ -323,6 +323,51 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
+        @notice exercise vested options
+        @dev payable method, payment must exactly equal:
+            exercise price * amount * eth peg
+        @param _price option exercise price
+        @param _amount number of options to exercise
+        @return bool success
+     */
+    function exerciseOptions(
+        uint32 _price,
+        uint64 _amount
+    )
+        external
+        payable
+        returns (bool)
+    {
+        require (
+            ethPeg.mul(_amount).mul(_price) == msg.value,
+            "Incorrect Payment Amount"
+        );
+        bytes32 _id = issuer.getID(msg.sender);
+
+        Option[] storage o = optionData[_id][_price];
+        require(o.length > 1);
+        uint64 _remaining = _amount;
+        _updateVestMap(_price);
+        for (uint256 i; i < o.length; i++) {
+            _updateOptionVestMap(o[i]);
+            if (o[i].vested == 0) continue;
+            if (o[i].vested < _remaining) {
+                _remaining = _remaining.sub(o[i].vested);
+                o[i].vested = 0;
+                continue;
+            }
+            o[i].vested = o[i].vested.sub(_remaining);
+            totalAtPrice[_price].vested = totalAtPrice[_price].vested.sub(_amount);
+            receiver.transfer(address(this).balance);
+            totalOptions = totalOptions.sub(_amount);
+            totalVestedOptions = totalVestedOptions.sub(_amount);
+            require(token.mint(msg.sender, _amount));
+            return true;
+        }
+        revert("Insufficient vested options");
+    }
+
+    /**
         @notice modify vesting date for one or more groups of options
         @dev time to vest can only be shortened, not extended
         @param _id investor ID

@@ -134,7 +134,7 @@ contract VestedOptions is STModuleBase {
     function sortedTotals() external view returns (uint256[2][]) {
         uint256[2][] memory _options = new uint256[2][](totalLength);
         uint32 _price = totalLimits[0];
-        for (uint256 i = 0; i < totalLength; i++) {
+        for (uint256 i; i < totalLength; i++) {
             _updateVestMap(_price);
             _options[i] = [uint256(_price), totalAtPrice[_price].vested];
             _price = totalAtPrice[_price].next;
@@ -149,50 +149,36 @@ contract VestedOptions is STModuleBase {
         @return number of options that are in the money
         @return aggregate exercise price for in-money options
      */
-    // function getInMoneyOptions(
-    //     bytes32 _id,
-    //     uint256 _perShareConsideration
-    // )
-    //     external
-    //     view
-    //     returns (
-    //         uint256 _optionCount,
-    //         uint256 _totalExercisePrice
-    //     )
-    // {
-    //     Option[] storage o = optionData[_id];
-    //     for (uint i; i < o.length; i++) {
-    //         if (o[i].exercisePrice >= _perShareConsideration) continue;
-    //         if (o[i].vestDate > now) continue;
-    //         if (o[i].expiryDate < now) continue;
-    //         uint256 _price = uint256(o[i].amount).mul(o[i].exercisePrice);
-    //         _totalExercisePrice = _totalExercisePrice.add(_price);
-    //         _optionCount = _optionCount.add(o[i].amount);
-    //     }
-    //     return (_optionCount, _totalExercisePrice);
-    // }
-
-    // function getOptions(
-    //     bytes32 _id,
-    //     uint256 _index
-    // )
-    //     external
-    //     view
-    //     returns (
-    //         uint256 _amount,
-    //         uint256 _price,
-    //         uint256 _vestDate,
-    //         uint256 _expiryDate
-    //     )
-    // {
-    //     Option storage o = optionData[_id][_index];
-    //     return (
-    //         o.amount,
-    //         o.exercisePrice,
-    //         o.vestDate,
-    //         o.expiryDate
-    //     );
-    // }
+    function getInMoneyOptions(
+        bytes32 _id,
+        uint256 _perShareConsideration
+    )
+        external
+        view
+        returns (
+            uint256 _optionCount,
+            uint256 _totalExercisePrice
+        )
+    {
+        uint32 _price = totalLimits[0];
+        for (uint256 i; i < totalLength; i++) {
+            if (_price >= _perShareConsideration) break;
+            Option[] storage o = optionData[_id][_price];
+            if (o.length > 0) {
+                _updateVestMap(_price);
+                uint256 _total = 0;
+                for (uint256 x = 0; x < o.length; x++) {
+                    _updateOptionVestMap(o[x]);
+                    if (o[x].vested == 0) continue;
+                    _total = _total.add(o[x].vested);
+                    _totalExercisePrice = _totalExercisePrice.add(o[x].vested.mul(_price));
+                }
+                _optionCount = _optionCount.add(_total);
+            }
+            _price = totalAtPrice[_price].next;
+        }
+        return (_optionCount, _totalExercisePrice);
+    }
 
     /**
         @notice Modify eth peg

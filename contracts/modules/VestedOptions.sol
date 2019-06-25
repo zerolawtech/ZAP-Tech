@@ -16,9 +16,9 @@ contract VestedOptions is STModuleBase {
     string public constant name = "Options";
     uint256 constant FINAL_MONTH = 4294944000;
 
-    uint256 public totalOptions;
-    uint256 public totalVestedOptions;
-    uint256 public ethPeg;
+    uint64 public totalOptions;
+    uint64 public totalVestedOptions;
+    uint64 public ethPeg;
     uint32 public expirationMonths;
     uint32 public gracePeriodMonths;
     address public receiver;
@@ -107,7 +107,7 @@ contract VestedOptions is STModuleBase {
     constructor(
         SecurityToken _token,
         address _issuer,
-        uint256 _ethPeg,
+        uint64 _ethPeg,
         uint32 _expireMonths,
         uint32 _gracePeriodMonths,
         address _receiver
@@ -130,10 +130,10 @@ contract VestedOptions is STModuleBase {
         @return dynamic array of (exercise price, total vested options at price)
      */
     function getSortedTotals() external view returns (uint256[2][]) {
+        _updateAllOptionTotals();
         uint256[2][] memory _options = new uint256[2][](totalLength);
         uint32 _price = totalLimits[0];
         for (uint256 i; i < totalLength; i++) {
-            _updateOptionTotal(_price);
             _options[i] = [uint256(_price), totalAtPrice[_price].vested];
             _price = totalAtPrice[_price].next;
         }
@@ -177,9 +177,9 @@ contract VestedOptions is STModuleBase {
     {
         uint256 _length;
         uint32 _price = totalLimits[0];
+        _updateAllOptionTotals();
         for (uint256 i; i < totalLength; i++) {
             if (optionData[_id][_price].length > 0) {
-                _updateOptionTotal(_price);
                 _length++;
             }
             _price = totalAtPrice[_price].next;
@@ -281,7 +281,7 @@ contract VestedOptions is STModuleBase {
         @param _peg new peg value
         @return bool
      */
-    function modifyPeg(uint256 _peg) external returns (bool) {
+    function modifyPeg(uint64 _peg) external returns (bool) {
         if (!_onlyAuthority()) return false;
         ethPeg = _peg;
         emit EthPegSet(_peg);
@@ -315,11 +315,11 @@ contract VestedOptions is STModuleBase {
         Option storage o = _saveOption(_id, _price, _iso);
 
         uint64 _total;
-        uint256 _tMax = t.vestMap.length - 1;
+        uint256 _tMax = t.length - 1;
         uint256 _oMax = expirationMonths - 1;
 
         for (uint256 i; i < _amount.length; i++) {
-            require(_monthsToVest[i] < expirationMonths);
+            require(_monthsToVest[i] <= _oMax); // dev: vest > expiration
 
             /* add to Option and OptionTotal vestMaps */
             uint256 _idx = _tMax - _monthsToVest[i];
@@ -338,7 +338,7 @@ contract VestedOptions is STModuleBase {
         o.unvested = o.unvested.add(_total);
         t.unvested = t.unvested.add(_total);
         totalOptions = totalOptions.add(_total);
-        require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions);
+        require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions); // dev: exceeds authorized
         // TODO emit event
         return true;
     }
@@ -408,15 +408,16 @@ contract VestedOptions is STModuleBase {
         returns (Option storage)
     {
         uint32 _expires = _getEpoch(expirationMonths);
-        uint256 i = optionData[_id][_price].length;
-        if (i > 0 && optionData[_id][_price][i-1].expiryDate == _expires) {
+        Option[] storage _options = optionData[_id][_price];
+        uint256 i = _options.length;
+        if (i > 0 && _options[i-1].expiryDate == _expires) {
             /* struct exists for this expiration date */
-            require(_iso == optionData[_id][_price][i-1].iso); // dev: iso mismatch
-            return optionData[_id][_price][i-1];
+            require(_iso == _options[i-1].iso); // dev: iso mismatch
+            return _options[i-1];
         }
         /* add new struct to end of array */
-        optionData[_id][_price].length++;
-        Option storage o = optionData[_id][_price][i];
+        _options.length++;
+        Option storage o = _options[i];
         if (_iso) {
             o.iso = _iso;
         }
@@ -605,6 +606,15 @@ contract VestedOptions is STModuleBase {
         return true;
     }
 
+    function _updateAllOptionTotals() internal {
+        uint32 _price = totalLimits[0];
+        while (_price != 0) {
+            uint32 _next = totalAtPrice[_price].next;
+            _updateOptionTotal(_price);
+            _price = _next;
+        }
+    }
+
     /**
         @notice advance vestMap and update totals for an OptionTotal struct
         @dev also updates totalOptions and totalVestedOptions
@@ -627,10 +637,14 @@ contract VestedOptions is STModuleBase {
         }
 
         /* adjust totals and remove previous months */
-        totalOptions = totalOptions.sub(_expiredTotal);
-        totalVestedOptions = totalVestedOptions.add(_vestedTotal).sub(_expiredTotal);
-        t.vested = t.vested.add(_vestedTotal).sub( _expiredTotal);
-        t.unvested = t.unvested.sub(_vestedTotal);
+        if (_vestedTotal > 0) {
+            totalVestedOptions = totalVestedOptions.add(_vestedTotal).sub(_expiredTotal);
+            t.vested = t.vested.add(_vestedTotal).sub( _expiredTotal);
+            t.unvested = t.unvested.sub(_vestedTotal);
+        }
+        if (_expiredTotal > 0) {
+            totalOptions = totalOptions.sub(_expiredTotal);
+        }
 
         /* only store length if entry was not removed */
         if (!_removeOptionTotal(_price)) {
@@ -647,8 +661,11 @@ contract VestedOptions is STModuleBase {
      */
     function _updateOption(Option storage o) internal {
         /* if expected length == actual length, values are up to date */
-        uint32 _length = o.expiryDate.sub(uint32(now)).div(2592000);
-        if (_length >= o.length) return;
+        uint32 _length;
+        if (now < o.expiryDate) {
+            _length = o.expiryDate.sub(uint32(now)).div(2592000);
+            if (_length >= o.length) return;
+        }
 
         /* sum vested options for months that have passed */
         uint64 _vestedTotal;

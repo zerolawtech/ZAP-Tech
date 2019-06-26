@@ -195,10 +195,11 @@ contract VestedOptions is STModuleBase {
         while (_price != 0) {
             Option[] storage o = optionData[_id][_price];
             if (o.length > 0) {
-                _exercisePrices[i] = [_price, o.length];
+                _exercisePrices[i][0] = _price;
                 i++;
                 for (uint256 x = 0; x < o.length; x++) {
-                    _updateOption(o[x]);
+                    if (!_updateOption(o[x])) continue;
+                    _exercisePrices[i][1]++;
                     _vestedTotal = _vestedTotal.add(o[x].vested);
                     _unvestedTotal = _unvestedTotal.add(o[x].unvested);
                 }
@@ -212,13 +213,13 @@ contract VestedOptions is STModuleBase {
         @notice get detailed information about specific options for an investor
         @param _id investor ID
         @param _price exercise price
-        @param _idx option array index (use getOptions for possible values)
+        @param _index option array index (use getOptions for possible values)
         @return vested total, unvested total, iso bool, expiry date, vestMap (ascending)
      */
-    function getOptionsAtPrice(
+    function getOptionsAt(
         bytes32 _id,
         uint32 _price,
-        uint256 _idx
+        uint256 _index
     )
         external
         view
@@ -230,14 +231,22 @@ contract VestedOptions is STModuleBase {
             uint32[] _vestMap
         )
     {
-        Option storage o = optionData[_id][_price][_idx];
-        if (!_updateOptionTotal(_price)) return;
-        _updateOption(o);
-        _vestMap = new uint32[](o.length);
-        for (uint256 i; i < o.length; i++) {
-            _vestMap[i] = o.vestMap[o.length-1-i];
+        require(_updateOptionTotal(_price)); // dev: no OptionTotal
+        uint256 _idx = _index;
+        for (uint256 i; i < optionData[_id][_price].length; i++) {
+            Option storage o = optionData[_id][_price][i];
+            if (o.length == 0 || !_updateOption(o)) continue;
+            if (_idx > 0) {
+                _idx--;
+                continue;
+            }
+            _vestMap = new uint32[](o.length);
+            for (i = 0; i < _vestMap.length; i++) {
+                _vestMap[i] = o.vestMap[_vestMap.length-1-i];
+            }
+            return (o.vested, o.unvested, o.iso, o.expiryDate, _vestMap);
         }
-        return (o.vested, o.unvested, o.iso, o.expiryDate, _vestMap);
+        revert(); // dev: out of bounds
     }
 
     /**
@@ -608,6 +617,7 @@ contract VestedOptions is STModuleBase {
         @notice advance vestMap and update totals for an OptionTotal struct
         @dev also updates totalOptions and totalVestedOptions
         @param _price exercise price to update
+        @return boolean - true if OptionTotal was NOT deleted
      */
     function _updateOptionTotal(uint32 _price) internal returns (bool) {
         /* if expected length == actual length, values are up to date */
@@ -648,13 +658,14 @@ contract VestedOptions is STModuleBase {
             this method does not update any totals outside of the struct, it
             should only be called along with _updateOptionTotal
         @param o Option storage pointer
+        @return boolean - true if option has NOT expired
      */
-    function _updateOption(Option storage o) internal {
+    function _updateOption(Option storage o) internal returns (bool) {
         /* if expected length == actual length, values are up to date */
         uint32 _length;
         if (now < o.expiryDate) {
             _length = o.expiryDate.sub(uint32(now)).div(2592000);
-            if (_length >= o.length) return;
+            if (_length >= o.length) return _length > 0;
         }
 
         /* sum vested options for months that have passed */
@@ -666,9 +677,10 @@ contract VestedOptions is STModuleBase {
         }
 
         /* adjust totals and remove previous months */
-        o.vested = o.vested.add(_vestedTotal);
+        o.vested = (_length > 0 ? o.vested.add(_vestedTotal) : 0);
         o.unvested = o.unvested.sub(_vestedTotal);
         o.length = _length;
+        return _length > 0;
     }
 
     /**

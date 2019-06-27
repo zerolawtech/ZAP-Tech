@@ -461,19 +461,23 @@ contract VestedOptions is STModuleBase {
         OptionBase storage b = optionData[_id][_price];
         uint256 i = b.start;
         uint256 _end = i + b.length;
-        for (i; i < _end; i++) {
-            /* iterate Options and reduce vested amounts */
+        for (i; i< _end; i++) {
             Option storage o = b.options[i];
             _updateOption(o);
             if (o.vested == 0) continue;
-            if (o.vested < _remaining) {
+            if (o.vested <= _remaining) {
                 _remaining = _remaining.sub(o.vested);
                 o.vested = 0;
-                continue;
+                if (o.unvested == 0) {
+                    o.length = 0;
+                }
+            } else {
+                o.vested = o.vested.sub(_remaining);
+                _remaining = 0;
             }
+            if (_remaining > 0) continue;
 
             /* success! reduce totals */
-            o.vested = o.vested.sub(_remaining);
             totalAtPrice[_price].vested = totalAtPrice[_price].vested.sub(_amount);
             _removeOptionTotal(_price);
             totalOptions -= _amount;
@@ -708,22 +712,29 @@ contract VestedOptions is STModuleBase {
         uint32 _length;
         if (now < o.expiryDate) {
             _length = o.expiryDate.sub(uint32(now)).div(2592000);
-            if (_length >= o.length) return true;
+            if (_length >= o.length) return o.length > 0;
+        }
+        if (_length == 0) {
+            o.length = 0;
+            return false;
         }
 
         /* sum vested options for months that have passed */
+        uint256 i = _length;
         uint32 _vestedTotal;
-        for (uint256 i = _length; i < o.length; i++) {
-            if (o.vestMap[i] == 0) continue;
-            _vestedTotal = _vestedTotal.add(o.vestMap[i]);
-            delete o.vestMap[i];
+        while (_vestedTotal < o.unvested && i < o.length) {
+            if (o.vestMap[i] > 0) {
+                _vestedTotal = _vestedTotal.add(o.vestMap[i]);
+                delete o.vestMap[i];
+            }
+            i++;
         }
 
         /* adjust totals and remove previous months */
-        o.vested = (_length > 0 ? o.vested.add(_vestedTotal) : 0);
+        o.vested = o.vested.add(_vestedTotal);
         o.unvested = o.unvested.sub(_vestedTotal);
         o.length = _length;
-        return _length > 0;
+        return true;
     }
 
     /**

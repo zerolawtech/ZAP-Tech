@@ -15,15 +15,15 @@ contract VestedOptions is STModuleBase {
     string public constant name = "Options";
     uint256 constant FINAL_MONTH = 4294944000;
 
-    uint64 public totalOptions;
+    address public receiver;
     uint32 public ethPeg;
     uint32 public expirationMonths;
     uint32 public gracePeriodMonths;
-    address public receiver;
+    uint64 total;
 
     /** linked list */
-    uint32[2] totalLimits;
     uint32 totalLength;
+    uint32[2] totalLimits;
     mapping (uint32 => OptionTotal) public totalAtPrice;
     mapping (bytes32 => mapping (uint32 => OptionBase)) optionData;
 
@@ -127,20 +127,25 @@ contract VestedOptions is STModuleBase {
         emit EthPegSet(_ethPeg);
     }
 
-    /**
-        @notice get total amount of vested options at each exercise price
-        @dev array is sorted by exercise price ascending
-        @return dynamic array of (exercise price, total vested options at price)
-     */
-    function getSortedTotals() external view returns (uint256[2][] _options) {
+    function totalOptions() public view returns (uint256) {
         uint32 _price = totalLimits[0];
         while (_price != 0) {
             uint32 _next = totalAtPrice[_price].next;
             _updateOptionTotal(_price);
             _price = _next;
         }
+        return total;
+    }
+
+    /**
+        @notice get total amount of vested options at each exercise price
+        @dev array is sorted by exercise price ascending
+        @return dynamic array of (exercise price, total vested options at price)
+     */
+    function getSortedTotals() external view returns (uint256[2][] _options) {
+        totalOptions();
         _options = new uint256[2][](totalLength);
-        _price = totalLimits[0];
+        uint32 _price = totalLimits[0];
         for (uint256 i; i < _options.length; i++) {
             _options[i] = [uint256(_price), totalAtPrice[_price].vested];
             _price = totalAtPrice[_price].next;
@@ -352,8 +357,8 @@ contract VestedOptions is STModuleBase {
         /* increase totals, final check */
         o.unvested = o.unvested.add(_total);
         t.unvested = t.unvested.add(_total);
-        totalOptions += _total;
-        require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions); // dev: exceeds authorized
+        total += _total;
+        require(token.authorizedSupply().sub(token.totalSupply()) >= total); // dev: exceeds authorized
         emit NewOptions( _id, _iso, _price, o.expiryDate, _amount, _monthsToVest);
         return true;
     }
@@ -480,7 +485,7 @@ contract VestedOptions is STModuleBase {
             /* success! reduce totals */
             totalAtPrice[_price].vested = totalAtPrice[_price].vested.sub(_amount);
             _removeOptionTotal(_price);
-            totalOptions -= _amount;
+            total -= _amount;
 
             /* transfer eth, mint tokens */
             receiver.transfer(address(this).balance);
@@ -554,7 +559,7 @@ contract VestedOptions is STModuleBase {
             }
             _price = _next;
         }
-        totalOptions -= _grandTotal;
+        total -= _grandTotal;
         emit TerminatedOptions(_id, _grandTotal);
         return true;
     }
@@ -622,7 +627,7 @@ contract VestedOptions is STModuleBase {
         returns (bool)
     {
         if (_old > _new) {
-            require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions);
+            require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions());
         }
         return true;
     }
@@ -656,7 +661,7 @@ contract VestedOptions is STModuleBase {
             t.unvested = t.unvested.sub(_vestedTotal);
         }
         if (_expiredTotal > 0) {
-            totalOptions -= _expiredTotal;
+            total -= _expiredTotal;
         }
 
         /* only store length if entry was not removed */

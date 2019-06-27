@@ -238,8 +238,14 @@ contract VestedOptions is STModuleBase {
         require(_updateOptionBase(_id, _price));
         OptionBase storage b = optionData[_id][_price];
         uint256 _idx = _index + b.start;
-        require(_idx <= b.start+b.length);
+        require(_idx <= b.start+b.length-1);
         Option storage o = b.options[_idx];
+
+        _vestMap = new uint32[](o.length);
+        for (uint256 i; i < _vestMap.length; i++) {
+            _vestMap[i] = o.vestMap[_vestMap.length-1-i];
+        }
+
         return (o.vested, o.unvested, o.iso, o.expiryDate, _vestMap);
     }
 

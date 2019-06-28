@@ -340,13 +340,11 @@ contract VestedOptions is STModuleBase {
 
         for (uint256 i; i < _amount.length; i++) {
             require(_monthsToVest[i] < _max[1]); // dev: vest > expiration
-
             /* add to Option and OptionTotal vestMaps */
             uint256 _idx = _max[0] - _monthsToVest[i];
             t.vestMap[_idx][0] = t.vestMap[_idx][0].add(_amount[i]);
             _idx = _max[1] - _monthsToVest[i];
             o.vestMap[_idx] = o.vestMap[_idx].add(_amount[i]);
-
             _total = _total.add(_amount[i]);
         }
 
@@ -466,7 +464,7 @@ contract VestedOptions is STModuleBase {
         OptionBase storage b = optionData[_id][_price];
         uint256 i = b.start;
         uint256 _end = i + b.length;
-        for (i; i< _end; i++) {
+        for (i; i < _end; i++) {
             Option storage o = b.options[i];
             _updateOption(o);
             if (o.vested == 0) continue;
@@ -513,16 +511,8 @@ contract VestedOptions is STModuleBase {
             if (_updateOptionBase(_id, _price)) {
                 OptionBase storage b = optionData[_id][_price];
                 uint32 _total = 0;
-                uint256 i = b.start;
-                uint256 _end = i + b.length;
-                /* iterate Options, increase vested total by unvested total */
-                for (i; i < _end; i++) {
-                    Option storage o = b.options[i];
-                    if (o.unvested == 0) continue;
-                    o.vested = o.vested.add(o.unvested);
-                }
                 /* remove unvested totals from Option vestMaps */
-                _total = _deleteUnvestedOptions(b, _price, 0);
+                _total = _accellerateOrTerminate(b, _price, 0);
                 if (_total > 0) {
                     /* modify totals */
                     totalAtPrice[_price].vested = totalAtPrice[_price].vested.add(_total);
@@ -551,7 +541,7 @@ contract VestedOptions is STModuleBase {
         while (_price != 0) {
             uint32 _next = totalAtPrice[_price].next;
             if (_updateOptionBase(_id, _price)) {
-                _grandTotal = _grandTotal.add(_deleteUnvestedOptions(
+                _grandTotal = _grandTotal.add(_accellerateOrTerminate(
                     optionData[_id][_price],
                     _price,
                     gracePeriodMonths
@@ -565,14 +555,17 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
-        @notice Delete unvested options
-        @dev if _gracePeriod is left as 0, it is not adjusted
+        @notice Shared logic for accellerating and terminating unvested options
+        @dev
+            if _gracePeriod == 0, unvested options become vested
+            if _gracePeriod > 0, unvested are removed and vested have their
+            expiration date adjusted
         @param b storage pointer to OptionBase
         @param _price Option exercise price
         @param _gracePeriod Adjusted grace period for vested options
         @return total deleted options
      */
-    function _deleteUnvestedOptions(
+    function _accellerateOrTerminate(
         OptionBase storage b,
         uint32 _price,
         uint32 _gracePeriod 
@@ -581,32 +574,45 @@ contract VestedOptions is STModuleBase {
         returns (uint32 _total)
     {
         uint32[2][1657] storage _vestMap = totalAtPrice[_price].vestMap;
-        uint256 _tMax = totalAtPrice[_price].length - 1;
+        uint256 _max = totalAtPrice[_price].length;
 
         uint256 i = b.start;
         uint256 _end = i + b.length;
-        for (i; i <= _end; i++) {
-            Option storage o = b.options[i];
+        for (i; i < _end; i++) {
+
             /* ensure Option vestMap is accurate */
+            Option storage o = b.options[i];
             _updateOption(o);
 
-            /* iterate vestMap, delete unvested options */
-            uint256 _oMax = o.length - 1;
-            uint256 _tMin = _tMax.sub(_oMax);
-            for (uint256 x = _oMax; x+1 == 0; x--) {
-                if (o.vestMap[x] == 0) continue;
-                _vestMap[_tMin+x][0] = _vestMap[_tMin+x][0].sub(o.vestMap[x]);
+            uint256 _min = _max - o.length;
+            if (_gracePeriod == 0) {
+                /* set unvested to vested */
+                if (o.unvested > 0) {
+                    o.vested = o.vested.add(o.unvested);
+                }
+            } else if (o.length > _gracePeriod) {
+                /* adjust expiration date */
+                _vestMap[_min][1] = _vestMap[_min][1].sub(o.vested).sub(o.unvested);
+                _vestMap[_max-_gracePeriod][1] = _vestMap[_max-_gracePeriod][1].add(o.vested);
+                o.expiryDate = _getEpoch(_gracePeriod);
             }
+            if (o.unvested == 0) continue;
+
+            /* iterate vestMap, delete unvested options */
+            for (uint256 x = 0; x < o.length; x++) {
+                if (o.vestMap[x] == 0) continue;
+                _vestMap[_min+x][0] = _vestMap[_min+x][0].sub(o.vestMap[x]);
+            }
+
             _total = _total.add(o.unvested);
             o.unvested = 0;
-
-            /* adjust expiration date */
-            if (_gracePeriod == 0 || o.length < _gracePeriod) continue;
-            _vestMap[_tMax-o.length][1] = _vestMap[_tMax-o.length][1].sub(o.vested);
-            _vestMap[_tMax-_gracePeriod][1] = _vestMap[_tMax-_gracePeriod][1].add(o.vested);
-            o.expiryDate = _getEpoch(_gracePeriod);
+            if (o.vested == 0) {
+                o.length = 0;
+            }
         }
-        totalAtPrice[_price].unvested = totalAtPrice[_price].unvested.sub(_total);
+        if (_total > 0) {
+            totalAtPrice[_price].unvested = totalAtPrice[_price].unvested.sub(_total);
+        }
         return _total;
     }
 
@@ -656,13 +662,9 @@ contract VestedOptions is STModuleBase {
         }
 
         /* adjust totals and remove previous months */
-        if (_vestedTotal > 0) {
-            t.vested = t.vested.add(_vestedTotal).sub(_expiredTotal);
-            t.unvested = t.unvested.sub(_vestedTotal);
-        }
-        if (_expiredTotal > 0) {
-            total -= _expiredTotal;
-        }
+        t.vested = t.vested.add(_vestedTotal).sub(_expiredTotal);
+        t.unvested = t.unvested.sub(_vestedTotal);
+        total -= _expiredTotal;
 
         /* only store length if entry was not removed */
         if (_removeOptionTotal(_price)) return false;

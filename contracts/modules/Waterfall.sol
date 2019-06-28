@@ -196,7 +196,7 @@ contract WaterfallModule is IssuerModuleBase {
 
         /** determine rational choices for non-participating convertible */
         bool[] memory _convertDecisions = new bool[](_dividendAmounts.length);
-        uint256[2][] memory _options = commonOptions.sortedTotals();
+        uint256[2][] memory _options = commonOptions.getSortedTotals();
         _recursiveConversionCheck(
             _remainingTotal,
             _commonTotalSupply,

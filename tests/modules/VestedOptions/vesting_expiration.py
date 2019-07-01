@@ -21,13 +21,13 @@ def issue_and_vest():
     _sleep(1)
     at_price = list(zip(range(0, 700, 100), range(600, -100, -100)))
     _check(
-        [[i] for i in zip([10] * 7, range(0, 700, 100))],
+        [[(i[0],), (i[1],)] for i in zip([10] * 7, range(0, 700, 100))],
         at_price,
         [i + ([[10, 1]],) for i in at_price]
     )
     _sleep(92)
     _check(
-        [[(10, 600)], [(10, 600)], []],
+        [[(10,), (600,)], [(10,), (600,)], [tuple(), tuple()]],
         [(600, 0), (600, 0), (0, 0)],
         [(600, 0, [(10, 1)]), (600, 0, [(10, 1)]), (0, 0, [])]
     )
@@ -40,13 +40,13 @@ def multiple_same_expiration():
     _sleep(1)
     at_price = list(zip(range(0, 1400, 200), range(1200, -200, -200)))
     _check(
-        [[i] for i in zip([10] * 7, range(0, 1400, 200))],
+        [[(i[0],), (i[1],)] for i in zip([10] * 7, range(0, 1400, 200))],
         at_price,
         [i + ([[10, 1]],) for i in at_price]
     )
     _sleep(93)
     _check(
-        [[(10, 1200)], []],
+        [[(10,), (1200,)], [tuple(), tuple()]],
         [(1200, 0), (0, 0)],
         [(1200, 0, [(10, 1)]), (0, 0, [])]
     )
@@ -61,13 +61,13 @@ def multiple_different_expirations():
 
     at_price = list(zip(range(100, 1300, 200), range(1100, -100, -200)))
     _check(
-        [[i] for i in zip([10] * 7, range(100, 1300, 200))],
+        [[(i[0],), (i[1],)] for i in zip([10] * 7, range(100, 1300, 200))],
         at_price,
         [i + ([[10, 2]],) for i in at_price]
     )
     _sleep(93)
     _check(
-        [[(10, 1200)], [(10, 600)], []],
+        [[(10,), (1200,)], [(10,), (600,)], [tuple(), tuple()]],
         [(1200, 0), (600, 0), (0, 0)],
         [(1200, 0, [(10, 2)]), (600, 0, [(10, 1)]), (0, 0, [])]
     )
@@ -79,13 +79,13 @@ def multiple_investors():
     _issue(id2, 10)
     _sleep(1)
     _check(
-        [[i] for i in zip([10] * 7, range(0, 1400, 200))],
+        [[(i[0],), (i[1],)] for i in zip([10] * 7, range(0, 1400, 200))],
         list(zip(range(0, 1400, 200), range(1200, -200, -200))),
         [i + ([[10, 1]],) for i in list(zip(range(0, 700, 100), range(600, -100, -100)))]
     )
     _sleep(93)
     _check(
-        [[(10, 1200)], []],
+        [[(10,), (1200,)], [tuple(), tuple()]],
         [(1200, 0), (0, 0)],
         [(600, 0, [(10, 1)]), (0, 0, [])]
     )
@@ -97,12 +97,7 @@ def issue_multiple_prices():
     _issue(id1, 20)
     _issue(id1, 25)
     _sleep(1)
-    a = [
-        list(zip([10] * 7, range(0, 700, 100))),
-        list(zip([20] * 7, range(0, 700, 100))),
-        list(zip([25] * 7, range(0, 700, 100)))
-    ]
-    totals = [list(map(itemgetter(i), a)) for i in range(len(a[0]))]
+    totals = [[(10, 20, 25), (i, i, i)] for i in range(0, 700, 100)]
     at_price = list(zip(range(0, 700, 100), range(600, -100, -100)))
 
     _check(
@@ -115,7 +110,7 @@ def issue_multiple_prices():
     )
     _sleep(93)
     _check(
-        [[(10, 600), (20, 600), (25, 600)], []],
+        [[(10, 20, 25), (600, 600, 600)], [tuple(), tuple()]],
         [(600, 0), (0, 0)],
         [(1800, 0, [(10, 1), (20, 1), (25, 1)]), (0, 0, [])]
     )
@@ -125,13 +120,13 @@ def last_month():
     '''lower and upper limits'''
     options.issueOptions(id1, 10, False, [100, 100], [0, 99], {'from': a[0]})
     _check(
-        [[(10, 0)], [(10, 100)]],
+        [[(10,), (0,)], [(10,), (100,)]],
         [(0, 200), (100, 100)],
         [(0, 200, [(10, 1)]), (100, 100, [(10, 1)])]
     )
     _sleep(98)
     _check(
-        [[(10, 100)], [(10, 200)], []],
+        [[(10,), (100,)], [(10,), (200,)], [tuple(), tuple()]],
         [(100, 100), (200, 0), (0, 0)],
         [(100, 100, [(10, 1)]), (200, 0, [(10, 1)]), (0, 0, [])]
     )

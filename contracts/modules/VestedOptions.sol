@@ -142,15 +142,24 @@ contract VestedOptions is STModuleBase {
         @dev array is sorted by exercise price ascending
         @return dynamic array of (exercise price, total vested options at price)
      */
-    function getSortedTotals() external view returns (uint256[2][] _options) {
+    function getSortedTotals()
+        external
+        view
+        returns (
+            uint256[] _exercisePrices,
+            uint256[] _totals
+        )
+    {
         totalOptions();
-        _options = new uint256[2][](totalLength);
+        _exercisePrices = new uint256[](totalLength);
+        _totals = new uint256[](totalLength);
         uint32 _price = totalLimits[0];
-        for (uint256 i; i < _options.length; i++) {
-            _options[i] = [uint256(_price), totalAtPrice[_price].vested];
+        for (uint256 i; i < _totals.length; i++) {
+            _exercisePrices[i] = _price;
+            _totals[i] = totalAtPrice[_price].vested;
             _price = totalAtPrice[_price].next;
         }
-        return _options;
+        return (_exercisePrices, _totals);
     }
 
     /**

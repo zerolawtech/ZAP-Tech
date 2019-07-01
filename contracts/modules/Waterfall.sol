@@ -75,7 +75,7 @@ contract WaterfallModule is IssuerModuleBase {
         @param _token token contract address
         @return uint256 per-share consideration
      */
-    function getPerShare(
+    function getPerShareConsideration(
         address _token
     )
         external
@@ -142,21 +142,75 @@ contract WaterfallModule is IssuerModuleBase {
         require(_dividendAmounts.length == preferredTokenCount);
 
         mergerConsideration = _mergerConsideration;
-        uint256 _remainingTotal = _mergerConsideration;
-        uint256 _commonTotalSupply = commonToken.circulatingSupply();
+        (
+            uint256 _remainingTotal,
+            uint256 _commonTotalSupply,
+            Consideration[] memory _preferred
+        ) = _calculatePreferred(_mergerConsideration, _dividendAmounts);
+
+        /** determine rational choices for non-participating convertible */
+        bool[] memory _convertDecisions = new bool[](_dividendAmounts.length);
+        uint256[][2] memory _options;
+        (_options[0], _options[1]) = commonOptions.getSortedTotals();
+        _recursiveConversionCheck(
+            _remainingTotal,
+            _commonTotalSupply,
+            _preferred,
+            _options,
+            0,
+            _convertDecisions
+        );
+
+        /** calculate final in-money options and common per-share condsideration */
+        for (uint256 i; i < _convertDecisions.length; i++) {
+            if (!_convertDecisions[i]) continue;
+            Consideration memory p = _preferred[i];
+            _commonTotalSupply = _commonTotalSupply.add(p.totalSupply);
+            _remainingTotal = _remainingTotal.add(p.perShare.mul(p.totalSupply));
+            p.perShare = 0;
+        }
+        (_remainingTotal, _commonTotalSupply) = _adjustOptions(
+            _remainingTotal,
+            _commonTotalSupply,
+            _options
+        );
+
+        /** save results to storage */
+        uint256 _commonPerShare = _remainingTotal.div(_commonTotalSupply);
+        perShareConsideration[commonToken] = _commonPerShare;
+        for (i = 0; i < _preferred.length; i++) {
+            p = _preferred[i];
+            if (p.participating) {
+                perShareConsideration[p.token] = p.perShare.add(_commonPerShare);
+            } else {
+                perShareConsideration[p.token] = p.perShare;
+            }
+        }
+    }
+
+    function _calculatePreferred(
+        uint256 _remainingTotal,
+        uint256[] _dividendAmounts
+    )
+        internal
+        returns (
+            uint256,
+            uint256 _commonTotalSupply,
+            Consideration[] memory _preferred
+        )
+    {
+        _commonTotalSupply = commonToken.circulatingSupply();
         uint256 _idx;
-        Consideration[] memory _preferred = new Consideration[](_dividendAmounts.length);
+        _preferred = new Consideration[](_dividendAmounts.length);
 
         /** calculate preferred considerations */
         for (uint256 i = preferredTokens.length - 1; i+1 != 0; i--) {
             PreferredSeries[] storage _tier = preferredTokens[i];
-            uint256 _tierSupply = 0;
             uint256 _tierTotal = 0;
 
-            for (uint256 x = 0; x == _tier.length; x++) {
+            for (uint256 x = 0; x < _tier.length; x++) {
                 Consideration memory p = _preferred[_idx];
                 p.totalSupply = _tier[x].token.circulatingSupply();
-                _tierSupply = _tierSupply.add(p.totalSupply);
                 p.perShare = _tier[x].prefPerShare.add(
                     _dividendAmounts[_idx].div(p.totalSupply)
                 );
@@ -193,44 +247,7 @@ contract WaterfallModule is IssuerModuleBase {
             }
             return;
         }
-
-        /** determine rational choices for non-participating convertible */
-        bool[] memory _convertDecisions = new bool[](_dividendAmounts.length);
-        uint256[2][] memory _options = commonOptions.getSortedTotals();
-        _recursiveConversionCheck(
-            _remainingTotal,
-            _commonTotalSupply,
-            _preferred,
-            _options,
-            0,
-            _convertDecisions
-        );
-
-        /** calculate final in-money options and common per-share condsideration */
-        for (i = 0; i < _convertDecisions.length; i++) {
-            if (!_convertDecisions[i]) continue;
-            p = _preferred[i];
-            _commonTotalSupply = _commonTotalSupply.add(p.totalSupply);
-            _remainingTotal = _remainingTotal.add(p.perShare.mul(p.totalSupply));
-            p.perShare = 0;
-        }
-        (_remainingTotal, _commonTotalSupply) = _adjustOptions(
-            _remainingTotal,
-            _commonTotalSupply,
-            _options
-        );
-
-        /** save results to storage */
-        uint256 _commonPerShare = _remainingTotal.div(_commonTotalSupply);
-        perShareConsideration[commonToken] = _commonPerShare;
-        for (i = 0; i < _preferred.length; i++) {
-            p = _preferred[i];
-            if (p.participating) {
-                perShareConsideration[p.token] = p.perShare.add(_commonPerShare);
-            } else {
-                perShareConsideration[p.token] = p.perShare;
-            }
-        }
+        return (_remainingTotal, _commonTotalSupply, _preferred);
     }
 
     /**
@@ -247,7 +264,7 @@ contract WaterfallModule is IssuerModuleBase {
         uint256 _remainingTotal,
         uint256 _commonTotalSupply,
         Consideration[] memory _preferred,
-        uint256[2][] memory _options,
+        uint256[][2] memory _options,
         uint256 _idx,
         bool[] memory _converts
     )
@@ -341,22 +358,41 @@ contract WaterfallModule is IssuerModuleBase {
     function _adjustOptions(
         uint256 _remainingTotal,
         uint256 _commonTotalSupply,
-        uint256[2][] memory _options
+        uint256[][2] memory _options
     )
         internal
+        pure
         returns (uint256, uint256)
     {
-        for (uint256 i; i < _options.length; i++) {
-            uint256[2] memory o = _options[i];
-            if (_remainingTotal.div(o[1].add(_commonTotalSupply)) <= o[0]) {
+        for (uint256 i; i < _options[0].length; i++) {
+            if (_remainingTotal.div(_options[i][1].add(_commonTotalSupply)) <= _options[i][0]) {
                 /** options >= this price are not in the money */
                 break;
             }
-            _remainingTotal = _remainingTotal.add(o[0].mul(o[1]));
-            _commonTotalSupply = _commonTotalSupply.add(o[1]);
+            _remainingTotal = _remainingTotal.add(_options[i][0].mul(_options[i][1]));
+            _commonTotalSupply = _commonTotalSupply.add(_options[i][1]);
         }
         return (_remainingTotal, _commonTotalSupply);
     }
 
+    /**
+        @notice supply permissions and hook points when attaching module
+        @dev
+            permissions: 0x40c10f19 - mint
+            hooks: 0x741b5078 - totalSupplyChanged
+            hookBools - all true
+     */
+    function getPermissions()
+        external
+        pure
+        returns
+    (
+        bytes4[] permissions,
+        bytes4[] hooks,
+        uint256 hookBools
+    )
+    {
+        return (permissions, hooks, ~uint256(0));
+    }
 
 }

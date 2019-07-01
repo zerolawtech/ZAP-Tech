@@ -303,51 +303,6 @@ contract VestedOptions is STModuleBase {
         return (_optionCount, _totalExercisePrice);
     }
 
-    function getInMoneyOptions(
-        bytes32 _id,
-        uint256 _perShareConsideration
-    )
-        external
-        view
-        returns (
-            uint256 _optionCount,
-            uint256 _totalExercicePrice
-        )
-    {
-        Option[] storage o = optionData[_id];
-        for (uint i; i < o.length; i++) {
-            if (o[i].exercisePrice >= _perShareConsideration) continue;
-            uint256 _price = uint256(o[i].amount).mul(o[i].exercisePrice);
-            _totalExercicePrice = _totalExercicePrice.add(_price);
-            _optionCount = _optionCount.add(o[i].amount);
-        }
-        return (_optionCount, _totalExercicePrice);
-    }
-
-    function getOptions(
-        bytes32 _id,
-        uint256 _index
-    )
-        external
-        view
-        returns (
-            uint256 _amount,
-            uint256 _exercisePrice,
-            uint256 _creationDate,
-            uint256 _vestDate,
-            uint256 _expiryDate
-        )
-    {
-        Option storage o = optionData[_id][_index];
-        return (
-            o.amount,
-            o.exercisePrice,
-            o.creationDate,
-            o.vestDate,
-            uint256(o.creationDate).add(_expiryDate)
-        );
-    }
-
     /**
         @notice Modify eth peg
         @dev

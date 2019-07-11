@@ -81,8 +81,8 @@ def cust(OwnedCustodian, accounts, issuer):
     yield OwnedCustodian[0]
 
 
-@pytest.fixture(scope="module")
-def check_counts(issuer, approve_many):
+@pytest.fixture
+def check_counts(issuer, approve_many, no_call_coverage):
     yield functools.partial(_check_countries, issuer)
 
 

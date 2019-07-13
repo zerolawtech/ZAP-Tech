@@ -7,7 +7,7 @@ from brownie import accounts, rpc
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(token, token2, gov, cp, approve_one, cptime):
+def setup(token, token2, gov, cp, id1, cptime):
     token.mint(accounts[1], 10000, {'from': accounts[0]})
     cp.newCheckpoint(token, cptime, {'from': accounts[0]})
 

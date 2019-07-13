@@ -13,7 +13,7 @@ def test_mint_to_issuer(issuer, token):
     assert token.balanceOf(issuer) == 3000
 
 
-def test_mint_to_investors(approve_many, token):
+def test_mint_to_investors(id1, id2, token):
     '''mint to investors'''
     token.mint(accounts[1], 1000, {'from': accounts[0]})
     assert token.totalSupply() == 1000
@@ -32,7 +32,7 @@ def test_mint_to_investors(approve_many, token):
     assert token.balanceOf(accounts[2]) == 6000
 
 
-def test_burn_from_issuer(issuer, token):
+def test_burn_from_issuer(id1, id2, issuer, token):
     '''burn from issuer'''
     token.mint(issuer, 10000, {'from': accounts[0]})
     token.burn(issuer, 1000, {'from': accounts[0]})

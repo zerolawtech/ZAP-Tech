@@ -4,41 +4,18 @@ import functools
 import itertools
 import pytest
 
+from brownie import accounts
+from brownie.types.convert import to_bytes
+
+
+# test isolation, always use!
 
 @pytest.fixture(autouse=True)
-def isolate(test_isolation):
+def isolation(test_isolation):
     pass
 
 
-@pytest.fixture(scope="module")
-def approve_many(kyc, issuer, accounts):
-    issuer.setCountries((1, 2, 3), (1, 1, 1), (0, 0, 0), {'from': accounts[0]})
-    product = itertools.product((1, 2, 3), (1, 2))
-    for count, country, rating in [(c, i[0], i[1]) for c, i in enumerate(product, start=1)]:
-        kyc.addInvestor(
-            ("investor" + str(count)).encode(),
-            country,
-            '0x000001',
-            rating,
-            9999999999,
-            (accounts[count],),
-            {'from': accounts[0]}
-        )
-
-
-@pytest.fixture(scope="module")
-def approve_one(kyc, issuer, accounts):
-    issuer.setCountries((1, 2, 3), (1, 1, 1), (0, 0, 0), {'from': accounts[0]})
-    kyc.addInvestor(
-        "investor1".encode(),
-        1,
-        '0x000001',
-        1,
-        9999999999,
-        (accounts[1],),
-        {'from': accounts[0]}
-    )
-
+# token deployments / linking
 
 @pytest.fixture(scope="module")
 def token(SecurityToken, issuer, accounts):
@@ -79,6 +56,50 @@ def cust(OwnedCustodian, accounts, issuer):
     accounts[0].deploy(OwnedCustodian, [accounts[0]], 1)
     issuer.addCustodian(OwnedCustodian[0], {'from': accounts[0]})
     yield OwnedCustodian[0]
+
+
+# investor approval
+
+
+@pytest.fixture(scope="module")
+def ownerid(issuer):
+    yield issuer.ownerID()
+
+
+@pytest.fixture(scope="module")
+def set_countries(issuer):
+    issuer.setCountries((1, 2, 3), (1, 1, 1), (0, 0, 0), {'from': accounts[0]})
+
+
+@pytest.fixture(scope="module")
+def id1(set_countries, kyc):
+    yield _add_investor(kyc, 1, 1, 1)
+
+
+@pytest.fixture(scope="module")
+def id2(set_countries, kyc):
+    yield _add_investor(kyc, 2, 1, 2)
+
+
+@pytest.fixture(scope="module")
+def approve_many(id1, id2, kyc):
+    product = list(itertools.product((2, 3), (1, 2)))
+    for count, country, rating in [(c, i[0], i[1]) for c, i in enumerate(product, start=3)]:
+        _add_investor(kyc, count, country, rating)
+
+
+def _add_investor(kyc, i, country, rating):
+    id_ = to_bytes(f"investor{i}".encode()).hex()
+    kyc.addInvestor(
+        id_,
+        country,
+        '0x000001',
+        rating,
+        9999999999,
+        (accounts[i],),
+        {'from': accounts[0]}
+    )
+    return id_
 
 
 @pytest.fixture

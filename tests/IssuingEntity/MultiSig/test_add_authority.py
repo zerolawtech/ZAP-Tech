@@ -31,7 +31,7 @@ def test_repeat_addr(issuer):
         issuer.addAuthority([accounts[-1], accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})
 
 
-def test_known_address(issuer, token, approve_one):
+def test_known_address(issuer, token, id1):
     '''known address'''
     with pytest.reverts("dev: known address"):
         issuer.addAuthority([accounts[0]], [], 2000000000, 1, {'from': accounts[0]})

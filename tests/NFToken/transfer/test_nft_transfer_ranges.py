@@ -4,6 +4,7 @@ import functools
 import pytest
 
 from brownie import accounts
+from brownie.test import skipcoverage
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -82,6 +83,7 @@ def test_one(transfer, ts):
     ts(6)
 
 
+@skipcoverage
 def test_split(transfer, nft, issuer):
     '''many ranges'''
     nft.modifyAuthorizedSupply("1000 gwei", {'from': accounts[0]})

@@ -110,8 +110,17 @@ def test_add_known(issuer, id1):
         )
 
 
-def test_add_other(approve_one, issuer, token, id1):
+def test_add_other(set_countries, issuer, kyc, token, id1):
     '''add already associated address'''
+    kyc.addInvestor(
+        b'investor1',
+        1,
+        '0x000001',
+        1,
+        9999999999,
+        (accounts[1],),
+        {'from': accounts[0]}
+    )
     token.mint(accounts[1], 100, {'from': accounts[0]})
     issuer.addAuthorityAddresses(id1, (accounts[-10],), {'from': accounts[0]})
     with pytest.reverts("dev: known address"):
@@ -184,7 +193,7 @@ def test_authority_add_to_other(issuer, id1):
 
 
 def test_authority_remove_from_other(issuer, id1):
-    '''authority - remove from other'''
+    '''authority - remove from olther'''
     issuer.addAuthorityAddresses(id1, accounts[-10:-8], {'from': accounts[-2]})
     with pytest.reverts("dev: wrong authority"):
         issuer.removeAuthorityAddresses(id1, accounts[-10:-8], {'from': accounts[-1]})

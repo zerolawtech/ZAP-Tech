@@ -65,7 +65,7 @@ contract TestModule {
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
+def setup(id1, id2, issuer, nft):
     nft.mint(accounts[1], 100, 0, "0x0000", {'from': accounts[0]})  # 1   - 100
     nft.mint(accounts[1], 100, 0, "0xaa01", {'from': accounts[0]})  # 101 - 200
     nft.mint(accounts[1], 100, 0, "0xaa02", {'from': accounts[0]})  # 201 - 300

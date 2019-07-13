@@ -6,7 +6,7 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft, token):
+def setup(id1, id2, issuer, nft, token):
     for i in range(6):
         accounts.add()
         accounts[0].transfer(accounts[-1], "1 ether")

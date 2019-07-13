@@ -26,7 +26,7 @@ def testcust(TestCustodian):
     yield cust
 
 
-def test_add(approve_many, issuer, testcust):
+def test_add(id1, id2, issuer, testcust):
     '''add custodian'''
     issuer.addCustodian(testcust, {'from': accounts[0]})
     assert issuer.getID(testcust) == testcust.ownerID()

@@ -35,6 +35,7 @@ contract TestModule {{
 
 }}"""
 
+
 @pytest.fixture(scope="module", autouse=True)
 def setup(approve_many, issuer, nft, token):
     token.mint(issuer, 100000, {'from': accounts[0]})
@@ -43,7 +44,8 @@ def setup(approve_many, issuer, nft, token):
 
 def test_is_permitted(issuer, token):
     '''check permitted'''
-    module = compile_source(module_source.format('0xbb2a8522'))[0].deploy(token, {'from': accounts[0]})
+    source = module_source.format('0xbb2a8522')
+    module = compile_source(source)[0].deploy(token, {'from': accounts[0]})
     assert not token.isPermittedModule(module, "0xbb2a8522")
     issuer.attachModule(token, module, {'from': accounts[0]})
     assert token.isPermittedModule(module, "0xbb2a8522")
@@ -53,7 +55,8 @@ def test_is_permitted(issuer, token):
 
 def test_token_detachModule(issuer, token):
     '''detach module'''
-    module = compile_source(module_source.format('0xbb2a8522'))[0].deploy(token, {'from': accounts[0]})
+    source = module_source.format('0xbb2a8522')
+    module = compile_source(source)[0].deploy(token, {'from': accounts[0]})
     with pytest.reverts():
         module.test(token.detachModule.encode_abi(module), {'from': accounts[0]})
     issuer.attachModule(token, module, {'from': accounts[0]})

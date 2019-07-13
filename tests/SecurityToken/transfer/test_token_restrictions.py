@@ -6,7 +6,7 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, token):
+def setup(id1, id2, issuer, token):
     token.mint(issuer, 100000, {'from': accounts[0]})
 
 

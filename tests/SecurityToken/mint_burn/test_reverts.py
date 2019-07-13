@@ -74,7 +74,7 @@ def test_burn_from_custodian(issuer, token, cust):
         token.burn(cust, 5000, {'from': accounts[0]})
 
 
-def test_global_lock(issuer, token, approve_one):
+def test_global_lock(issuer, token, id1):
     '''mint - token lock'''
     issuer.setTokenRestriction(token, True, {'from': accounts[0]})
     with pytest.reverts("dev: token locked"):

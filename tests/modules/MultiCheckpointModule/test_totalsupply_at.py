@@ -6,7 +6,7 @@ from brownie import accounts, rpc
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_one, token):
+def setup(id1, token):
     token.mint(accounts[1], 100000, {'from': accounts[0]})
 
 

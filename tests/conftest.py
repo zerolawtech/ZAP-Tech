@@ -5,13 +5,13 @@ import itertools
 import pytest
 
 from brownie import accounts
-from brownie.types.convert import to_bytes
+from brownie.convert import to_bytes
 
 
 # test isolation, always use!
 
 @pytest.fixture(autouse=True)
-def isolation(test_isolation):
+def isolation(fn_isolation):
     pass
 
 

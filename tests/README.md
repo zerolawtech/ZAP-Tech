@@ -5,8 +5,10 @@ Unit testing of this project is performed with [Brownie](https://github.com/Hype
 To run the tests:
 
 ```bash
-$ brownie test
+$ pytest tests/
 ```
+
+A [dockerfile](Dockerfile) is available if you are experiencing issues.
 
 ## Organization
 

@@ -5,8 +5,10 @@ Unit testing of this project is performed with [Brownie](https://github.com/Hype
 To run the tests:
 
 ```bash
-$ brownie test
+$ pytest tests/
 ```
+
+A [dockerfile](Dockerfile) is available if you are experiencing issues.
 
 ## Organization
 
@@ -23,5 +25,4 @@ Tests for SFT are sorted by the main contract being tested, then optionally by t
 * `KYCIssuer`: Tests that target [KYCIssuer](../contracts/KYCIssuer.sol).
 * `KYCRegistrar`: Tests that target [KYCRegistrar](../contracts/KYCRegistrar.sol).
 * `NFToken`: Tests that target [NFToken](../contracts/NFToken.sol).
-* `OwnedCustodian`: Tests that target [OwnedCustodian](../contracts/custodians/OwnedCustodian.sol).
 * `SecurityToken`: Tests that target [SecurityToken](../contracts/SecurityToken.sol).

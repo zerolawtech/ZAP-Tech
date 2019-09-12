@@ -1,8 +1,6 @@
 # run with:
 # docker build -f Dockerfile -t brownie .
-# docker run -v $PWD:/usr/src brownie brownie test
-# If you need to update the version of brownie then add the --no-cache
-#  flag to the docker build command
+# docker run -v $PWD:/usr/src brownie pytest tests
 
 FROM ubuntu:bionic
 WORKDIR /usr/src
@@ -17,11 +15,6 @@ RUN apt-get install -y python3.6 python3-pip python3-venv python3-tk wget curl g
 RUN pip3 install wheel pip setuptools virtualenv py-solc-x eth-brownie
 
 RUN npm install -g ganache-cli@6.5.1
-
-# Brownie installs compilers at runtime so ensure the updates are
-# in the compiled image so it doesn't do this every time
-RUN brownie init; true
-RUN brownie test
 
 # Fix UnicodeEncodeError error when running tests
 ENV PYTHONIOENCODING=utf-8

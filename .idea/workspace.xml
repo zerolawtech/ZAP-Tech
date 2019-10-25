@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f448d659-22d8-45f4-b8b3-6efe379db0a0" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -16,22 +16,22 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="FIRST">
-              <first_editor relative-caret-position="180">
-                <caret line="610" selection-start-line="610" selection-end-line="610" />
+              <first_editor relative-caret-position="392">
+                <caret line="588" column="751" lean-forward="true" selection-start-line="588" selection-start-column="751" selection-end-line="588" selection-end-column="751" />
               </first_editor>
               <second_editor />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-            <state split_layout="SPLIT">
+            <state split_layout="FIRST">
               <first_editor relative-caret-position="392">
                 <caret line="177" selection-start-line="177" selection-end-line="177" />
               </first_editor>
@@ -48,8 +48,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md" />
         <option value="$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md" />
+        <option value="$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md" />
       </list>
     </option>
   </component>
@@ -134,6 +134,7 @@
       <updated>1571964943487</updated>
       <workItem from="1571964944821" duration="7832000" />
       <workItem from="1571978414819" duration="149000" />
+      <workItem from="1571987590069" duration="2134000" />
     </task>
     <task id="LOCAL-00001" summary="adds directories for model legal forms and whitepapers/researrch">
       <created>1571965778497</created>
@@ -156,17 +157,24 @@
       <option name="project" value="LOCAL" />
       <updated>1571972088019</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="revises section on challenges posed by contractual nature of OrgShares">
+      <created>1571989331725</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1571989331725</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="7981000" />
+    <option name="totallyTimeSpent" value="10115000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="885" height="915" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.32946634" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.034802783" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -193,25 +201,26 @@
     <MESSAGE value="adds directories for model legal forms and whitepapers/researrch" />
     <MESSAGE value="adds placeholder for ZAP whitepaper" />
     <MESSAGE value="formats ZAP whitepaper in markdown; miscellaneous organizational edits" />
-    <option name="LAST_COMMIT_MESSAGE" value="formats ZAP whitepaper in markdown; miscellaneous organizational edits" />
+    <MESSAGE value="revises section on challenges posed by contractual nature of OrgShares" />
+    <option name="LAST_COMMIT_MESSAGE" value="revises section on challenges posed by contractual nature of OrgShares" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
+    <entry file="file://$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="FIRST">
-          <first_editor relative-caret-position="180">
-            <caret line="610" selection-start-line="610" selection-end-line="610" />
+          <first_editor relative-caret-position="392">
+            <caret line="177" selection-start-line="177" selection-end-line="177" />
           </first_editor>
           <second_editor />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md">
+    <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
+        <state split_layout="FIRST">
           <first_editor relative-caret-position="392">
-            <caret line="177" selection-start-line="177" selection-end-line="177" />
+            <caret line="588" column="751" lean-forward="true" selection-start-line="588" selection-start-column="751" selection-end-line="588" selection-end-column="751" />
           </first_editor>
           <second_editor />
         </state>

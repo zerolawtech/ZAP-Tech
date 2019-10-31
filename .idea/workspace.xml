@@ -20,8 +20,8 @@
         <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="FIRST">
-              <first_editor relative-caret-position="315">
-                <caret line="607" column="2" selection-start-line="607" selection-start-column="2" selection-end-line="607" selection-end-column="2" />
+              <first_editor relative-caret-position="336">
+                <caret line="614" column="39" lean-forward="true" selection-start-line="614" selection-start-column="39" selection-end-line="614" selection-end-column="39" />
               </first_editor>
               <second_editor />
             </state>
@@ -135,7 +135,7 @@
       <workItem from="1571964944821" duration="7832000" />
       <workItem from="1571978414819" duration="149000" />
       <workItem from="1571987590069" duration="4027000" />
-      <workItem from="1572123336629" duration="7075000" />
+      <workItem from="1572123336629" duration="7652000" />
     </task>
     <task id="LOCAL-00001" summary="adds directories for model legal forms and whitepapers/researrch">
       <created>1571965778497</created>
@@ -200,11 +200,25 @@
       <option name="project" value="LOCAL" />
       <updated>1572492497639</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="further revisions to section on contractual nature of OrgShares">
+      <created>1572494258994</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1572494258994</updated>
+    </task>
+    <task id="LOCAL-00011" summary="adds section on Venture Capital Considerations">
+      <created>1572494282831</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1572494282831</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="19083000" />
+    <option name="totallyTimeSpent" value="19660000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="925" extended-state="6" />
@@ -238,6 +252,7 @@
     <MESSAGE value="adds placeholder for ZAP whitepaper" />
     <MESSAGE value="formats ZAP whitepaper in markdown; miscellaneous organizational edits" />
     <MESSAGE value="revises section on challenges posed by contractual nature of OrgShares" />
+    <MESSAGE value="further revisions to section on contractual nature of OrgShares" />
     <MESSAGE value="adds section on Venture Capital Considerations" />
     <option name="LAST_COMMIT_MESSAGE" value="adds section on Venture Capital Considerations" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
@@ -246,8 +261,8 @@
     <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="FIRST">
-          <first_editor relative-caret-position="315">
-            <caret line="607" column="2" selection-start-line="607" selection-start-column="2" selection-end-line="607" selection-end-column="2" />
+          <first_editor relative-caret-position="336">
+            <caret line="614" column="39" lean-forward="true" selection-start-line="614" selection-start-column="39" selection-end-line="614" selection-end-column="39" />
           </first_editor>
           <second_editor />
         </state>

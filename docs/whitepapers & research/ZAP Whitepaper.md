@@ -614,7 +614,7 @@ Blockchain-based smart contracts, paired with tokenized OrgShares, create a powe
  
 ZAP realizes this vision by ________.  
  
- 
+ ..
 
 
 

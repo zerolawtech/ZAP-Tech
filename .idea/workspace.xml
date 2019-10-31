@@ -20,8 +20,8 @@
         <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="FIRST">
-              <first_editor relative-caret-position="350">
-                <caret line="592" column="417" lean-forward="true" selection-start-line="592" selection-start-column="417" selection-end-line="592" selection-end-column="417" />
+              <first_editor relative-caret-position="399">
+                <caret line="99" column="28" lean-forward="true" selection-start-line="99" selection-start-column="28" selection-end-line="99" selection-end-column="28" />
               </first_editor>
               <second_editor />
             </state>
@@ -32,7 +32,7 @@
         <entry file="file://$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="FIRST">
-              <first_editor relative-caret-position="392">
+              <first_editor relative-caret-position="3717">
                 <caret line="177" selection-start-line="177" selection-end-line="177" />
               </first_editor>
               <second_editor />
@@ -54,10 +54,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="184" />
-    <option name="y" value="127" />
+    <option name="x" value="67" />
+    <option name="y" value="27" />
     <option name="width" value="927" />
-    <option name="height" value="923" />
+    <option name="height" value="692" />
   </component>
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -134,7 +134,8 @@
       <updated>1571964943487</updated>
       <workItem from="1571964944821" duration="7832000" />
       <workItem from="1571978414819" duration="149000" />
-      <workItem from="1571987590069" duration="3570000" />
+      <workItem from="1571987590069" duration="4027000" />
+      <workItem from="1572123336629" duration="3755000" />
     </task>
     <task id="LOCAL-00001" summary="adds directories for model legal forms and whitepapers/researrch">
       <created>1571965778497</created>
@@ -178,17 +179,24 @@
       <option name="project" value="LOCAL" />
       <updated>1571989876791</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="revises section on challenges posed by contractual nature of OrgShares">
+      <created>1571991690904</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1571991690904</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="11551000" />
+    <option name="totallyTimeSpent" value="15763000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="67" y="25" width="885" height="915" extended-state="6" />
+    <frame x="67" y="25" width="1853" height="925" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.034802783" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.03442623" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -200,7 +208,7 @@
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
-      <window_info anchor="bottom" id="Terminal" order="9" visible="true" weight="0.33020133" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="9" visible="true" weight="0.32980132" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -220,21 +228,21 @@
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md">
+    <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="FIRST">
-          <first_editor relative-caret-position="392">
-            <caret line="177" selection-start-line="177" selection-end-line="177" />
+          <first_editor relative-caret-position="399">
+            <caret line="99" column="28" lean-forward="true" selection-start-line="99" selection-start-column="28" selection-end-line="99" selection-end-column="28" />
           </first_editor>
           <second_editor />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
+    <entry file="file://$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="FIRST">
-          <first_editor relative-caret-position="350">
-            <caret line="592" column="417" lean-forward="true" selection-start-line="592" selection-start-column="417" selection-end-line="592" selection-end-column="417" />
+          <first_editor relative-caret-position="3717">
+            <caret line="177" selection-start-line="177" selection-end-line="177" />
           </first_editor>
           <second_editor />
         </state>

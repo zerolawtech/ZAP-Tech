@@ -1,8 +1,8 @@
 
-#⌁⌁ZAP⌁⌁🔫 
-##THE ZEROLAW org-AUGMENTATION PROTOCOL 
+<h1>⌁⌁ZAP⌁⌁🔫</h1> 
+<h2>THE ZEROLAW org-AUGMENTATION PROTOCOL </h2>
 
-###1. Introduction
+<h3>1. Introduction</h3>
 
 The ZeroLaw Augmentation Protocol (ZAP) is a general-purpose tech/law stack for augmenting any business entity or organization through the use of smart contracts and tokens deployed to Ethereum. It is non-rent-seeking, fully free and open source and is neither funded by nor requires the use of any protocol token. It is intended to be compatible with a range of legal compliance strategies or applicable legal regimes by providing tunable compliance parameters; it is even compatible with antilaw position. ZAP’s compliance parameters may be tuned “all the way up,” “all the way down” or anywhere in between; thus, ZAP is suitable for any entity or organization, ranging from traditional corporations to anarchic, pseudonymous collectives. ZAP merges the vision of a borderless, decentralized future with the power to comply with existing legal requirements & best practices for doing business. ZAP has been developed by ZeroLaw, an independent law/technology team working to make technology and legal agreements interoperable. Anyone may contribute to the protocol. 
 
@@ -16,9 +16,9 @@ ZAP is highly modular It is divided into Components, with each Component being a
 
 ZAP, this paper and the other documents and materials referenced herein (the “**_ZeroLaw Materials_**”) are not intended to be, or to serve the purposes of, legal, accounting, tax, investment, or other advice or services. There is no attorney-client or other representational or fiduciary relationship between ZeroLaw or any person affiliated or otherwise connected with or representing ZeroLaw or who has or will contribute to the ZeroLaw Materials (each, a “**_ZeroLaw Participant_**”), on the one hand, and any reader, recipient or user of the ZeroLaw Materials (each, a “**_ZeroLaw User_**”), on the other hand. The ZeroLaw Materials are being provided on an as-is basis and for informational purposes only, and should be considered highly experimental and unreliable. Any use of the ZeroLaw Materials should be vetted with an attorney and other applicable professional advisors. No ZeroLaw Participant is making any statement, representation, warranty, guarantee, or assurance that any of the ZeroLaw Materials is suitable for any purpose or complies with any applicable law. No ZeroLaw Participant has promised or is undertaking to provide any assistance, service or guidance to any ZeroLaw User.
 
-###2. The Org Component
+<h3>2. The Org Component</h3>
 
-####OrgLaw
+<h4>OrgLaw</h4>
 
 The law of the Org is its spirit and may consist of its constitutional or charter principles, as well as any applicable regulatory regime it may opt into or otherwise be subject to. For example, if the Org is a Delaware corporation, its OrgLaw will be its certificate of incorporation and bylaws, together with the Delaware General Corporation Law. If the Org is a DAO*, then the OrgLaw may be an informal, mutable social contract or community understanding based on the members’ shared values.  The OrgLaw may define the rules, regulations and agreements that are to be implemented in the OrgCode. Alternatively, OrgLaw may consist of rules, regulations and/or agreements specifying a “code deference” approach to governance. Code deference approaches may be absolute or qualified and complete or partial.[1]
 
@@ -36,7 +36,7 @@ We also adopt the following DAO typology:
 
 ·        'ShadowDAOs' -> hacktivist/anon"
 
-####B. OrgCode
+<h4>B. OrgCode</h4>
 
 If the OrgLaw is the soul of the Org, then the OrgCode is the Org’s brain & central nervous system. The OrgCode consists of a smart contract deployed to Ethereum as an instance of[ IsssuingEntity.sol](https://github.com/zerolawtech/SFT-Protocol/blob/master/contracts/IssuingEntity.sol). Other smart contracts become part of the OrgCode by becoming connected to the OrgCode via the applicable[ association method](https://sft-protocol.readthedocs.io/en/latest/issuing-entity.html#associating-contracts), either through an owner- or administrator-controlled association process or through a more open process, depending on the configuration of the Org in question. The OrgCode then either implements or extends the OrgLaw by administering these ancillary smart contracts. For example:
 
@@ -64,11 +64,11 @@ The OrgCode is administered by a standard multi-sig permissioning scheme inherit
 
 As an example of multisig permissioning in action, an Org that is a corporation could configure each issuance of an OrgShare token to be authorized by two addresses respectively controlled by the President and Secretary of the corporation. This would mirror the two-officer signature requirement for stock certificates imposed by most states’ corporation statutes.
 
-###3. The Shares Component & IDVerifier Component
+<h3>3. The Shares Component & IDVerifier Component</h3>
 
-####A. ShareLaw
+<h4>A. ShareLaw</h4>
 
-#####i. Intro to ShareLaw
+<h5>i. Intro to ShareLaw</h5>
 
 On the social/legal layer, OrgShares are transferable legal rights pertaining to the Org. In this paper, we use the term “OrgShares” in an entity-neutral sense. These rights are defined under, or are a function of, the OrgLaw, but are different from it; the OrgLaw is not transferable as such, but the shares are. Therefore, we discuss the ShareLaw separately from the OrgLaw, even though the former is largely a function of the latter. You can think of OrgShares as the reification of the rights conferred upon particular Org participants by the OrgLaw.
 
@@ -162,7 +162,7 @@ Unclear taxation—likely partnership
   </tr>
 </table>
 
-#####ii. Share Instruments
+<h5>ii. Share Instruments</h5>
 
 In the immediately preceding section, we discussed how the ShareLaw divides determines the type of OrgShares—for example, whether the OrgShares are capital stock, club memberships, investment contracts, or something else. However, those types of categories are essentially classifications of types of rights—they are very abstract. The ShareLaw does not stop there—it also classifies types of OrgShare _instruments_.
 
@@ -180,7 +180,7 @@ It is critical that the instrument type for each OrgShare be explicit so that ea
 
 As further discussed below under “ShareCode,” ZAP accommodates blockchain equivalents to all three types of instrument. Although each instrument type has pros and cons, and such pros and cons may differ depending on the relevant type of Org in question, in general ZeroLaw believes tokens functioning as securities certificates are a more suitable model for shares implemented on a public permissionless blockchain because, _inter alia_, they create the opportunity for finer (and potentially more liberal) transferability tuning and chain-of-title analysis, which can be vitally important in securities transactions. The lending example above leads to one illustration of how the certificated model is a far more natural fit for blockchain, as people will naturally wish to view possession of a token representing an OrgShare or the locking up of that token in a multisig smart contract as a form of possession of an OrgShare that ought to create a senior, perfected security interest in the OrgShare as collateral.  For a very in-depth discussion of this topic, _see_ “_[Representation of Corporate Capital Stock via Cryptographically Secured Blockchain Tokens: Motivations and Potential Implementations](https://gabrielshapiro.wordpress.com/2018/10/28/2/)”_ by Gabriel Shapiro.
 
-#####iii. Transfer Restrictions
+<h5>iii. Transfer Restrictions</h5>
 
 An Org may desire to (or, depending on the applicable law, may be required to), limit the transferability of OrgShares. OrgShare transfer restrictions constitute part of the ShareLaw, and such aspects of the ShareLaw may in many (but not necessarily all) cases be programmatically enforced in the ShareCode.
 
@@ -440,7 +440,7 @@ On the next page are some illustrative examples, for various Org types, of commo
 
 An Org may not wish to or be required to implement all types of transfer restrictions.  Nevertheless, a robust general-purpose Org augmentation protocol _must _be _able to_ accommodate all such transfer restrictions and more. Otherwise, a protocol will effectively be requiring Orgs to choose between taking advantage of the efficiencies of the protocol and non-compliance (or high risk of non-compliance) with applicable law. At the same time, an Org protocol should not assume that every Org will need to comply with all such transfer restrictions and should recognize that, consistent with the politics and ideals of decentralization, Org administrators should minimize their power to censor transactions to the greatest extent possible without violating the law. Therefore, while transfer restrictions & associated permissioning schemes must be possible, they must also be optional and tunable. 
 
-#####iv. Identity-Based Restrictions
+<h5>iv. Identity-Based Restrictions</h5>
 
 As noted above, many potential transfer restrictions are identity-based. Complying with such transfer restrictions will require an off-chain identity documentation process capable of verifying that a particular prospective Shareholder is a certain person in the real world, the Ethereum addresses belonging to that person, the legal jurisdictions relevant to that person and that the person satisfies any applicable “accreditation requirements” and does not appear on (or reside in a country that appears on) any applicable sanctions lists. Many ID verification services exist, including ones that verify the “accredited investor” status of investors under U.S. federal securities law. We anticipate that, over time, vendors who provide such services will supplement them with blockchain-specific subservices, such as maintaining lists of Ethereum addresses associated with DEXs or centralized exchanges which an Org may desire to prevent from receiving OrgShares.  
 
@@ -456,9 +456,9 @@ Blacklists are perhaps even more important. While it is theoretically possible f
 
 So far, we have mainly discussed commercial and regulatory reasons why identity verification, whitelisting and blacklisting can matter. However, even DAOs or other Orgs with a more activist, libertarian or cypherpunk agenda—which we refer to as “ChaoDAOs”—might find the power to whitelist and blacklist persons as an integral part of practicing good OpSec or maintaining cultural consistency. For example, a hacktivist cooperative may wish to restrict transfers of its Shares to nation-state actors or ideologically opposed groups. The “rating” process for such a ChaoDAO may be binary—you’re either in or you’re out—but a form of minimal ID-verification may be needed to confirm that the person in control of a particular forum handle is also in control of a particular Ethereum address. A DAO organized around local politics may wish to ensure that Shares can only be held by residents of the applicable municipality. If a group of developers is selling a token intended not to be a security, then that group may wish to only allow transfers of that token to individuals who pass a series of Q&As and tests proving that they are not buying for investment purposes, as contemplated by the Brooklyn Project’s[ Consumer Token Framework](https://collaborate.thebkp.com/project/BKP/document/1/version/2). Alternatively, if a DAO or similar association wishes to allow free transferability, then that principle may be enshrined in its ShareLaw, and there will be no whitelists or blacklists. Thus, the ShareLaw Component, including the identity verification aspects thereof, augments, rather than limits, Orgs’ autonomy.
 
-####B. SharesCode
+<h4>B. SharesCode</h4>
 
-#####i. OrgShare Instruments as Tokens
+<h5>i. OrgShare Instruments as Tokens</h5>
 
 On the tech layer, OrgShares are represented as tokens on Ethereum, with each token having programmatically tunable levels of transferability. The tokens are thus shares instruments and can be classified as certificates, book entries or entitlements.
 
@@ -466,9 +466,9 @@ ZAP represents certificated shares as non-fungible tokens (NFTs) issued by an in
 
 ZAP represents book-entry shares as fungible tokens issued by an instance of[ SecurityToken.sol](https://github.com/zerolawtech/SFT-Protocol/blob/master/contracts/SecurityToken.sol). In effect, the Ethereum blockchain becomes the Org’s official share ledger. If the Org is a corporation, this approach is explicitly permitted under the Wyoming and Delaware corporate statutes (with Wyoming’s version of the statute even allowing for transfers to be recorded as changes in owners represented as Ethereum address rather owners represented as the legal names of persons). Since the blockchain is meant to be the Org’s official share ledger, the degree of separation between the Org and the secondary market that exists with token-certs does not really exist under the book-entry approach. The Org will be deemed to have approved or given official effect to any transfer of an OrgShare that gets recorded on the blockchain. Therefore, the Org will likely want to adopt the tightest possible transfer restrictions and institute manual review procedures to ensure that it is not officially recording a prohibited transfer of OrgShares.  This is more cumbersome than the certificated system described above, but does offer an advantage to third parties who might be considering acquiring OrgShares—they can know from the state of the blockchain that the Org regards the history of transfers as valid.
 
-Although in general we believe the main benefit to deploying an Org on Ethereum is the resulting disintermediation, and thus anticipate that few Orgs will tend to represent their OrgShares through account-based/entitlement-based instruments, ZAP nevertheless has the capability of doing so. ZAP represents entitlement-based OrgShares as tokens held by a special type of custodial smart contract deployed as an instance of OwnedCustodian.sol or IBaseCustodian.sol. Such OrgShares may also be conceptualized as simply being token-certs that are held by a custodian or book entries that are marked as giving authority to custodians. For more on custodial smart contracts, _see ______ below.  
+Although in general we believe the main benefit to deploying an Org on Ethereum is the resulting disintermediation, and thus anticipate that few Orgs will tend to represent their OrgShares through account-based/entitlement-based instruments, ZAP nevertheless has the capability of doing so. ZAP represents entitlement-based OrgShares as tokens held by a special type of custodial smart contract deployed as an instance of OwnedCustodian.sol or IBaseCustodian.sol. Such OrgShares may also be conceptualized as simply being token-certs that are held by a custodian or book entries that are marked as giving authority to custodians. For more on custodial smart contracts, see  below.  
 
-#####ii. Code-Enforced Share Transfer Restrictions
+<h5>ii. Code-Enforced Share Transfer Restrictions</h5>
 
 Transfer restrictions can be encoded in the smart contract rules governing transfer of the tokens representing the OrgShares, and thus enforced programmatically. This reduces monitoring and enforcement costs and can thus facilitate freer transfer even of restricted securities than might otherwise be feasible.
 
@@ -508,7 +508,7 @@ An important caveat: In configuring its transfer restrictions, an Org will be re
 
 Such assumptions may be more or less conservative, depending on the Org’s preferences. For example, a conservative Org may wish to assume that it reach $10M in assets at any time, and thus always set shareholder limits below the Rule 12g-1 thresholds. Another Org could might be willing to grow its shareholder base beyond those limits on the assumption that it will not reach $10M in assets. As a general purpose Org augmentation protocol, ZAP is designed to accommodate a wide array of risk preference choices.
 
-#####iii. ID Verification
+<h5>iii. ID Verification</h5>
 
 The technology-based components of the ID verification process will typically consist of three tools:
 
@@ -542,15 +542,15 @@ Additional authorities (beyond “owner”) can be permissioned to call one or m
 
 The ownership and authority schemes in KYCIssuer.sol and KYCRegistrar.sol can be combined with a standard <span style="text-decoration:underline;">MultiSig Implementation</span> to impose M-of-N multisig rules regarding the combination of owners or authorities that is necessary to add new persons to the whitelist or add or remove restrictions from persons who are already on the whitelist.  
 
-###4. The Custodial Component
+<h3>4. The Custodial Component</h3>
 
-####A. Custodial Law 
+<h4>A. Custodial Law </h4>
 
 In the traditional financial world, custodians for securities and other assets are commonplace. Although blockchain offers the opportunity for more direct interactions between an Org and its shareholders than is typical for many public companies, we nevertheless recognize that custodial arrangements will continue to have a role even for blockchain-augmented Orgs. Therefore, ZAP seeks to trust-minimize custodial arrangements to the greatest extent possible.
 
 Custodial arrangements may be necessary or desirable in a number of contexts. For example,  Section 17(f) of the Investment Company Act requires registered management companies to custody their securities with a securities custodian such as a qualified bank, national securities exchange or securities depository. We envision a future in which digital securities deployed to public blockchains are ubiquitous and Orgs enter into triparty agreements with the investment companies who own the OrgShares and the qualified securities custodians who hold the OrgShares on behalf of the investment companies. These agreements could provide that custody of the OrgShares is maintained in transparent, trust-reduced custodial smart contracts that give both the Org and the investment companies relevant administrative powers such as the ability to ensure that the custodian does not violate transfer restrictions applicable to specific OrgShares. Eventually, such smart contract arrangements could become so feature-rich and reliable that they might lead to changes in law--for example, Section 17(f) might be amended to eliminate the requirement for a thrid-party custodian if an appropriate smart contract is used to safeguard the investment companies' assets as well or better than trusted custodial intermediaries. 
  
- ####B. Custodial Code
+<h4>B. Custodial Code</h4>
  
 Custodial smart contracts are approved to hold tokens representing OrgShares on behalf of multiple investors. Each custodial contract must be individually approved by an Org’s owners or administrators (through an association of the custodial smart contract with the OrgCode) before receiving tokens.
 
@@ -562,7 +562,7 @@ There are two broad categories of custodial smart contracts:
 
 As discussed above, an Org may need to carefully limit the number of investors it has in order to avoid opting into expensive regulatory regimes. For this reason, ZAP embodies conservative assumptions regarding how ownership of custodied OrgShares is counted. When an investor transfers a balance into a custodian it does not increase or decrease the overall investor count; instead the investor is now included in the list of beneficial owners represented by the custodian. Even if the investor now has a balance of 0 in their own wallet, they will still be included in the Org’s investor count.
 
-#####i. Custodial Token Transfers
+<h5>i. Custodial Token Transfers</h5>
 
 There are three types of token transfers related to Custodians.
 
@@ -580,9 +580,9 @@ Permissioning checks for custodial transfers are identical to those of normal tr
 **SecurityToken.transferCustodian(_address[2] _addr_, _uint256 _value_)** modifies investor counts and ownership records based on an internal transfer of ownership within the Custodian contract.
 
 
-###5. Misc. Additional Legal Considerations & Org Modules 
+<h3>5. Misc. Additional Legal Considerations & Org Modules </h3>
 
-####A. Unique Challenges Posed by the Contractual Nature of OrgShares
+<h4>A. Unique Challenges Posed by the Contractual Nature of OrgShares</h4>
 
 OrgShares are bundles of legal rights associated with a blockchain token that functions as a transferable instrument. Unlike with typical ERC20 tokens on Ethereum or other 'bearer instruments' such as protocol tokens, persons in markets for stock, membership interests or other types of shares, or even debt instruments like bonds, typically consider it important to ensure that buyers and sellers of the instrument understand that the instrument represents a bundle of legal rights and the nature and limitations of those legal rights. 
 
@@ -613,7 +613,7 @@ ZAP thus addresses this issue in at least two ways:
 
 2) In a future version of ZAP, we intend to add a module that enables Orgs to gate sales/purchases of OrgShares in the secondary market with an automated escrow process. This would enable issuers to ensure that the contractual terms of OrgShares are agreed upon by future buyers, without representatives of the Org needing to manually permission each OrgShare transaction. Each OrgShare purchase/sale could be required to be effected through a smart contract escrow. The OrgShare tokens and the purchase price (any Ethereum-compatible tokens) would be deposited into the escrow smart contract. The would-be purchaser would be directed to a website to e-sign an acknowledgement of having received disclosures regarding the nature of the OrgShares. The hash of that acknowledgement and the purchaser's Ethereum address could then be recorded to the smart contract escrow, evidencing that the information had been received and the acknowledgement signed, whereupon the OrgShare tokens would be automatically transferred to the address of the purchaser and the token-denominated purchase price would be automatically transferred to the address of the seller out of the smart contract escrow. The smart contract escrow could also be configured to permit termination by the would-be seller if the required documents are not proffered by the would-be purchaser within some specified period--e.g. 48 hours. Upon a termination,  the OrgShare tokens and purchase price tokens would revert to the original owners, minus a penalty to be paid by the would-be purchaser for failure to deliver the documents within the required time. In effect, this arrangement would simulate a traditional share purchase agreement which is signed by the parties on one date and then provides for a later 'closing date' triggered when various conditions precedent--such as the signing of additional documents by one or more parties--have been satisfied. This is a 'smart contract' along the lines originally proposed by Nick Szabo--i.e., a mechanism for automated and trust-reducing the performance-or-breach structure of a share purchase agreement. 
   
-####B. Venture Capital Considerations & Preferred Stock Liquidation Module
+<h4>B. Venture Capital Considerations & Preferred Stock Liquidation Module</h4>
 
 Blockchain-based smart contracts, paired with tokenized OrgShares, create a powerful tool for venture-backed companies with complex preferred stock capital structures, partnerships with tiered distribution waterfalls and any Org with mezzanine debt. As envisioned by Vice Chancellor J. Travis Laster of the Delaware Court of Chancery:
 
@@ -631,14 +631,3 @@ Today in regular M&A deal execution, these processes require a cadre of lawyers,
 
 The Governance Module, [Governance.sol](https://github.com/zerolawtech/SFT-Protocol/blob/master/contracts/modules/Governance.sol), is a minimal proof of concept that may be used as a starting point for enabling OrgShareholders to vote on governance issues.  It can be combined with a checkpoint module to build whatever specific setup is required by an Org. Although the current version is modest in scope, it provides a critical function for corporate-style Orgs--namely, requiring OrgShareholder approval before increasing the number of shares of a given class or series of stock that the corporation is authorized to issue. This vote is also legally required in the case of corporations, and takes the form of stockholders voting on a proposed amendment to the corproation's certificate of incorporation. With ZAP, that vote can be held on chain.
   
-
-
-
-
-
-
----
-
-
-
-

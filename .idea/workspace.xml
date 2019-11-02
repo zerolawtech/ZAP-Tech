@@ -20,8 +20,8 @@
         <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="FIRST">
-              <first_editor relative-caret-position="336">
-                <caret line="614" column="39" lean-forward="true" selection-start-line="614" selection-start-column="39" selection-end-line="614" selection-end-column="39" />
+              <first_editor relative-caret-position="276">
+                <caret line="618" column="269" selection-start-line="618" selection-start-column="269" selection-end-line="618" selection-end-column="269" />
               </first_editor>
               <second_editor />
             </state>
@@ -53,11 +53,11 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds">
     <option name="x" value="67" />
     <option name="y" value="27" />
-    <option name="width" value="927" />
-    <option name="height" value="692" />
+    <option name="width" value="901" />
+    <option name="height" value="913" />
   </component>
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -135,7 +135,8 @@
       <workItem from="1571964944821" duration="7832000" />
       <workItem from="1571978414819" duration="149000" />
       <workItem from="1571987590069" duration="4027000" />
-      <workItem from="1572123336629" duration="7652000" />
+      <workItem from="1572123336629" duration="8265000" />
+      <workItem from="1572652273676" duration="7184000" />
     </task>
     <task id="LOCAL-00001" summary="adds directories for model legal forms and whitepapers/researrch">
       <created>1571965778497</created>
@@ -214,17 +215,24 @@
       <option name="project" value="LOCAL" />
       <updated>1572494282831</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="adds section on Venture Capital Considerations">
+      <created>1572494808528</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1572494808528</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="19660000" />
+    <option name="totallyTimeSpent" value="27457000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="67" y="25" width="1853" height="925" extended-state="6" />
+    <frame x="67" y="27" width="901" height="913" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.03442623" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.071753986" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -236,7 +244,7 @@
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="9" visible="true" weight="0.32980132" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="9" visible="true" weight="0.17362046" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -261,8 +269,8 @@
     <entry file="file://$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="FIRST">
-          <first_editor relative-caret-position="336">
-            <caret line="614" column="39" lean-forward="true" selection-start-line="614" selection-start-column="39" selection-end-line="614" selection-end-column="39" />
+          <first_editor relative-caret-position="276">
+            <caret line="618" column="269" selection-start-line="618" selection-start-column="269" selection-end-line="618" selection-end-column="269" />
           </first_editor>
           <second_editor />
         </state>

@@ -79,9 +79,9 @@ If the OrgLaw is the soul or mind of the Org, then the OrgCode is the Org’s CN
     <li>Custodian contracts (i.e., instances of OwnedCustodian.sol or iBaseCustodian.sol) must be associated to the OrgCode in order to send or receive OrgShares, and the OrgCode is also where any applicable restrictions will be set on a custodian contract</li>
 </ul>
 
-The OrgCode is administered by a standard multi-sig permissioning scheme inherited from[ MultiSig.sol](https://sft-protocol.readthedocs.io/en/latest/multisig.html#multisig). The owner(s) of the OrgCode (one or more Ethereum addresses declared as owners in the OrgCode constructor) may access any administrative function of the OrgCode. Owners may also delegate administrative function access to one or more additional authorities (one or more Ethereum addresses declared as authorities through the .addAuthority method). Authorities are approved by owners on an administrative-function-by-administrative-function basis via the function _signatures parameter of .addAuthority; such _signatures may include any administrative function other than the .addAuthority method itself, which can only be called by owners. Both owner and authority rights to can be tied to a multisig threshold via the _threshold parameter. Authority permissioning may additionally be time-limited via the _approvedUntil parameter. The parameters for existing owners and authorities can be modified later via various specialized methods. The same permissioning scheme can be extended to the other smart contracts to which the OrgCode is connected.
+The OrgCode is administered by a standard multi-sig permissioning scheme inherited from[ MultiSig.sol](https://sft-protocol.readthedocs.io/en/latest/multisig.html#multisig). The owner(s) of the OrgCode (one or more Ethereum addresses declared as owners in the OrgCode constructor) may access any administrative function of the OrgCode. Owners may also delegate administrative function access to one or more additional authorities (one or more Ethereum addresses declared as authorities through the .addAuthority method). Authorities are approved by owners on an administrative-function-by-administrative-function basis via the function _signatures parameter of .addAuthority; such _signatures may include any administrative function other than the .addAuthority method itself, which can only be called by owners. Both owner and authority rights to can be tied to a multisig threshold via the _threshold parameter. Authority permissioning may additionally be time-limited via the _approvedUntil parameter. The parameters for existing owners and authorities can be modified later via various specialized methods. The same permissioning scheme can be extended to the Org's custom modules (see Section 5 below).
 
-As an example of multisig permissioning in action, an Org that is a corporation could configure each issuance of an OrgShare token to be authorized by two addresses respectively controlled by the President and Secretary of the corporation. This would mirror the two-officer signature requirement for stock certificates imposed by most states’ corporation statutes.
+This scheme is very powerful and flexible, accomodating a wide array of potential use cases and compliance techniques. For example, an Org that is a corporation could configure each issuance of an OrgShare token to be authorized by two addresses respectively controlled by the President and Secretary of the corporation. This would mirror the two-officer signature requirement for stock certificates imposed by most states’ corporation statutes.
 
 <h2>3. The Shares Component & IDVerifier Component</h2>
 
@@ -89,12 +89,9 @@ As an example of multisig permissioning in action, an Org that is a corporation 
 
 <h4>i. Intro to ShareLaw</h4>
 
-On the social/legal layer, OrgShares are transferable legal rights pertaining to the Org. In this paper, we use the term “OrgShares” in an entity-neutral sense. These rights are defined under, or are a function of, the OrgLaw, but are different from it; the OrgLaw is not transferable as such, but the shares are. Therefore, we discuss the ShareLaw separately from the OrgLaw, even though the former is largely a function of the latter. You can think of OrgShares as the reification of the rights conferred upon particular Org participants by the OrgLaw.
+On the social/legal layer, OrgShares are transferable legal rights pertaining to the Org. You can think of OrgShares as the reification of the rights conferred upon particular Org participants by the OrgShare.
 
 Below are some illustrative examples, for various Org types, of how the ShareLaw of those Org types could be/often would be configured:
-
-Table Form Examples
-
 
 <table>
   <tr>
@@ -102,7 +99,7 @@ Table Form Examples
    </td>
    <td>OrgShare Type
    </td>
-   <td>ShareLaw (Partial)
+   <td>ShareLaw
    </td>
   </tr>
   <tr>
@@ -130,7 +127,7 @@ Ordinary Income Tax (mostly)
 <p>
 Operating Agreement
 <p>
-U.S. federal securities laws (?)
+U.S. federal securities laws 
 <p>
 Partnership Income Tax (mostly)
 <p>
@@ -162,7 +159,7 @@ Gift Tax?
    </td>
    <td>investment contract interest in decentralized venture fund
    </td>
-   <td>“Code is Law” & ambiguous legal standing (possibly partnership or unincorporated for-profit association)
+   <td>misc. governance arrangements
 <p>
 Misc voting
 <p>
@@ -185,7 +182,7 @@ Unclear taxation—likely partnership
 
 In the immediately preceding section, we discussed how the ShareLaw divides determines the type of OrgShares—for example, whether the OrgShares are capital stock, club memberships, investment contracts, or something else. However, those types of categories are essentially classifications of types of rights—they are very abstract. The ShareLaw does not stop there—it also classifies types of OrgShare _instruments_.
 
-Instruments are methods of representing, and evidencing ownership over, OrgShares. Although the distinctions among types of instruments may appear dry and technical, they are critical from a legal perspective. Many other security token protocols ignore this issue and do not clearly and consistently treat token instrumentalities as belonging to a defined category of legal instruments. Under corporate and commercial law, the type of instrument by which an OrgShare is transferred will determine what formalities need to be followed with respect to transactions such as transferring ownership of the OrgShare or pledging the OrgShare as collateral for a loan.
+Instruments are methods of representing, and evidencing ownership over, OrgShares. Although the distinctions among types of instruments may appear dry and technical, they are critical from a legal perspective. Many other security token protocols ignore this issue and do not clearly and consistently treat tokens as belonging to a defined category of legal instruments. Under corporate and commercial law, the type of instrument by which an OrgShare is transferred will determine what formalities need to be followed with respect to transactions such as transferring ownership of the OrgShare or pledging the OrgShare as collateral for a loan.
 
 Under the Uniform Commercial Code, there are three types of securities instruments:
 <ul>
@@ -194,15 +191,15 @@ Under the Uniform Commercial Code, there are three types of securities instrumen
     <li>account-based/entitlement-based</li>
 </ul>
 
-It is critical that the instrument type for each OrgShare be explicit so that each person transacting in the OrgShare knows what type of instrument he or she is dealing with. For example, if a lender is extending credit to a shareholder and taking a security interest in the OrgShare as collateral, the lender cannot know how to perfect its rights to foreclose on the OrgShare in an event of default unless it knows the instrument type: if the instrument is a securities certificate, then the lender can take possession of the certificate and be assured of having a first-priority security interest; on the other hand, if the instrument is a book-entry representation, then the lender must bring the Org into the mix to ensure that the Org notes the encumbrance on the Org’s books and does not make alternative transfers.
+It is critical that the instrument type for each OrgShare be explicit so that each person transacting in the OrgShare knows what type of instrument he or she is dealing with. For example, if a lender is extending credit to a shareholder and taking a security interest in the OrgShare as collateral, the lender cannot know how to perfect its rights to foreclose on the OrgShare in an event of default unless it knows the instrument type of the corresponding token: if the token is a securities certificate, then the lender can take possession of the token and be assured of having a first-priority security interest; on the other hand, if the token is a book-entry representation of the OrgShare, then the lender must notify the Org to ensure that the Org notes the encumbrance on the Org’s books and does not make alternative transfers.
 
-As further discussed below under “ShareCode,” ZAP accommodates blockchain equivalents to all three types of instrument. Although each instrument type has pros and cons, and such pros and cons may differ depending on the relevant type of Org in question, in general ZeroLaw believes tokens functioning as securities certificates are a more suitable model for shares implemented on a public permissionless blockchain because, _inter alia_, they create the opportunity for finer (and potentially more liberal) transferability tuning and chain-of-title analysis, which can be vitally important in securities transactions. The lending example above leads to one illustration of how the certificated model is a far more natural fit for blockchain, as people will naturally wish to view possession of a token representing an OrgShare or the locking up of that token in a multisig smart contract as a form of possession of an OrgShare that ought to create a senior, perfected security interest in the OrgShare as collateral.  For a very in-depth discussion of this topic, _see_ “_[Representation of Corporate Capital Stock via Cryptographically Secured Blockchain Tokens: Motivations and Potential Implementations](https://gabrielshapiro.wordpress.com/2018/10/28/2/)”_ by Gabriel Shapiro.
+As further discussed below under “ShareCode,” ZAP accommodates blockchain equivalents to all three types of instrument. Although each instrument type has pros and cons, and such pros and cons may differ depending on the relevant type of Org in question, in general ZeroLaw believes tokens functioning as securities certificates are work better on a public permissionless blockchain because they create the opportunity for finer (and potentially more liberal) transferability tuning and chain-of-title analysis, which can be vitally important in securities transactions. The lending example above leads to one illustration of how the certificated model is a far more natural fit for blockchain, as people will naturally wish to view possession of a token representing an OrgShare or the locking up of that token in a multisig smart contract as a form of possession of a securities certificate in token form that ought to create a senior, perfected security interest in the OrgShare as collateral.  For a very in-depth discussion of this topic, _see_ “_[Representation of Corporate Capital Stock via Cryptographically Secured Blockchain Tokens: Motivations and Potential Implementations](https://gabrielshapiro.wordpress.com/2018/10/28/2/)”_ by Gabriel Shapiro.
 
 <h4>iii. Transfer Restrictions</h4>
 
-An Org may desire to (or, depending on the applicable law, may be required to), limit the transferability of OrgShares. OrgShare transfer restrictions constitute part of the ShareLaw, and such aspects of the ShareLaw may in many (but not necessarily all) cases be programmatically enforced in the ShareCode.
+An Org may desire to (or, depending on the applicable law, may be required to), limit the transferability of OrgShares. OrgShare transfer restrictions constitute part of the ShareLaw, and such aspects of the ShareLaw may in many cases be programmatically enforced in the ShareCode.
 
-Transfer restrictions typically fall under one of three types (or a combination thereof):
+There are three main types of transfer restrictions:
 
 <ul>
     <li>identity-based</li>
@@ -210,13 +207,13 @@ Transfer restrictions typically fall under one of three types (or a combination 
     <li>vesting-based (may be time-based, service-based or milestone-based vesting);</li>
 </ul>
 
-Transfer restrictions typically arise from one of four sources of law (or a combination thereof):
+Transfer restrictions typically arise from four main sources of law (or a combination thereof):
 
 <ul>
     <li>securities laws (if the OrgShares are securities)</li>
     <li>general regulatory requirements such as export/sanctions controls, money transmitter laws, etc.</li>
-    <li>legal contract or other private agreement (need not necessarily be legally enforceable if other enforcement methods available)</li>
-    <li>misc. property-oriented laws</li>
+    <li>legal contract or other private agreement</li>
+    <li>misc. commercial laws and property laws</li>
 </ul>
 
 Transfer restrictions will typically apply at one of the following levels of granularity (or a combination thereof):
@@ -235,7 +232,7 @@ Transfer restrictions will typically apply in one or both of the following marke
     <li>secondary market (shareholder-->shareholder or shareholder-->Org)</li>
 </ul>
 
-On the next page are some illustrative examples, for various Org types, of common transferability restrictions
+Below are some illustrative examples, for various Org types, of common transferability restrictions
 
 
 <table>
@@ -455,7 +452,7 @@ On the next page are some illustrative examples, for various Org types, of commo
 </table>
 
 
-An Org may not wish to or be required to implement all types of transfer restrictions.  Nevertheless, a robust general-purpose Org augmentation protocol _must _be _able to_ accommodate all such transfer restrictions and more. Otherwise, a protocol will effectively be requiring Orgs to choose between taking advantage of the efficiencies of the protocol and non-compliance (or high risk of non-compliance) with applicable law. At the same time, an Org protocol should not assume that every Org will need to comply with all such transfer restrictions and should recognize that, consistent with the politics and ideals of decentralization, Org administrators should minimize their power to censor transactions to the greatest extent possible without violating the law. Therefore, while transfer restrictions & associated permissioning schemes must be possible, they must also be optional and tunable. 
+An Org may not wish to or be required to implement all types of transfer restrictions.  Nevertheless, a robust general-purpose Org augmentation protocol must be **able to** accommodate all such transfer restrictions and more. Otherwise, a protocol will effectively be requiring Orgs to choose between taking advantage of the efficiencies of the protocol and non-compliance (or high risk of non-compliance) with applicable law. On the other hand, the protocol should not assume that every Org will need to comply with all such transfer restrictions and should recognize that, consistent with the politics and ideals of decentralization, Org administrators should minimize their power to censor transactions to the greatest extent possible without violating the law. Therefore, while transfer restrictions & associated permissioning schemes must be possible, they must also be optional and tunable. This is the approach embodied in ZAP.  
 
 <h4>iv. Identity-Based Restrictions</h4>
 

@@ -1,4 +1,4 @@
-<h1>>⌁⌁ZAP⌁⌁</h1> 
+<h1>⌁⌁ZAP⌁⌁</h1> 
 <h1>THE ZEROLAW org-AUGMENTATION PROTOCOL</h1>
 
 <h2>1. Introduction</h2>
@@ -13,50 +13,71 @@ ZAP's highly modular architecture is divided into Components, with each Componen
  
  ZAP Orgs may differ significantly from one another depending on the type of entity or organization being augmented through the protocol. This paper aims to explain a prototypical ZAP implementation, with notes regarding how parameter settings might differ among Org types. 
 
-<h3>>Important Disclaimer - Please Read!</h3>
+<h3>Important Disclaimer - Please Read!</h3>
 
-ZAP, this paper and the other documents and materials referenced herein (the “**_ZeroLaw Materials_**”) are not intended to be, or to serve the purposes of, legal, accounting, tax, investment, or other advice or services. There is no attorney-client or other representational or fiduciary relationship between ZeroLaw or any person affiliated or otherwise connected with or representing ZeroLaw or who has or will contribute to the ZeroLaw Materials (each, a “**_ZeroLaw Participant_**”), on the one hand, and any reader, recipient or user of the ZeroLaw Materials (each, a “**_ZeroLaw User_**”), on the other hand. The ZeroLaw Materials are being provided on an as-is basis and for informational purposes only, and should be considered highly experimental and unreliable. Any use of the ZeroLaw Materials should be vetted with an attorney and other applicable professional advisors. No ZeroLaw Participant is making any statement, representation, warranty, guarantee, or assurance that any of the ZeroLaw Materials is suitable for any purpose or complies with any applicable law. No ZeroLaw Participant has promised or is undertaking to provide any assistance, service or guidance to any ZeroLaw User.
+ZAP, this paper, the ZAP source code and the other ideas, documents and materials referenced herein or included in any ZeroLaw or ZAP software repository (the “**_ZeroLaw Materials_**”) are not intended to be, or to serve the purposes of, legal, accounting, tax, investment, or other advice or services. There is no attorney-client or other representational or fiduciary relationship between ZeroLaw or any person affiliated or otherwise connected with or representing ZeroLaw or who has or will contribute to the ZeroLaw Materials (each, a “**_ZeroLaw Participant_**”), on the one hand, and any reader, recipient or user of the ZeroLaw Materials (each, a “**_ZeroLaw User_**”), on the other hand. The ZeroLaw Materials are being provided on an as-is basis and for informational purposes only, and should be considered highly experimental and unreliable. Any use of the ZeroLaw Materials should be vetted with an attorney and other applicable professional advisors. No ZeroLaw Participant is making any statement, representation, warranty, guarantee, or assurance that any of the ZeroLaw Materials is suitable for any purpose or complies with any applicable law. No ZeroLaw Participant has promised or is undertaking to provide any assistance, service or guidance to any ZeroLaw User.
 
 <h2>2. The Org Component</h2>
 
 <h3>OrgLaw</h3>
 
-The law of the Org is its spirit and may consist of its constitutional or charter principles, as well as any applicable regulatory regime it may opt into or otherwise be subject to. For example, if the Org is a Delaware corporation, its OrgLaw will be its certificate of incorporation and bylaws, together with the Delaware General Corporation Law. If the Org is a DAO*, then the OrgLaw may be an informal, mutable social contract or community understanding based on the members’ shared values.  The OrgLaw may define the rules, regulations and agreements that are to be implemented in the OrgCode. Alternatively, OrgLaw may consist of rules, regulations and/or agreements specifying a “code deference” approach to governance. Code deference approaches may be absolute or qualified and complete or partial.[1]
+The law of the Org is its spirit. The OrgLaw comprises the Org's constitutional or charter principles (whether or not expressed in a written document), and, if it is a state-chartered Org, the applicable authorizing legal regime. For example, if the Org is a Delaware corporation, its OrgLaw will be its certificate of incorporation and bylaws, together with the Delaware General Corporation Law. If the Org is a DAO*, then the OrgLaw may be an informal, mutable social contract or community understanding based on the members’ shared values along with any rules relating to partnerships or unincorporated associations that apply in relevant jurisdictions. 
 
-_*A Word About “DAOs”. _The term “DAO” is probably one of the most ambiguous and widely misused in the blockchain/DeFi community.  In this paper we use the term “DAO” to refer to an Org—meaning that a DAO is a code/law dyad, just like any other Org. The OrgLaw for a DAO may be anarchic, but that is still a form of social agreement which we regard as ultimately legalistic (and potentially binding) in nature. DAOs may also be subject to default laws included in their OrgLaw, even if the DAO members are unaware of such default laws—for examples, in common law jurisdictions DAOs may be general partnerships by default.  Unless otherwise expressly stated, we do **_not _**use the term “DAO” to refer solely to a smart contract that automates treasury, voting and liquidation functions for a DAO—we refer to such a smart contract as the OrgCode for a DAO, or as the “DAO smart contract”. _See _“_The ZeroLaw Manifesto_” for extensive discussion of these issues.
+The relationship between the OrgLaw and the OrgCode is complex, nuanced, and potentially bidirectional. The OrgLaw may define the rules, regulations and agreements that are to be implemented in the OrgCode. Alternatively, OrgLaw may consist of rules, regulations and/or agreements specifying a “code deference” approach to governance. Code deference approaches may be absolute or qualified and complete or partial.
+
+<table>
+  <tr>
+   <td>Code Deference Approach
+   </td>
+   <td>Complete
+   </td>
+   <td>Partial
+   </td>
+  </tr>
+  <tr>
+   <td>Absolute
+   </td>
+   <td>
+   "Code Is Law" For All Org Governance
+   </td>
+   <td>
+   "Code Is Law" For Governance of Some Aspects of Org
+   </td>
+   </tr>
+   <tr>
+   <td>Qualified</td>
+   <td>
+   All Org Governance Defers to Code, Except in Limited Cases Like Consensus Attack, Court Orders, Etc.
+   </td>
+   <td>
+   Some Aspects of Org Governance Defer to Code, Except in Limited Cases Like Consensus Attack, Court Orders, Etc.
+   </td>
+   </tr>
+</table>
+
+For an example of qualified partial code deference, see [The Model DAO Charter](https://).
+
+***A Word On “DAOs”** The term “DAO” is probably one of the most ambiguous and widely misused in the blockchain/DeFi community.  In this paper we use the term “DAO” to refer to a type of Org—meaning that a DAO is a code/law dyad, just like any other Org. The OrgLaw for a DAO may be anarchic, but that is still a form of social agreement which we regard as ultimately legalistic (and potentially binding) in nature. DAOs may also be subject to default laws included in their OrgLaw, even if the DAO members are unaware of such default laws—for examples, in common law jurisdictions DAOs may be general partnerships by default.  Unless otherwise expressly stated, we do **not** use the term “DAO” to refer solely to a smart contract that automates treasury, voting and liquidation functions for an Org—rather, we refer to such a smart contract as the OrgCode for a DAO, or as the 'DAO smart contract'. 
 
 We also adopt the following DAO typology:
+
 <ul>
-    <li>>'GrantDAOs'-> grant-giving (@MolochDAO)</li> 
-    <li>'VentureDAOs' -> venture capital (@The_DAO_Project)</li>
-    <li>'GovDAOs' -> protocol/DAPP governance (@makerdao)</li>
-    <li>'PACDAOs' -> political (@YangDAOofficial)</li>
-    <li>'ShadowDAOs' -> hacktivist/anon"</li>
+    <li>'GrantDAOs'-> grant-giving (MolochDAO)</li> 
+    <li>'VentureDAOs' -> venture capital (TheDAO by slock.it)</li>
+    <li>'GovDAOs' -> protocol/DAPP governance (MakerDAO)</li>
+    <li>'PACDAOs' -> political (YangDAOofficial)</li>
+    <li>'ShadowDAOs' -> hacktivist/anon (?)</li>
 </ul>
 
 <h3>B. OrgCode</h3>
 
-If the OrgLaw is the soul of the Org, then the OrgCode is the Org’s brain & central nervous system. The OrgCode consists of a smart contract deployed to Ethereum as an instance of[ IsssuingEntity.sol](https://github.com/zerolawtech/SFT-Protocol/blob/master/contracts/IssuingEntity.sol). Other smart contracts become part of the OrgCode by becoming connected to the OrgCode via the applicable[ association method](https://sft-protocol.readthedocs.io/en/latest/issuing-entity.html#associating-contracts), either through an owner- or administrator-controlled association process or through a more open process, depending on the configuration of the Org in question. The OrgCode then either implements or extends the OrgLaw by administering these ancillary smart contracts. For example:
+If the OrgLaw is the soul or mind of the Org, then the OrgCode is the Org’s CNS. The OrgCode consists of a smart contract deployed to Ethereum as an instance of[ IsssuingEntity.sol](https://github.com/zerolawtech/SFT-Protocol/blob/master/contracts/IssuingEntity.sol). Other smart contracts become part of the OrgCode by becoming connected to the OrgCode via the applicable[ association method](https://sft-protocol.readthedocs.io/en/latest/issuing-entity.html#associating-contracts), either through an owner- or administrator-controlled association process or through a more open process, depending on the configuration of the Org in question. The OrgCode then either implements or extends the OrgLaw by administering these ancillary smart contracts. For example:
 
 <ul>
-    <li>ShareCode contracts must be associated to the OrgCode before OrgShares can be transferred, so that the OrgCode can accurately track holder addresses</li>
-    <li>IDcode contracts must be associated to the OrgCode to provide any identity confirmation data that may be required by the ShareLaw before new addresses/persons can receive or send OrgShares</li>
-    <li>Custodian contracts must be associated to the OrgCode in order to send or receive OrgShares, and the OrgCode is also where any applicable restrictions will be set on a custodian contract</li>
-    <li>A Governance contract must be associated to the OrgCode if certain functions—such as the authorization or issuance of additional OrgShares—require on-chain approval by OrgShare holders</li>
+    <li>ShareCode contracts (i.e., instances of SecurityToken.sol or NFToken.sol) must be associated to the OrgCode before OrgShares can be transferred, so that the OrgCode can accurately track holder addresses</li>
+    <li>IDcode contracts (i.e., instances of KYCIssuer.sol or KYCRegistrar.sol) must be associated to the OrgCode to provide any identity confirmation data that may be required by the ShareLaw before new addresses/persons can receive or send OrgShares</li>
+    <li>Custodian contracts (i.e., instances of OwnedCustodian.sol or iBaseCustodian.sol) must be associated to the OrgCode in order to send or receive OrgShares, and the OrgCode is also where any applicable restrictions will be set on a custodian contract</li>
 </ul>
-
-
-The OrgCode also supports custom modules. There is no limit to the ways that OrgLaw can be embedded in modules and programmatically enforced. For example, the current version of ZAP includes
-
-<ul>
-    <li>a venture-capital-style preferred stock module that will honor the liquidation preferences and conversion features of preferred stock in a dividend, merger or other distribution event</li>
-    <li>a module of vesting and exercise of stock options</li>
-    <li>a minimal voting/governance module allowing for the supply of OrgShares to be throttled by a mandatory vote of current shareholders</li>
-</ul>
-
-Other possibilities including adding modules to handle crowdsales, country/time based token locks, automated right-of-first refusal procedures, complex shareholder votes, tender offer execution and bond redemption. Modules can be attached and detached from the OrgCode via IssuingEntity.attachModule(address _target, address _module) and IssuingEntity.detachModule(address _target, address _module). ZAP’s modularity is designed to maximize gas efficiency - modules may be detached as soon as they are no longer needed, and may even adjust their own hook points or detach themselves during the course of their lifecycle..
-
-In the most conventional possible configuration of a ZAP-based Org, the OrgCode simply implements and enforces the OrgLaw. However, to the extent that the OrgLaw is voluntarily configured to reflect one or another degree of “code deference,” the OrgCode may define and determine the OrgLaw pursuant to a “code is law” approach. (For a detailed breakdown of the potential styles of relating legal agreements to smart contracts, including the distinction between “absolute code deference” and “qualified code deference,” see _The ZeroLaw Manifesto_).
 
 The OrgCode is administered by a standard multi-sig permissioning scheme inherited from[ MultiSig.sol](https://sft-protocol.readthedocs.io/en/latest/multisig.html#multisig). The owner(s) of the OrgCode (one or more Ethereum addresses declared as owners in the OrgCode constructor) may access any administrative function of the OrgCode. Owners may also delegate administrative function access to one or more additional authorities (one or more Ethereum addresses declared as authorities through the .addAuthority method). Authorities are approved by owners on an administrative-function-by-administrative-function basis via the function _signatures parameter of .addAuthority; such _signatures may include any administrative function other than the .addAuthority method itself, which can only be called by owners. Both owner and authority rights to can be tied to a multisig threshold via the _threshold parameter. Authority permissioning may additionally be time-limited via the _approvedUntil parameter. The parameters for existing owners and authorities can be modified later via various specialized methods. The same permissioning scheme can be extended to the other smart contracts to which the OrgCode is connected.
 
@@ -184,7 +205,7 @@ An Org may desire to (or, depending on the applicable law, may be required to), 
 Transfer restrictions typically fall under one of three types (or a combination thereof):
 
 <ul>
-    <li>>identity-based</li>
+    <li>identity-based</li>
     <li>transaction-based</li>
     <li>vesting-based (may be time-based, service-based or milestone-based vesting);</li>
 </ul>
@@ -470,9 +491,10 @@ Transfer restrictions can be encoded in the smart contract rules governing trans
 
 Direct transfer restrictions are set by the owner or another appropriately permissioned authority of the Org smart contract (an instance of IssuingEntity.sol). Such restrictions can be set at various levels of granularity:
 
-·        identity-based transfer restrictions—i.e., restrictions on all OrgShares held by a particular shareholder or custodian—are set by calling IssuingEntity.setEntityRestriction(bytes32 _id, bool _restricted), where bytes32_id is the unique HashID of the restricted holder (_see below_ under “ID Verification” for more on HashIDs);
-
-·     restrictions on all of the OrgShares or all of the OrgShares of a given class or series—i.e., restrictions on particular OrgShares, regardless of who holds them—are set by calling IssuingEntity.setTokenRestriction(address _token, bool _restricted)
+<ul>
+    <li>identity-based transfer restrictions—i.e., restrictions on all OrgShares held by a particular shareholder or custodian—are set by calling IssuingEntity.setEntityRestriction(bytes32 _id, bool _restricted), where bytes32_id is the unique HashID of the restricted holder (_see below_ under “ID Verification” for more on HashIDs)</li>
+    <li>restrictions on all of the OrgShares or all of the OrgShares of a given class or series—i.e., restrictions on particular OrgShares, regardless of who holds them—are set by calling IssuingEntity.setTokenRestriction(address _token, bool _restricted)</li>
+</ul>
 
 It is also possible to impose various other types of transfer restrictions indirectly. An Org may define a limit on the number of unique shareholders it will have. Such a limit may be defined on a per-Org, per-country and/or per-accreditation-type basis.
 
@@ -484,13 +506,12 @@ Investor limits are configured with setter functions called on the OrgCode (the 
 
 The setter method IssuingEntity.setCountry(uint16 _country, bool _permitted, uint8 _minRating, uint32[8] _limits) approves or prohibits a country’s citizens or permanent residents from being shareholders and sets investor limits within that country. Its parameters are as follows:
 
-·        _country: The code of the country to modify
-
-·        _permitted: Permission bool
-
-·        _minRating: The minimum rating required for an investor in this country to hold tokens. Cannot be zero.
-
-·        _limits: A uint32[8] array of investor limits for this country which essentially supplies investor limits in a destructured variable assignment. The seven positions in the array correspond to the seven possible shareholder accreditation types. If there are fewer than seven possible accreditation types, the remainder will be set to “0”. For example, for U.S. issuers, there are likely to be three accreditation types—unaccredited, accredited and QIB—and thus four of the array elements would typically be 0.
+<ul>
+    <li>_country: The code of the country to modify</li>
+    <li>_permitted: Permission bool</li>
+    <li>_minRating: The minimum rating required for an investor in this country to hold tokens. Cannot be zero.</li>
+    <li>_limits: A uint32[8] array of investor limits for this country which essentially supplies investor limits in a destructured variable assignment. The seven positions in the array correspond to the seven possible shareholder accreditation types. If there are fewer than seven possible accreditation types, the remainder will be set to “0”. For example, for U.S. issuers, there are likely to be three accreditation types—unaccredited, accredited and QIB—and thus four of the array elements would typically be 0.</li>
+</ul>
 
 IssuingEntity.setCountries(uint16[] _country, uint8[] _minRating, uint32[] _limit) is a similar setter method that enables approving many countries (with corresponding per-country investor limits) at once without per-country differences in limitations that vary based on the shareholder’s accreditation level.
 
@@ -504,25 +525,22 @@ Such assumptions may be more or less conservative, depending on the Org’s pref
 
 The technology-based components of the ID verification process will typically consist of three tools:
 
-·        an encrypted off-chain database of personally identifiable information (PII) regarding current and prospective Org members, which may include each such person’s:
+<ul>
+    <li>an encrypted off-chain database of personally identifiable information (PII) regarding current and prospective Org members, which may include each such person’s:
+        <ul>
+            <li>full legal name</li>
+            <li>country and region (encoded under the[ ISO 3166 standard](https://sft-protocol.readthedocs.io/en/latest/data-standards.html) for storage in KYCIssuer.sol or KYCRegistrar.sol)</li>
+            <li>rating (non-accredited, accredited, QIB, etc.—varies by issuer & jurisdiction—will be represented by an arbitrary uint8 in KYCIssuer.sol or KYCRegistrar.sol)</li>
+            <li>tax ID #</li>
+            <li>one or more public Ethereum addresses</li>
+            <li>a required renewal date (will be represented in epoch time in KYCIssuer.sol or KYCRegistrar.sol)</li>
+            <li>the KECCAK256 hash of a subset of the foregoing PII (the IDHash)</li>
+        </ul>
+    </li>
+    <li>an Org-specific smart contract (deployed as an instance of <span style="text-decoration:underline;">KYCIssuer.sol</span>) which, for each Org member, stores a mapping of that Org member’s IDHash to the Org member’s country code, region code, rating code (reflecting “accredited” status or lack thereof), required renewal date and Ethereum address(es) (RegistryData)</li>
+    <li>an inter-Org smart contract (deployed as an instance of KYCRegistrar.sol) which stores the RegistryData of current and prospective members of many Orgs—such inter-Org registrars would likely be deployed and maintained by independent third parties running businesses related to securities tokens; for example, professional transfer agents or investor-accreditation-check services</li>
+</ul>
 
-`o`   full legal name
-
-`o`   country and region (encoded under the[ ISO 3166 standard](https://sft-protocol.readthedocs.io/en/latest/data-standards.html) for storage in KYCIssuer.sol or KYCRegistrar.sol)
-
-`o`   rating (non-accredited, accredited, QIB, etc.—varies by issuer & jurisdiction—will be represented by an arbitrary uint8 in KYCIssuer.sol or KYCRegistrar.sol)
-
-`o`   tax ID #
-
-`o`   one or more public Ethereum addresses
-
-`o`   a required renewal date (will be represented in epoch time in KYCIssuer.sol or KYCRegistrar.sol)
-
-`o`   the KECCAK256 hash of a subset of the foregoing PII (the IDHash)
-
-·        an Org-specific smart contract (deployed as an instance of <span style="text-decoration:underline;">KYCIssuer.sol</span>) which, for each Org member, stores a mapping of that Org member’s IDHash to the Org member’s country code, region code, rating code (reflecting “accredited” status or lack thereof), required renewal date and Ethereum address(es) (RegistryData);
-
-·        an inter-Org smart contract (deployed as an instance of KYCRegistrar.sol) which stores the RegistryData of current and prospective members of many Orgs—such inter-Org registrars would likely be deployed and maintained by independent third parties running businesses related to securities tokens; for example, professional transfer agents or investor-accreditation-check services;
 
 KYCIssuer.sol and KYCRegistrar.sol essentially function as on-chain whitelists, but they only store IDHashes. Without access to the information contained in the private off-chain database of personally identifiable information, it would be impossible to correlate a particular IDHash with a particular person. Nonetheless, it is possible that the on-chain registrar smart contracts will be subject to GDPR or other privacy regulations, and the public nature and practical irreversibility of Ethereum may thus place the ZAP protocol at risk of being non-compliant, depending on the details of the Org. We anticipate that zero-knowledge proof and other techniques will eventually be added to address these issues. 
 
@@ -548,9 +566,10 @@ Custodial smart contracts are approved to hold tokens representing OrgShares on 
 
 There are two broad categories of custodial smart contracts:
 
-·        **Owned** custodial smart contracts are instances of OwnedCustodian.sol; they are controlled and maintained by a known legal entity such as a registered securities broker/dealer or a centralized securities exchange or cryptocurrency exchange.
-
-·        **Autonomous** custodial smart contracts are instances of IBaseCustodian.sol; they are autonomous in that once deployed there is no authority capable of exercising control over the contract. Autonomous custodial smart contracts will be useful for escrow arrangements, implementation of privacy protocols and the operation of decentralized exchanges.
+<ul>
+    <li>>**Owned** custodial smart contracts are instances of OwnedCustodian.sol; they are controlled and maintained by a known legal entity such as a registered securities broker/dealer or a centralized securities exchange or cryptocurrency exchange.</li>
+    <li>**Autonomous** custodial smart contracts are instances of IBaseCustodian.sol; they are autonomous in that once deployed there is no authority capable of exercising control over the contract. Autonomous custodial smart contracts will be useful for escrow arrangements, implementation of privacy protocols and the operation of decentralized exchanges.</li>
+</ul>
 
 As discussed above, an Org may need to carefully limit the number of investors it has in order to avoid opting into expensive regulatory regimes. For this reason, ZAP embodies conservative assumptions regarding how ownership of custodied OrgShares is counted. When an investor transfers a balance into a custodian it does not increase or decrease the overall investor count; instead the investor is now included in the list of beneficial owners represented by the custodian. Even if the investor now has a balance of 0 in their own wallet, they will still be included in the Org’s investor count.
 
@@ -558,12 +577,11 @@ As discussed above, an Org may need to carefully limit the number of investors i
 
 There are three types of token transfers related to Custodians.
 
-·        **Inbound**: transfers from an investor into the Custodian contract.
-
-·        **Outbound**: transfers out of the Custodian contract to an investor’s wallet.
-
-·        **Internal**: transfers involving a change of ownership within the Custodian contract. This is the only type of transfer that involves a change of ownership of the token, however no tokens actually move.
-
+<ul>
+    <li>**Inbound**: transfers from an investor into the Custodian contract</li>
+    <li>**Outbound**: transfers out of the Custodian contract to an investor’s wallet</li>
+    <li>**Internal**: transfers involving a change of ownership within the Custodian contract. This is the only type of transfer that involves a change of ownership of the token, however no tokens actually move</li>
+</ul>
 Importantly, internal transfers are subject to the same permissioning regime established by the OrgCode. 
 
 Permissioning checks for custodial transfers are identical to those of normal transfers. **TokenBase.checkTransferCustodian(_address _cust_, _address _from_, _address _to_, _uint256 _value_)** checks if a custodian internal transfer of tokens is permitted and returns **true** if the transfer is permitted. If the transfer is not permitted, the call will revert with the reason given in the error string.
@@ -574,7 +592,40 @@ Permissioning checks for custodial transfers are identical to those of normal tr
 
 <h2>5. Misc. Additional Legal Considerations & Org Modules </h2>
 
-<h3>A. Unique Challenges Posed by the Contractual Nature of OrgShares</h3>
+<h3>A. Introduction to ZAP Modules</h3>
+
+ZAP supports custom modules. Modules can be dynamically attached and detached from the OrgCode via IssuingEntity.attachModule(address _target, address _module) and IssuingEntity.detachModule(address _target, address _module). ZAP’s modularity is designed to maximize gas efficiency - modules may be detached as soon as they are no longer needed, and may even adjust their own hook points or detach themselves during the course of their lifecycle.
+ 
+ There is no limit to the ways that OrgLaw can be enocded and programmatically enforced through such modules. For example, the current version of ZAP includes:
+
+<ul>
+    <li>the Waterfall Module (Waterfall.sol), a venture-capital-style preferred stock module that will honor the liquidation preferences and conversion features of preferred stock in a dividend, merger or other distribution event</li>
+    <li>the Dividend Module (Dividend.sol), a module for automated distribution of dividends to OrgShare holders</li>
+    <li>the Options Module (VestedOptions.sol), a module for automated vesting and exercise of stock options</li>
+    <li>the Governance Module (Governance.sol), a minimal voting/governance module allowing for the supply of OrgShares to be throttled by a mandatory vote of current shareholders</li>
+</ul>
+
+Other possibilities including adding modules to handle crowdsales, country/time based token locks, automated right-of-first refusal procedures, complex shareholder votes, tender offer execution and bond redemption. 
+
+<h3>B. Venture Capital Considerations & Preferred Stock Liquidation Module</h3>
+
+Blockchain-based smart contracts, paired with tokenized OrgShares, create a powerful tool for venture-backed companies with complex preferred stock capital structures, partnerships with tiered distribution waterfalls and any Org with mezzanine debt. As envisioned by Vice Chancellor J. Travis Laster of the Delaware Court of Chancery:
+
+  >By accurately programming different classes or series of preferred stock [to] carry different voting rights, conversion rights, payment rights, and other features…up front, a complex capital structure can be administered automatically, without human intervention. If, for example, the corporation wishes to issue additional shares, but a particular series of preferred stock has a blocking right, then the stock ledger could be coded to prevent the shares from being issued unless the requisite vote is received. Smart contracting technology also could be used to implement conversion provisions and would simplify the often difﬁcult task of calculating conversion rates, particularly when anti-dilution formulas come into play. If the features were programmed accurately up front, then the calculations would take place automatically.
+ 
+ZAP is working toward realizing this vision in a number of ways. 
+
+The experimental Waterfall Module, [Waterfall.sol](https://github.com/iamdefinitelyahuman/ZAP-Tech/blob/waterfall/contracts/modules/Waterfall.sol), encodes the distribution rules for a corporate-style Org's entire capital structure: common stock, common stock options, and any number of series of preferred stock. This enables automatic and trust-reduced distribution to all OrgShareholders of their respective portions of any and all dividends, merger consideration and liquidation proceeds that the Org might have occasion to pay out to OrgShareholders.
+
+Preferred stock will typically be convertible to common stock at some ratio and have a 'liquidation preference' that is hard-coded at the time of issuance and taken into account by the Waterfall Module in allocating distributions. Varieties of preferred stock recognized by the Waterfall Module include fully participating, partially participating and non-participating preferred stock; given a distribution amount, the Waterfall Module will determine whether the preferred stock should be treated on a preferred-stock basis or an as-converted-to-common-stock basis (i.e., which treatment will result in a greater payment to the preferred stock) and allocate the distribution amount accordingly. The Waterfall Module can also pay out stock options on a net-exercise basis by deducting the exercise price of the option from the otherwise applicable per-share merger consideration.  
+
+For example, if the Org is a 'target' Org to be acquired by an 'acquirer' Org in a statutory merger pursuant to which the acqurier Org becomes the owner of all OrgShares, the acquirer Org would deposit the merger consideration in the form of ETH, DAI or another Ethereum-based cryptocurrency to the address of a smart contract escrow. The merger consideration would then automatically be divvied-up in accordance with the liquidation priorities of the different stockholders, with preferred stockholders at the top of the stack and common stockholders at the bottom--unless the preferred stock is getting paid on an as-converted-to-common-stock basis or is participating, in which case the preferred stock would be pari passu with the common stock for all or a portion of the merger consideration. The allocated amounts would be distributed to the addresses where the stockholders held the token-certificates representing the various issued and outstanding shares of capital stock or stock options. 
+
+Today in regular M&A deal execution, these processes require a cadre of lawyers, transfer agents, escrow agents and payment agents. The roles of these intermediaries and trust holes, and the manual and error-prone processes they rely upon, could be dramatically reduced or, in certain cases, even completely eliminated with ZAP. Alternatively, the Waterfall Module can be used simply to calculate the relevant amounts in a transparent and trust-reduced manner, and distribution could then be handled on a more ad hoc basis--entirely on-chain, entirely off-chain, or partially on-chain & off-chain. This should be the future; it just makes sense. 
+
+The Governance Module, [Governance.sol](https://github.com/zerolawtech/SFT-Protocol/blob/master/contracts/modules/Governance.sol), is a minimal proof of concept that may be used as a starting point for enabling OrgShareholders to vote on governance issues.  It can be combined with a checkpoint module to build whatever specific setup is required by an Org. Although the current version is modest in scope, it provides a critical function for corporate-style Orgs--namely, requiring OrgShareholder approval before increasing the number of shares of a given class or series of stock that the corporation is authorized to issue. This vote is also legally required in the case of corporations, and takes the form of stockholders voting on a proposed amendment to the corporation's certificate of incorporation. With ZAP, that vote can be held on chain.
+  
+<h3>C. Unique Challenges Posed by the Contractual Nature of OrgShares</h3>
 
 OrgShares are bundles of legal rights associated with a blockchain token that functions as a transferable instrument. Unlike with typical ERC20 tokens on Ethereum or other 'bearer instruments' such as protocol tokens, persons in markets for stock, membership interests or other types of shares, or even debt instruments like bonds, typically consider it important to ensure that buyers and sellers of the instrument understand that the instrument represents a bundle of legal rights and the nature and limitations of those legal rights. 
 
@@ -601,25 +652,8 @@ In an ordinary client-server architecture, the solution would be simple—force 
 
 ZAP thus addresses this issue in at least two ways:
 
-1) ZAP trust-minimizes the authentication of legal documents pertaining to the Org. The Org admins can record the hash of a legal document (e.g., the Org’s certificate of incorporation, or a Shareholders’ Agreement) to the blockchain via the OrgCode (the Org’s instance of IssuingEntity.sol). Current or prospective shareholders who receive the document through potentially compromised or secondhand sources can then verify that the hash of the document matches the recorded hash available from the OrgCode.  This process can also assist with version control, since Org governance documents may frequently be amended and shareholder will want to ensure they are working from the most current version.
-
-2) In a future version of ZAP, we intend to add a module that enables Orgs to gate sales/purchases of OrgShares in the secondary market with an automated escrow process. This would enable issuers to ensure that the contractual terms of OrgShares are agreed upon by future buyers, without representatives of the Org needing to manually permission each OrgShare transaction. Each OrgShare purchase/sale could be required to be effected through a smart contract escrow. The OrgShare tokens and the purchase price (any Ethereum-compatible tokens) would be deposited into the escrow smart contract. The would-be purchaser would be directed to a website to e-sign an acknowledgement of having received disclosures regarding the nature of the OrgShares. The hash of that acknowledgement and the purchaser's Ethereum address could then be recorded to the smart contract escrow, evidencing that the information had been received and the acknowledgement signed, whereupon the OrgShare tokens would be automatically transferred to the address of the purchaser and the token-denominated purchase price would be automatically transferred to the address of the seller out of the smart contract escrow. The smart contract escrow could also be configured to permit termination by the would-be seller if the required documents are not proffered by the would-be purchaser within some specified period--e.g. 48 hours. Upon a termination,  the OrgShare tokens and purchase price tokens would revert to the original owners, minus a penalty to be paid by the would-be purchaser for failure to deliver the documents within the required time. In effect, this arrangement would simulate a traditional share purchase agreement which is signed by the parties on one date and then provides for a later 'closing date' triggered when various conditions precedent--such as the signing of additional documents by one or more parties--have been satisfied. This is a 'smart contract' along the lines originally proposed by Nick Szabo--i.e., a mechanism for automated and trust-reducing the performance-or-breach structure of a share purchase agreement. 
-  
-<h3>B. Venture Capital Considerations & Preferred Stock Liquidation Module</h3>
-
-Blockchain-based smart contracts, paired with tokenized OrgShares, create a powerful tool for venture-backed companies with complex preferred stock capital structures, partnerships with tiered distribution waterfalls and any Org with mezzanine debt. As envisioned by Vice Chancellor J. Travis Laster of the Delaware Court of Chancery:
-
-  >By accurately programming different classes or series of preferred stock [to] carry different voting rights, conversion rights, payment rights, and other features…up front, a complex capital structure can be administered automatically, without human intervention. If, for example, the corporation wishes to issue additional shares, but a particular series of preferred stock has a blocking right, then the stock ledger could be coded to prevent the shares from being issued unless the requisite vote is received. Smart contracting technology also could be used to implement conversion provisions and would simplify the often difﬁcult task of calculating conversion rates, particularly when anti-dilution formulas come into play. If the features were programmed accurately up front, then the calculations would take place automatically.
- 
-ZAP is working toward realizing this vision in a number of ways. 
-
-The experimental Waterfall Module, [Waterfall.sol](https://github.com/iamdefinitelyahuman/ZAP-Tech/blob/waterfall/contracts/modules/Waterfall.sol), encodes the distribution rules for a corporate-style Org's entire capital structure: common stock, common stock options, and any number of series of preferred stock. This enables automatic and trust-reduced distribution to all OrgShareholders of their respective portions of any and all dividends, merger consideration and liquidation proceeds that the Org might have occasion to pay out to OrgShareholders.
-
-Preferred stock will typically be convertible to common stock at some ratio and have a 'liquidation preference' that is hard-coded at the time of issuance and taken into account by the Waterfall Module in allocating distributions. Varieties of preferred stock recognized by the Waterfall Module include fully participating, partially participating and non-participating preferred stock; given a distribution amount, the Waterfall Module will determine whether the preferred stock should be treated on a preferred-stock basis or an as-converted-to-common-stock basis (i.e., which treatment will result in a greater payment to the preferred stock) and allocate the distribution amount accordingly. The Waterfall Module can also pay out stock options on a net-exercise basis by deducting the exercise price of the option from the otherwise applicable per-share merger consideration.  
-
-For example, if the Org is a 'target' Org to be acquired by an 'acquirer' Org in a statutory merger pursuant to which the acqurier Org becomes the owner of all OrgShares, the acquirer Org would deposit the merger consideration in the form of ETH, DAI or another Ethereum-based cryptocurrency to the address of a smart contract escrow. The merger consideration would then automatically be divvied-up in accordance with the liquidation priorities of the different stockholders, with preferred stockholders at the top of the stack and common stockholders at the bottom--unless the preferred stock is getting paid on an as-converted-to-common-stock basis or is participating, in which case the preferred stock would be pari passu with the common stock for all or a portion of the merger consideration. The allocated amounts would be distributed to the addresses where the stockholders held the token-certificates representing the various issued and outstanding shares of capital stock or stock options. 
-
-Today in regular M&A deal execution, these processes require a cadre of lawyers, transfer agents, escrow agents and payment agents. The roles of these intermediaries and trust holes, and the manual and error-prone processes they rely upon, could be dramatically reduced or, in certain cases, even completely eliminated with ZAP. Alternatively, the Waterfall Module can be used simply to calculate the relevant amounts in a transparent and trust-reduced manner, and distribution could then be handled on a more ad hoc basis--entirely on-chain, entirely off-chain, or partially on-chain & off-chain. This should be the future; it just makes sense. 
-
-The Governance Module, [Governance.sol](https://github.com/zerolawtech/SFT-Protocol/blob/master/contracts/modules/Governance.sol), is a minimal proof of concept that may be used as a starting point for enabling OrgShareholders to vote on governance issues.  It can be combined with a checkpoint module to build whatever specific setup is required by an Org. Although the current version is modest in scope, it provides a critical function for corporate-style Orgs--namely, requiring OrgShareholder approval before increasing the number of shares of a given class or series of stock that the corporation is authorized to issue. This vote is also legally required in the case of corporations, and takes the form of stockholders voting on a proposed amendment to the corproation's certificate of incorporation. With ZAP, that vote can be held on chain.
-  
+<ul>
+ <li>ZAP trust-minimizes the authentication of legal documents pertaining to the Org. The Org admins can record the hash of a legal document (e.g., the Org’s certificate of incorporation, or a Shareholders’ Agreement) to the blockchain via the OrgCode (the Org’s instance of IssuingEntity.sol). Current or prospective shareholders who receive the document through potentially compromised or secondhand sources can then verify that the hash of the document matches the recorded hash available from the OrgCode.  This process can also assist with version control, since Org governance documents may frequently be amended and shareholder will want to ensure they are working from the most current version.</li>
+    
+ <li>In a future version of ZAP, we intend to add a module that enables Orgs to gate sales/purchases of OrgShares in the secondary market with an automated escrow process. This would enable issuers to ensure that the contractual terms of OrgShares are agreed upon by future buyers, without representatives of the Org needing to manually permission each OrgShare transaction. Each OrgShare purchase/sale could be required to be effected through a smart contract escrow. The OrgShare tokens and the purchase price (any Ethereum-compatible tokens) would be deposited into the escrow smart contract. The would-be purchaser would be directed to a website to e-sign an acknowledgement of having received disclosures regarding the nature of the OrgShares. The hash of that acknowledgement and the purchaser's Ethereum address could then be recorded to the smart contract escrow, evidencing that the information had been received and the acknowledgement signed, whereupon the OrgShare tokens would be automatically transferred to the address of the purchaser and the token-denominated purchase price would be automatically transferred to the address of the seller out of the smart contract escrow. The smart contract escrow could also be configured to permit termination by the would-be seller if the required documents are not proffered by the would-be purchaser within some specified period--e.g. 48 hours. Upon a termination,  the OrgShare tokens and purchase price tokens would revert to the original owners, minus a penalty to be paid by the would-be purchaser for failure to deliver the documents within the required time. In effect, this arrangement would simulate a traditional share purchase agreement which is signed by the parties on one date and then provides for a later 'closing date' triggered when various conditions precedent--such as the signing of additional documents by one or more parties--have been satisfied. This is a 'smart contract' along the lines originally proposed by Nick Szabo--i.e., a mechanism for automated and trust-reducing the performance-or-breach structure of a share purchase agreement.</li> 
+  </ul>

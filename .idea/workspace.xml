@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="f448d659-22d8-45f4-b8b3-6efe379db0a0" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/papers &amp; research/ZAP Whitepaper.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/papers &amp; research/ZAP Whitepaper.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/SFT Phase 2 (Review).pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs/papers &amp; research/ZAP Audit Report (under old name SFT).pdf" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -20,8 +20,30 @@
         <entry file="file://$PROJECT_DIR$/docs/papers &amp; research/ZAP Whitepaper.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="SPLIT">
-              <first_editor relative-caret-position="240">
-                <caret line="655" column="616" selection-start-line="655" selection-start-column="616" selection-end-line="655" selection-end-column="616" />
+              <first_editor relative-caret-position="20160">
+                <caret line="660" column="290" selection-start-line="660" selection-start-column="290" selection-end-line="660" selection-end-column="290" />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/docs/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor />
+              <second_editor />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="114">
+                <caret line="52" selection-start-line="52" selection-end-line="52" />
               </first_editor>
               <second_editor />
             </state>
@@ -36,6 +58,7 @@
       <find>SecurityToken.so</find>
       <find>NFT</find>
       <find>506</find>
+      <find>SFT</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -47,6 +70,7 @@
         <option value="$PROJECT_DIR$/docs/model legal forms/Model DAO Charter - Unincorporated Association - QDC.md" />
         <option value="$PROJECT_DIR$/docs/whitepapers &amp; research/ZAP Whitepaper.md" />
         <option value="$PROJECT_DIR$/docs/papers &amp; research/ZAP Whitepaper.md" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
@@ -135,7 +159,7 @@
       <workItem from="1571987590069" duration="4027000" />
       <workItem from="1572123336629" duration="8265000" />
       <workItem from="1572652273676" duration="8038000" />
-      <workItem from="1572712175719" duration="24250000" />
+      <workItem from="1572712175719" duration="25003000" />
     </task>
     <task id="LOCAL-00001" summary="adds directories for model legal forms and whitepapers/researrch">
       <created>1571965778497</created>
@@ -305,15 +329,28 @@
       <option name="project" value="LOCAL" />
       <updated>1572826705063</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="misc. edits">
+      <created>1572828577697</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1572828577697</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Updates SFT references in README.md to &quot;ZAP&quot;">
+      <created>1572829067076</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1572829067076</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="52561000" />
+    <option name="totallyTimeSpent" value="53314000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="925" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.21530055" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -353,7 +390,8 @@
     <MESSAGE value="misc edits" />
     <MESSAGE value="misc. edits, including re-ordering section on modules" />
     <MESSAGE value="misc. edits" />
-    <option name="LAST_COMMIT_MESSAGE" value="misc. edits" />
+    <MESSAGE value="Updates SFT references in README.md to &quot;ZAP&quot;" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updates SFT references in README.md to &quot;ZAP&quot;" />
     <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="editorHistoryManager">
@@ -373,11 +411,29 @@
     <entry file="file://$PROJECT_DIR$/docs/flow1.png">
       <provider selected="true" editor-type-id="images" />
     </entry>
+    <entry file="file://$PROJECT_DIR$/docs/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor />
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="114">
+            <caret line="52" selection-start-line="52" selection-end-line="52" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/docs/papers &amp; research/ZAP Whitepaper.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="SPLIT">
-          <first_editor relative-caret-position="240">
-            <caret line="655" column="616" selection-start-line="655" selection-start-column="616" selection-end-line="655" selection-end-column="616" />
+          <first_editor relative-caret-position="20160">
+            <caret line="660" column="290" selection-start-line="660" selection-start-column="290" selection-end-line="660" selection-end-column="290" />
           </first_editor>
           <second_editor />
         </state>

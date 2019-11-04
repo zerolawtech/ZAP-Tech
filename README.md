@@ -1,12 +1,12 @@
-# SFT Protocol
+# ZAP Protocol
 
 ## Description
 
-The SFT protocol is a set of smart contracts, written in Solidity for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. SFT favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
+The ZeroLaw org-Augmentation Protocol (ZAP)  is a set of smart contracts, written in Solidity for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. SFT favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
 
 ## How it Works
 
-SFT is designed to maximize interoperability between different network participants. Broadly speaking, these participants may be split into four categories:
+ZAP is designed to maximize interoperability between different network participants. Broadly speaking, these participants may be split into four categories:
 
 * **Issuers** are entities that create and sell security tokens to fund their business operations.
 * **Investors** are entities that have passed KYC/AML checks and are are able to hold or transfer security tokens.
@@ -21,7 +21,7 @@ Security tokens in the protocol are built upon the ERC20 token standard. Tokens 
 
 ## Components
 
-The SFT protocol is comprised of four core components:
+ZAP is comprised of four core components:
 
 1. **Token**
 
@@ -57,7 +57,7 @@ In-depth documentation is hosted at [Read the Docs](https://sft-protocol.readthe
 
 ## Develoment Progress
 
-The SFT Protocol is still under active development and has not yet undergone a third party audit. Please notify us if you find any issues in the code. We highly recommend against using these contracts prior to an audit by a trusted third party.
+ZAP is still under active development and has not yet undergone a third party audit. Please notify us if you find any issues in the code. We highly recommend against using these contracts prior to an audit by a trusted third party.
 
 ## Testing and Deployment
 

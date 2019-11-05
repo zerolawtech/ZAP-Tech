@@ -567,7 +567,7 @@ contract NFToken is TokenBase  {
 		} else {
 			_auth = msg.sender;
 		}
-		_transfer(msg.sender, [_from, _to], _value);
+		_transfer(_auth, [_from, _to], _value);
 		return true;
 	}
 

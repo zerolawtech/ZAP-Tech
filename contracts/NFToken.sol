@@ -3,7 +3,7 @@ pragma solidity >=0.4.24 <0.5.0;
 import "./bases/Token.sol";
 
 /**
-	@title Non-Fungible SecurityToken 
+	@title Non-Fungible SecurityToken
 	@dev
 		Expands upon the ERC20 token standard
 		https://theethereum.wiki/w/index.php/ERC20_Token_Standard
@@ -213,7 +213,7 @@ contract NFToken is TokenBase  {
 		@param _rating Investor rating array
 		@param _country Investor country array
 		@param _value Value of transfer
-		@return address array of investors 
+		@return address array of investors
 		@return dynamic array of range pointers that to transfer
 	 */
 	function _checkTransfer(
@@ -243,7 +243,7 @@ contract NFToken is TokenBase  {
 			_addr[RECEIVER] = address(issuer);
 		}
 		require(_addr[SENDER] != _addr[RECEIVER], "Cannot send to self");
-		
+
 		if (_rating[SENDER] == 0 && _id[SENDER] != ownerID) {
 			/* if sender is custodian, look at custodied ranges */
 			_cust = _addr[SENDER];
@@ -370,8 +370,8 @@ contract NFToken is TokenBase  {
 		upperBound += _value;
 		require(totalSupply <= authorizedSupply); // dev: exceed auth
 		emit RangeSet(_tag, _start, _stop, _time);
-		emit Transfer(0x00, msg.sender, _value);
-		emit TransferRange(0x00, msg.sender, _start, _stop, _value);
+		emit Transfer(0x00, _owner, _value);
+		emit TransferRange(0x00, _owner, _start, _stop, _value);
 		_modifyTotalSupply(_owner, _old);
 		return true;
 	}

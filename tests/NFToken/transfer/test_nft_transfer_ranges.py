@@ -82,7 +82,7 @@ def test_one(transfer, ts):
     ts(6)
 
 
-def test_split(transfer, nft, issuer, skipcoverage):
+def test_split(transfer, nft, issuer, skip_coverage):
     '''many ranges'''
     nft.modifyAuthorizedSupply("1000 gwei", {'from': accounts[0]})
     nft.mint(issuer, "100 gwei", 0, "0x00", {'from': accounts[0]})

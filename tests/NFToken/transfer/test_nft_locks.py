@@ -65,7 +65,7 @@ def test_time_partial(nft):
     nft.modifyRanges(102001, 106001, rpc.time() + 20, "0x00", {'from': accounts[0]})
     assert nft.getRange(102001)['_stop'] == 106001
     nft.transfer(accounts[2], 4000, {'from': accounts[1]})
-    assert nft.rangesOf(accounts[1]) == ((108001, 110001), (102001, 106001))
+    assert nft.rangesOf(accounts[1]) == ((102001, 106001), (108001, 110001))
     rpc.sleep(25)
     nft.transfer(accounts[2], 6000, {'from': accounts[1]})
     assert nft.rangesOf(accounts[2]) == ((100001, 110001),)

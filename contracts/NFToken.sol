@@ -1,9 +1,9 @@
-pragma solidity >=0.4.24 <0.5.0;
+pragma solidity 0.4.25;
 
 import "./bases/Token.sol";
 
 /**
-	@title Non-Fungible SecurityToken 
+	@title Non-Fungible SecurityToken
 	@dev
 		Expands upon the ERC20 token standard
 		https://theethereum.wiki/w/index.php/ERC20_Token_Standard
@@ -13,6 +13,9 @@ contract NFToken is TokenBase  {
 	uint256 constant SENDER = 0;
 	uint256 constant RECEIVER = 1;
 
+	/** depending on the intended totalSupply, you may wish to adjust this constant */
+	uint256 constant SCOPING_MULTIPLIER = 16;
+
 	uint48 upperBound;
 	uint48[281474976710656] tokens;
 	mapping (uint48 => Range) rangeMap;
@@ -20,7 +23,8 @@ contract NFToken is TokenBase  {
 
 	struct Balance {
 		uint48 balance;
-		uint48[] ranges;
+		uint48 length;
+		uint48[140737488355328] ranges;
 	}
 
 	struct Range {
@@ -153,15 +157,13 @@ contract NFToken is TokenBase  {
 	{
 		Balance storage b = balances[_owner];
 		uint256 _count;
-		for (uint256 i; i < b.ranges.length; i++) {
-			if (b.ranges[i] == 0) continue;
+		for (uint256 i; i < b.length; i++) {
 			if (rangeMap[b.ranges[i]].custodian != _custodian) continue;
 			_count++;
 		}
 		uint48[2][] memory _ranges = new uint48[2][](_count);
 		_count = 0;
-		for (i = 0; i < b.ranges.length; i++) {
-			if (b.ranges[i] == 0) continue;
+		for (i = 0; i < b.length; i++) {
 			if (rangeMap[b.ranges[i]].custodian != _custodian) continue;
 			_ranges[_count] = [b.ranges[i], rangeMap[b.ranges[i]].stop];
 			_count++;
@@ -213,7 +215,7 @@ contract NFToken is TokenBase  {
 		@param _rating Investor rating array
 		@param _country Investor country array
 		@param _value Value of transfer
-		@return address array of investors 
+		@return address array of investors
 		@return dynamic array of range pointers that to transfer
 	 */
 	function _checkTransfer(
@@ -243,13 +245,13 @@ contract NFToken is TokenBase  {
 			_addr[RECEIVER] = address(issuer);
 		}
 		require(_addr[SENDER] != _addr[RECEIVER], "Cannot send to self");
-		
+
 		if (_rating[SENDER] == 0 && _id[SENDER] != ownerID) {
 			/* if sender is custodian, look at custodied ranges */
 			_cust = _addr[SENDER];
-			_range = balances[_addr[RECEIVER]].ranges;
+			Balance storage b = balances[_addr[RECEIVER]];
 		} else {
-			_range = balances[_addr[SENDER]].ranges;
+			b = balances[_addr[SENDER]];
 		}
 		if (_cust == 0x00 || (_rating[SENDER] == 0 && _id[SENDER] != ownerID)) {
 			require(balances[_addr[SENDER]].balance >= _value, "Insufficient Balance");
@@ -258,6 +260,10 @@ contract NFToken is TokenBase  {
 				custBalances[_addr[SENDER]][_cust] >= _value,
 				"Insufficient Custodial Balance"
 			);
+		}
+		_range = new uint48[](b.length);
+		for (uint256 i; i < _range.length; i++) {
+			_range[i] = b.ranges[i];
 		}
 		/* bytes4 signature for token module checkTransfer() */
 		require(_callModules(
@@ -362,7 +368,8 @@ contract NFToken is TokenBase  {
 		} else {
 			/* create new range */
 			_setRange(_start, _owner, _stop, _time, _tag, 0x00);
-			balances[_owner].ranges.push(_start);
+			balances[_owner].ranges[balances[_owner].length] = _start;
+			balances[_owner].length += 1;
 		}
 		uint48 _old = balances[_owner].balance;
 		balances[_owner].balance += _value;
@@ -370,8 +377,8 @@ contract NFToken is TokenBase  {
 		upperBound += _value;
 		require(totalSupply <= authorizedSupply); // dev: exceed auth
 		emit RangeSet(_tag, _start, _stop, _time);
-		emit Transfer(0x00, msg.sender, _value);
-		emit TransferRange(0x00, msg.sender, _start, _stop, _value);
+		emit Transfer(0x00, _owner, _value);
+		emit TransferRange(0x00, _owner, _start, _stop, _value);
 		_modifyTotalSupply(_owner, _old);
 		return true;
 	}
@@ -567,7 +574,7 @@ contract NFToken is TokenBase  {
 		} else {
 			_auth = msg.sender;
 		}
-		_transfer(msg.sender, [_from, _to], _value);
+		_transfer(_auth, [_from, _to], _value);
 		return true;
 	}
 
@@ -1108,16 +1115,27 @@ contract NFToken is TokenBase  {
 	)
 		internal
 	{
-		uint48[] storage r = balances[_addr].ranges;
-		for (uint256 i; i < r.length; i++) {
+		uint48[140737488355328] storage r = balances[_addr].ranges;
+		if (_old == 0) {
+			// add a new range to the array
+			r[balances[_addr].length] = _new;
+			balances[_addr].length += 1;
+			return;
+		}
+		for (uint256 i; i <= balances[_addr].length; i++) {
 			if (r[i] == _old) {
-				r[i] = _new;
+				if (_new > 0) {
+					// replace an existing range
+					r[i] = _new;
+				} else {
+					// delete an existing range
+					balances[_addr].length -= 1;
+					r[i] = r[balances[_addr].length];
+				}
 				return;
 			}
 		}
-		if (_new != 0) {
-			r.push(_new);
-		}
+		revert();
 	}
 
 	/**
@@ -1131,11 +1149,11 @@ contract NFToken is TokenBase  {
 		_stop -= 1;
 		if (_start == _stop) return;
 		tokens[_stop] = _value;
-		uint256 _interval = 16;
+		uint256 _interval = SCOPING_MULTIPLIER;
 		while (true) {
 			uint256 i = (_stop / _interval * _interval);
 			if (i == 0) return;
-			_interval *= 16;
+			_interval *= SCOPING_MULTIPLIER;
 			if (i % _interval == 0) continue;
 			if (i > _start) tokens[i] = _value;
 		}
@@ -1152,8 +1170,8 @@ contract NFToken is TokenBase  {
 		uint256 _increment = 1;
 		while (true) {
 			if (tokens[i] != 0x00) return tokens[i];
-			if (i % (_increment * 16) == 0) {
-				_increment *= 16;
+			if (i % (_increment * SCOPING_MULTIPLIER) == 0) {
+				_increment *= SCOPING_MULTIPLIER;
 				require(i <= upperBound); // dev: exceeds upper bound
 			}
 			i += _increment;

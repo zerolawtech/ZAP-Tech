@@ -13,6 +13,9 @@ contract NFToken is TokenBase  {
 	uint256 constant SENDER = 0;
 	uint256 constant RECEIVER = 1;
 
+	/** depending on the intended totalSupply, you may wish to adjust this constant */
+	uint256 constant SCOPING_MULTIPLIER = 16;
+
 	uint48 upperBound;
 	uint48[281474976710656] tokens;
 	mapping (uint48 => Range) rangeMap;
@@ -1131,11 +1134,11 @@ contract NFToken is TokenBase  {
 		_stop -= 1;
 		if (_start == _stop) return;
 		tokens[_stop] = _value;
-		uint256 _interval = 16;
+		uint256 _interval = SCOPING_MULTIPLIER;
 		while (true) {
 			uint256 i = (_stop / _interval * _interval);
 			if (i == 0) return;
-			_interval *= 16;
+			_interval *= SCOPING_MULTIPLIER;
 			if (i % _interval == 0) continue;
 			if (i > _start) tokens[i] = _value;
 		}
@@ -1152,8 +1155,8 @@ contract NFToken is TokenBase  {
 		uint256 _increment = 1;
 		while (true) {
 			if (tokens[i] != 0x00) return tokens[i];
-			if (i % (_increment * 16) == 0) {
-				_increment *= 16;
+			if (i % (_increment * SCOPING_MULTIPLIER) == 0) {
+				_increment *= SCOPING_MULTIPLIER;
 				require(i <= upperBound); // dev: exceeds upper bound
 			}
 			i += _increment;

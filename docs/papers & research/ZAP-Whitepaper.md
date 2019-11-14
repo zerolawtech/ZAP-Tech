@@ -497,19 +497,19 @@ Transfer restrictions can be encoded in the smart contract rules governing trans
 Direct transfer restrictions are set by the owner or another appropriately permissioned authority of the Org smart contract (an instance of OrgCode.sol). Such restrictions can be set at various levels of granularity:
 
 <ul>
-    <li>identity-based transfer restrictions—i.e., restrictions on all OrgShares held by a particular shareholder or custodian—are set by calling OrgCode.setEntityRestriction(bytes32 _id, bool _restricted), where bytes32_id is the unique HashID of the restricted holder (_see below_ under “ID Verification” for more on HashIDs)</li>
-    <li>restrictions on all of the OrgShares or all of the OrgShares of a given class or series—i.e., restrictions on particular OrgShares, regardless of who holds them—are set by calling OrgCode.setTokenRestriction(address _token, bool _restricted)</li>
+    <li>identity-based transfer restrictions—i.e., restrictions on all OrgShares held by a particular shareholder or custodian—are set by calling OrgCode.setEntityRestriction with the unique HashID of the restricted holder (_see below_ under “ID Verification” for more on HashIDs)</li>
+    <li>restrictions on all of the OrgShares or all of the OrgShares of a given class or series—i.e., restrictions on particular OrgShares, regardless of who holds them—are set by calling OrgCode.setTokenRestriction</li>
 </ul>
 
 It is also possible to impose various other types of transfer restrictions indirectly. An Org may define a limit on the number of unique shareholders it will have. Such a limit may be defined on a per-Org, per-country and/or per-accreditation-type basis.
 
-For example, if the OrgShares are equity securities and the Org is a pre-IPO company that has or will be expected to have $10M+ in assets, the Org will want to prohibit any transfer of OrgShares that would result in the Org having more than 499 unaccredited shareholders or more than 1,999 overall to prevent itself from having to “go public” prematurely under SEC Rule 12g-1 / Section 12(g)(1) of the Securities Exchange Act of 1934. Such investor limits have the same effect as transfer restrictions because programmatically prevent transfers that would cause the Org to violate the applicable condition. An example of a situation in which restrictions by country would be important would be where an Org wishes to take advantage of Regulation S so that a particular issuance of OrgShares is not covered by U.S. law and thus programmatically prohibits all transfers of OrgShares to U.S. citizens and U.S permanent residents, either indefinitely or for a period of time (e.g., the 12-month anti-flowback period for equity securities under Tier ____ of Regulation S).
+For example, if the OrgShares are equity securities and the Org is a pre-IPO company that has or will be expected to have $10M+ in assets, the Org will want to prohibit any transfer of OrgShares that would result in the Org having more than 499 unaccredited shareholders or more than 1,999 overall to prevent itself from having to “go public” prematurely under SEC Rule 12g-1 / Section 12(g)(1) of the Securities Exchange Act of 1934. Such investor limits have the same effect as transfer restrictions because programmatically prevent transfers that would cause the Org to violate the applicable condition. An example of a situation in which restrictions by country would be important would be where an Org wishes to take advantage of Regulation S so that a particular issuance of OrgShares is not covered by U.S. law and thus programmatically prohibits all transfers of OrgShares to U.S. citizens and U.S permanent residents, either indefinitely or for a period of time (e.g., the 12-month anti-U.S.-flowback period for equity securities sold by a non-reporting issuer in a Category 3, Regulation S offering).
 
 Shareholder counts and limits are stored in uint32[8] arrays. The first entry in each array is the sum of all the remaining entries. The remaining entries correspond to the count or limit for each accreditation level. Setting an investor limit to 0 means no limit is imposed. The issuer must explicitly approve each country from which investors are allowed to purchase tokens. It is possible for an issuer to set a limit that is lower than the current investor count. When a limit is met or exceeded existing investors are still able to receive tokens, but new investors are blocked.
 
 Investor limits are configured with setter functions called on the OrgCode (the Org’s instance of OrgCode.sol).
 
-The setter method OrgCode.setCountry(uint16 _country, bool _permitted, uint8 _minRating, uint32[8] _limits) approves or prohibits a country’s citizens or permanent residents from being shareholders and sets investor limits within that country. Its parameters are as follows:
+The setter method OrgCode.setCountry approves or prohibits a country’s citizens or permanent residents from being shareholders and sets investor limits within that country. Its parameters are as follows:
 
 <ul>
     <li>_country: The code of the country to modify</li>
@@ -518,9 +518,9 @@ The setter method OrgCode.setCountry(uint16 _country, bool _permitted, uint8 _mi
     <li>_limits: A uint32[8] array of investor limits for this country which essentially supplies investor limits in a destructured variable assignment. The seven positions in the array correspond to the seven possible shareholder accreditation types. If there are fewer than seven possible accreditation types, the remainder will be set to “0”. For example, for U.S. issuers, there are likely to be three accreditation types—unaccredited, accredited and QIB—and thus four of the array elements would typically be 0.</li>
 </ul>
 
-OrgCode.setCountries(uint16[] _country, uint8[] _minRating, uint32[] _limit) is a similar setter method that enables approving many countries (with corresponding per-country investor limits) at once without per-country differences in limitations that vary based on the shareholder’s accreditation level.
+OrgCode.setCountries is a similar setter method that enables approving many countries (with corresponding per-country investor limits) at once without per-country differences in limitations that vary based on the shareholder’s accreditation level.
 
-The setter method OrgCode.setInvestorLimits(uint32[8] _limits) sets total shareholder limits for the Org by accreditation type, irrespective of country. This is likely to be the most common setter method used by early, pre-public ZAP orgs. For example, a U.S.-based Org whose OrgShares are equity securities would call issuer.setInvestorLimits with argument [1999, 499, 0, 0, 0, 0, 0, 0]—meaning that OrgShare transfers which would result in the Org having more than 1,999 shareholders overall (inclusive of accredited shareholders) or more than 499 unaccredited shareholders will be programmatically blocked. Thus, the Org would prevent itself from prematurely becoming an Exchange-Act-reporting company under SEC Rule 12g-1/Section 12(g)(1) of the Exchange Act.
+The setter method OrgCode.setInvestorLimits sets total shareholder limits for the Org by accreditation type, irrespective of country. This is likely to be the most common setter method used by early, pre-public ZAP orgs. For example, a U.S.-based Org whose OrgShares are equity securities would call issuer.setInvestorLimits with argument [1999, 499, 0, 0, 0, 0, 0, 0]—meaning that OrgShare transfers which would result in the Org having more than 1,999 shareholders overall (inclusive of accredited shareholders) or more than 499 unaccredited shareholders will be programmatically blocked. Thus, the Org would prevent itself from prematurely becoming an Exchange-Act-reporting company under SEC Rule 12g-1/Section 12(g)(1) of the Exchange Act.
 
 An important caveat: In configuring its transfer restrictions, an Org will be relying upon various assumptions that tie into its off-chain identity verification procedures—for example, it will assume that the representations made by prospective shareholders during the identity verification process (e.g. that they are buying shares for their own account and have sole control over an Ethereum address) are accurate. While these process-backed assumptions are not perfect, they are ultimately no more risky or uncertain than the working assumptions adopted by ordinary off-chain companies today. Indeed, one can argue that the risks for on-chain Orgs are lower, since ordinary companies cannot programmatically enforce their investor limits but must rely solely on contractual covenants to avoid gaining more investors than they intended.
 
@@ -589,17 +589,17 @@ There are three types of token transfers related to Custodians.
 </ul>
 Importantly, internal transfers are subject to the same permissioning regime established by the OrgCode. 
 
-Permissioning checks for custodial transfers are identical to those of normal transfers. **OrgShare.checkTransferCustodian(_address _cust_, _address _from_, _address _to_, _uint256 _value_)** checks if a custodian internal transfer of tokens is permitted and returns **true** if the transfer is permitted. If the transfer is not permitted, the call will revert with the reason given in the error string.
+Permissioning checks for custodial transfers are identical to those of normal transfers. **OrgShare.checkTransferCustodian** checks if a custodian internal transfer of tokens is permitted and returns **true** if the transfer is permitted. If the transfer is not permitted, the call will revert with the reason given in the error string.
 
 
-**BookShare.transferCustodian(_address[2] _addr_, _uint256 _value_)** modifies investor counts and ownership records based on an internal transfer of ownership within the Custodian contract.
+**BookShare.transferCustodian** modifies investor counts and ownership records based on an internal transfer of ownership within the Custodian contract.
 
 
 <h2>5. Misc. Additional Legal Considerations & Org Modules </h2>
 
 <h3>A. Introduction to ZAP Modules</h3>
 
-ZAP supports custom modules. Modules can be dynamically attached and detached from the OrgCode via OrgCode.attachModule(address _target, address _module) and OrgCode.detachModule(address _target, address _module). ZAP’s modularity is designed to maximize gas efficiency - modules may be detached as soon as they are no longer needed, and may even adjust their own hook points or detach themselves during the course of their lifecycle.
+ZAP supports custom modules. Modules can be dynamically attached and detached from the OrgCode via OrgCode.attachModule and OrgCode.detachModule. ZAP’s modularity is designed to maximize gas efficiency - modules may be detached as soon as they are no longer needed, and may even adjust their own hook points or detach themselves during the course of their lifecycle.
  
  There is no limit to the ways that OrgLaw can be encoded and programmatically enforced through such modules. For example, the current version of ZAP includes:
 

@@ -2,7 +2,7 @@
 
 ## Description
 
-The ZeroLaw org-Augmentation Protocol (ZAP)  is a set of smart contracts, written in Solidity for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. SFT favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
+The ZeroLaw org-Augmentation Protocol (ZAP)  is a set of smart contracts, written in Solidity for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. ZAP favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
 
 ## How it Works
 

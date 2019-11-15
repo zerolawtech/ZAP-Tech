@@ -210,7 +210,6 @@ Investor limits are configured with setter functions called on the OrgCode (the 
 
 The setter method OrgCode.setCountry approves or prohibits a country’s citizens or permanent residents from being shareholders and sets investor limits within that country. Its parameters are as follows:
 
-
 * `_country`: the code of the country to modify
 * `_permitted`: permission bool
 * `_minRating`: the minimum rating required for an investor in this country to hold tokens. Cannot be zero.
@@ -227,8 +226,6 @@ Such assumptions may be more or less conservative, depending on the Org’s pref
 #### iii. ID Verification
 
 The technology-based components of the ID verification process will typically consist of three tools:
-
-
 
 * an encrypted off-chain database of personally identifiable information (PII) regarding current and prospective Org members, which may include each such person’s:
   * full legal name
@@ -345,7 +342,6 @@ One might consider traditional securities markets, interfaces and intermediaries
 
 In contrast, blockchain tokens typically do not represent bundles of legal rights, and they trade freely through any blockchain wallet or blockchain software client rather than solely through broker-dealers with fiduciary and disclosure obligations. Transactions in ordinary ERC20 tokens may occur through a variety of interfaces and instrumentalities, whether on a p2p basis or by means of centralized cryptocurrency exchanges (e.g. Binance, Kraken and Coinbase) or decentralized exchange smart contracts (e.g., Uniswap and 0x). In general, a user transacting through such interfaces could reasonably believe the token they are buying is a cryptonative asset rather than a contractual right. 
 
-
 Although user confusion is always undesirable, when it comes to transactions in securities instruments, it could be disastrous. No company should want to sell its shares to a person who thinks those shares are a utility token. This could lead to significant confusion--for example, a buyer might not be on notice that the token it holds could be converted into another token pursuant to a merger transaction under applicable law. A buyer might not know that it needs to contact the issuer and supply a Form W-9 in order to receive dividends on the share. A buyer might not understand that it has the right to vote on certain corporate transactions, or might not receive proxy statements explaining the proposals to be voted upon. 
 
 Thus, along with blockchain’s tremendous potential for decentralizing transactions and opening new markets comes a resulting vacuum of infrastructure and best practices within those markets. If the OrgShares of pre-IPO Orgs become tokenized and freely transferable on a trust-reduced basis, the informational mechanisms that exist for traditional public equities will not be available to ensure that purchasers of these OrgShares are fully informed. 
@@ -368,3 +364,15 @@ ZAP thus addresses this issue in at least two ways:
 * ZAP trust-minimizes the authentication of legal documents pertaining to the Org. The Org admins can record the hash of a legal document (e.g., the Org’s certificate of incorporation, or a Shareholders’ Agreement) to the blockchain via the OrgCode (the Org’s instance of OrgCode.sol). Current or prospective shareholders who receive the document through potentially compromised or secondhand sources can then verify that the hash of the document matches the recorded hash available from the OrgCode.  This process can also assist with version control, since Org governance documents may frequently be amended and shareholder will want to ensure they are working from the most current version.
 
 *  In a future version of ZAP, we intend to add a module that enables Orgs to gate sales/purchases of OrgShares in the secondary market with an automated escrow process. This would enable issuers to ensure that the contractual terms of OrgShares are agreed upon by future buyers, without representatives of the Org needing to manually permission each OrgShare transaction. Each OrgShare purchase/sale could be required to be effected through a smart contract escrow. The OrgShare tokens and the purchase price (any tokens on the applicable blockchain) would be deposited into the escrow smart contract. The would-be purchaser would be directed to a website to e-sign an acknowledgement of having received disclosures regarding the nature of the OrgShares. The hash of that acknowledgement and the purchaser's blockchain address could then be recorded to the smart contract escrow, evidencing that the information had been received and the acknowledgement signed, whereupon the OrgShare tokens would be automatically transferred to the address of the purchaser and the token-denominated purchase price would be automatically transferred to the address of the seller out of the smart contract escrow. The smart contract escrow could also be configured to permit termination by the would-be seller if the required documents are not proffered by the would-be purchaser within some specified period--e.g. 48 hours. Upon a termination,  the OrgShare tokens and purchase price tokens would revert to the original owners, minus a penalty to be paid by the would-be purchaser for failure to deliver the documents within the required time. In effect, this arrangement would simulate a traditional share purchase agreement which is signed by the parties on one date and then provides for a later 'closing date' triggered when various conditions precedent--such as the signing of additional documents by one or more parties--have been satisfied. This is a 'smart contract' along the lines originally proposed by Nick Szabo--i.e., a mechanism for automated and trust-reducing the performance-or-breach structure of a share purchase agreement. 
+
+### 6. Conclusion
+
+Thus concludes the ZAP Whitepaper. 
+
+We welcome all contributors to ZAP, both legal and technical. If you are interested in contributing, please email g.shapiro@zerolaw.tech (legal) and/or b.hauser@zerolaw.tech and a.firmani@zerolaw.tech (code). 
+
+If you are interested in engaging the ZeroLaw team to implement ZAP for your organization, please contact g.shapiro@zerolaw.tech, b.hauser@zerolaw.tech and a.firmani@zerolaw.tech. 
+
+Please keep in mind the disclaimers provided at the beginning of this whitepaper, and use ZAP responsibly. 
+
+Hack on! 

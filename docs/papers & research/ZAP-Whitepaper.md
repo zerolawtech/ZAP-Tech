@@ -270,9 +270,9 @@ Custodial smart contracts are approved to hold tokens representing OrgShares on 
 There are two broad categories of custodial smart contracts:
 
 
-* *Owned* custodial smart contracts are instances of OwnedCustodian.sol; they are controlled and maintained by a known legal entity such as a registered securities broker/dealer or a centralized securities exchange or cryptocurrency exchange.
+* *Owned* custodial smart contracts; they are controlled and maintained by a known legal entity such as a registered securities broker/dealer or a centralized securities exchange or cryptocurrency exchange.
 
-* *Autonomous* custodial smart contracts are instances of IBaseCustodian.sol; they are autonomous in that once deployed there is no authority capable of exercising control over the contract. Autonomous custodial smart contracts will be useful for escrow arrangements, implementation of privacy protocols and the operation of decentralized exchanges.
+* *Autonomous* custodial smart contracts are autonomous in that once deployed there is no authority capable of exercising control over the contract. Autonomous custodial smart contracts will be useful for escrow arrangements, implementation of privacy protocols and the operation of decentralized exchanges.
 
 
 As discussed above, an Org may need to carefully limit the number of investors it has in order to avoid opting into expensive regulatory regimes. For this reason, ZAP embodies conservative assumptions regarding how ownership of custodied OrgShares is counted. When an investor transfers a balance into a custodian it does not increase or decrease the overall investor count; instead the investor is now included in the list of beneficial owners represented by the custodian. Even if the investor now has a balance of 0 in their own wallet, they will still be included in the Org’s investor count.

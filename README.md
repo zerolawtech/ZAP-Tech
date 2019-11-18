@@ -111,4 +111,4 @@ SecurityToken.transfer confirmed - block: 14   gas used: 192451 (2.41%)
 
 ## License
 
-This project is licensed under the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) license.
+The code in this project is licensed under the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) license. The ZAP Whitepape r and SFT Yellowpaper are licensed under [Creative Commons - Attribution-NonCommercial-NoDerivatives 4.0 International](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode). All model legal forms, including all documents contained in the "model-legal-forms" folder, are licensed under [Attribution-ShareAlike](https://creativecommons.org/licenses/by-sa/4.0/legalcode).

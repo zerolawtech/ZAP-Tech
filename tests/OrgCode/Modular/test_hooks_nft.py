@@ -81,18 +81,18 @@ def test_checkTransferRange(org, nft):
     nft.transferRange(accounts[1], 500, 600, {'from': accounts[0]})
 
 
-def test_transferTokenRange(org, nft):
-    source = '''transferTokenRange(
+def test_transferShareRange(org, nft):
+    source = '''transferShareRange(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
         uint16[2] _country,
         uint48[2] _range'''
-    _hook(org, nft, nft.transfer, (accounts[1], 1000), source, "0xead529f5")
+    _hook(org, nft, nft.transfer, (accounts[1], 1000), source, "0x244d5002")
 
 
-def test_transferTokensCustodian(org, nft, cust):
-    source = '''transferTokensCustodian(
+def test_transferSharesCustodian(org, nft, cust):
+    source = '''transferSharesCustodian(
         address _custodian,
         address[2] _addr,
         bytes32[2] _id,
@@ -107,7 +107,7 @@ def test_transferTokensCustodian(org, nft, cust):
         cust.transferInternal,
         (nft, accounts[2], accounts[3], 100),
         source,
-        "0x8b5f1240"
+        "0xdc9d1da1"
     )
 
 

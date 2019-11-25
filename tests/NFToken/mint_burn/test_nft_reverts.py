@@ -6,7 +6,7 @@ from brownie import accounts
 
 
 def test_mint_zero(org, nft):
-    '''mint 0 tokens'''
+    '''mint 0 shares'''
     with pytest.reverts("dev: mint 0"):
         nft.mint(org, 0, 0, "0x00", {'from': accounts[0]})
     nft.mint(org, 10000, 0, "0x00", {'from': accounts[0]})

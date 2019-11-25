@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 
-def test_permissions(token, options):
-    assert token.isPermittedModule(options, token.mint.signature)
+def test_permissions(share, options):
+    assert share.isPermittedModule(options, share.mint.signature)
 
 
 def hooks(options):

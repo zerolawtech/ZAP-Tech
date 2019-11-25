@@ -12,7 +12,7 @@ def setup(approve_many, org, nft):
 
 def test_zero_nfts(nft):
     '''cannot send 0 nfts'''
-    with pytest.reverts("Cannot send 0 tokens"):
+    with pytest.reverts("Cannot send 0 shares"):
         nft.transfer(accounts[1], 0, {'from': accounts[0]})
 
 

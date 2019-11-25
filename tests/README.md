@@ -24,5 +24,5 @@ Tests for SFT are sorted by the main contract being tested, then optionally by t
 * `OrgCode`: Tests that target [OrgCode](../contracts/OrgCode.sol).
 * `IDVerifierOrg`: Tests that target [IDVerifierOrg](../contracts/IDVerifierOrg.sol).
 * `IDVerifierRegistrar`: Tests that target [IDVerifierRegistrar](../contracts/IDVerifierRegistrar.sol).
-* `NFToken`: Tests that target [NFToken](../contracts/NFToken.sol).
-* `SecurityToken`: Tests that target [SecurityToken](../contracts/SecurityToken.sol).
+* `CertShare`: Tests that target [CertShare](../contracts/CertShare.sol).
+* `BookShare`: Tests that target [BookShare](../contracts/BookShare.sol).

@@ -27,7 +27,7 @@ contract TestModule {
     ) {
         bytes4[] memory _hooks = new bytes4[](2);
         _hooks[0] = 0x2d79c6d7; // checkTransferRange
-        _hooks[1] = 0xead529f5; // transferTokenRange
+        _hooks[1] = 0x244d5002; // transferShareRange
         return (permissions, _hooks, 3);
     }
 
@@ -56,7 +56,7 @@ contract TestModule {
         revert();
     }
 
-    function transferTokenRange(
+    function transferShareRange(
         address[2], bytes32[2], uint8[2], uint16[2], uint48[2]
     ) external returns (bool) {
         revert();
@@ -102,24 +102,24 @@ def test_checkTransferRange_always(nft, module):
     _always(nft, module, "0x2d79c6d7")
 
 
-def test_transferTokenRange_transferRange(nft, module):
+def test_transferShareRange_transferRange(nft, module):
     '''module.checkTransferRange, nft.transferRange - adjust tags'''
-    _transferRange(nft, module, "0xead529f5")
+    _transferRange(nft, module, "0x244d5002")
 
 
-def test_transferTokenRange_transfer(nft, module):
+def test_transferShareRange_transfer(nft, module):
     '''module.checkTransferRange, nft.transfer - adjust tags'''
-    module.setHookTags("0xead529f5", True, "0xff", ["0x01"], {'from': accounts[0]})
+    module.setHookTags("0x244d5002", True, "0xff", ["0x01"], {'from': accounts[0]})
     nft.transfer(accounts[2], 250, {'from': accounts[1]})
     with pytest.reverts():
         nft.transfer(accounts[2], 250, {'from': accounts[1]})
-    module.setHookTags("0xead529f5", False, "0xff", ["0x01"], {'from': accounts[0]})
+    module.setHookTags("0x244d5002", False, "0xff", ["0x01"], {'from': accounts[0]})
     nft.transfer(accounts[2], 250, {'from': accounts[1]})
 
 
-def test_transferTokenRange_always(nft, module):
+def test_transferShareRange_always(nft, module):
     '''module.checkTransferRange - toggle always and permitted'''
-    _always(nft, module, "0xead529f5")
+    _always(nft, module, "0x244d5002")
 
 
 def _transferRange(nft, module, sig):

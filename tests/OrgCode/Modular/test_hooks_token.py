@@ -46,13 +46,13 @@ contract TestModule {{
 
 
 @pytest.fixture(scope="module", autouse=True)
-def testhook(approve_many, org, token):
-    token.mint(org, 100000, {'from': accounts[0]})
-    hook = functools.partial(_hook, org, token)
+def testhook(approve_many, org, share):
+    share.mint(org, 100000, {'from': accounts[0]})
+    hook = functools.partial(_hook, org, share)
     yield hook
 
 
-def test_checkTransfer(testhook, token):
+def test_checkTransfer(testhook, share):
     source = '''checkTransfer(
         address[2] _addr,
         bytes32 _authID,
@@ -60,33 +60,33 @@ def test_checkTransfer(testhook, token):
         uint8[2] _rating,
         uint16[2] _country,
         uint256 _value'''
-    testhook(token.checkTransfer, (accounts[0], accounts[1], 1000), source, "0x70aaf928")
+    testhook(share.checkTransfer, (accounts[0], accounts[1], 1000), source, "0x70aaf928")
 
 
-def test_transferTokens(testhook, token):
-    source = '''transferTokens(
+def test_transferShares(testhook, share):
+    source = '''transferShares(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
         uint16[2] _country,
         uint256 _value'''
-    testhook(token.transfer, (accounts[1], 1000), source, "0x35a341da")
+    testhook(share.transfer, (accounts[1], 1000), source, "0x0675a5e0")
 
 
-def test_transferTokensCustodian(testhook, token, cust):
-    source = '''transferTokensCustodian(
+def test_transferSharesCustodian(testhook, share, cust):
+    source = '''transferSharesCustodian(
         address _custodian,
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
         uint16[2] _country,
         uint256 _value'''
-    token.transfer(accounts[2], 10000, {'from': accounts[0]})
-    token.transfer(cust, 5000, {'from': accounts[2]})
-    testhook(cust.transferInternal, (token, accounts[2], accounts[3], 100), source, "0x8b5f1240")
+    share.transfer(accounts[2], 10000, {'from': accounts[0]})
+    share.transfer(cust, 5000, {'from': accounts[2]})
+    testhook(cust.transferInternal, (share, accounts[2], accounts[3], 100), source, "0xdc9d1da1")
 
 
-def test_totalSupplyChanged(testhook, org, token, cust):
+def test_totalSupplyChanged(testhook, org, share, cust):
     source = '''totalSupplyChanged(
         address _addr,
         bytes32 _id,
@@ -94,20 +94,20 @@ def test_totalSupplyChanged(testhook, org, token, cust):
         uint16 _country,
         uint256 _old,
         uint256 _new'''
-    testhook(token.burn, (org, 1000), source, "0x741b5078")
-    testhook(token.mint, (accounts[2], 1000), source, "0x741b5078")
+    testhook(share.burn, (org, 1000), source, "0x741b5078")
+    testhook(share.mint, (accounts[2], 1000), source, "0x741b5078")
 
 
-def _hook(org, token, fn, args, source, sig):
+def _hook(org, share, fn, args, source, sig):
     args = list(args) + [{'from': accounts[0]}]
     source = module_source.format(sig, source)
     project = compile_source(source)
-    module = project.TestModule.deploy(token, {'from': accounts[0]})
+    module = project.TestModule.deploy(share, {'from': accounts[0]})
     fn(*args)
-    org.attachModule(token, module, {'from': accounts[0]})
+    org.attachModule(share, module, {'from': accounts[0]})
     fn(*args)
     module.setReturn(False, {'from': accounts[0]})
     with pytest.reverts():
         fn(*args)
-    org.detachModule(token, module, {'from': accounts[0]})
+    org.detachModule(share, module, {'from': accounts[0]})
     fn(*args)

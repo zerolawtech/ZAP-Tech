@@ -15,27 +15,27 @@ def isolation(fn_isolation):
     pass
 
 
-# token deployments / linking
+# share deployments / linking
 
 @pytest.fixture(scope="module")
-def token(SecurityToken, org, accounts):
-    t = accounts[0].deploy(SecurityToken, org, "Test Token", "TST", 1000000)
-    org.addToken(t, {'from': accounts[0]})
+def share(BookShare, org, accounts):
+    t = accounts[0].deploy(BookShare, org, "Test Share", "TST", 1000000)
+    org.addOrgShare(t, {'from': accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
-def token2(SecurityToken, org, accounts, token):
-    t = accounts[0].deploy(SecurityToken, org, "Test Token2", "TS2", 1000000)
-    org.addToken(t, {'from': accounts[0]})
+def share2(BookShare, org, accounts, share):
+    t = accounts[0].deploy(BookShare, org, "Test Share2", "TS2", 1000000)
+    org.addOrgShare(t, {'from': accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
-def nft(NFToken, org, accounts):
-    token = accounts[0].deploy(NFToken, org, "Test NFT", "NFT", 1000000)
-    org.addToken(token, {'from': accounts[0]})
-    yield token
+def nft(CertShare, org, accounts):
+    share = accounts[0].deploy(CertShare, org, "Test NFT", "NFT", 1000000)
+    org.addOrgShare(share, {'from': accounts[0]})
+    yield share
 
 
 @pytest.fixture(scope="module")

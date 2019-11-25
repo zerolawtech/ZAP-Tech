@@ -5,9 +5,9 @@ import pytest
 from brownie import accounts, rpc
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(proposal, gov, token, token2):
-    gov.newVote("0x1234", 5000, 0, [token], [1], {'from': accounts[0]})
-    gov.newVote("0x1234", 5000, 0, [token, token2], [1, 2], {'from': accounts[0]})
+def setup(proposal, gov, share, share2):
+    gov.newVote("0x1234", 5000, 0, [share], [1], {'from': accounts[0]})
+    gov.newVote("0x1234", 5000, 0, [share, share2], [1, 2], {'from': accounts[0]})
 
 
 def test_close_proposal(gov):
@@ -39,7 +39,7 @@ def test_close_proposal_already_closed(gov):
         gov.closeProposal("0x1234", {'from': accounts[0]})
 
 
-def test_close_proposal_no_end_not_passing(gov, cptime, token3):
+def test_close_proposal_no_end_not_passing(gov, cptime, share3):
     gov.newProposal(
         "0xffff",
         cptime,
@@ -50,13 +50,13 @@ def test_close_proposal_no_end_not_passing(gov, cptime, token3):
         "0x",
         {'from': accounts[0]}
     )
-    gov.newVote("0xffff", 5000, 0, [token3], [1], {'from': accounts[0]})
+    gov.newVote("0xffff", 5000, 0, [share3], [1], {'from': accounts[0]})
     rpc.sleep(210)
     with pytest.reverts("dev: proposal has not passed"):
         gov.closeProposal("0xffff", {'from': accounts[0]})
 
 
-def test_close_proposal_no_end_passing(gov, token3, cptime):
+def test_close_proposal_no_end_passing(gov, share3, cptime):
     gov.newProposal(
         "0xffff",
         cptime,
@@ -67,7 +67,7 @@ def test_close_proposal_no_end_passing(gov, token3, cptime):
         "0x",
         {'from': accounts[0]}
     )
-    gov.newVote("0xffff", 5000, 0, [token3], [1], {'from': accounts[0]})
+    gov.newVote("0xffff", 5000, 0, [share3], [1], {'from': accounts[0]})
     rpc.sleep(210)
     gov.voteOnProposal("0xffff", 1, {'from': accounts[5]})
     gov.closeProposal("0xffff", {'from': accounts[0]})

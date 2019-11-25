@@ -57,7 +57,7 @@ def test_add_investor_investor_id(ikyc):
         ikyc.addInvestor(id_, 1, 1, 1, 9999999999, (accounts[3],), {'from': accounts[0]})
 
 
-def test_update_investor(ikyc, token):
+def test_update_investor(ikyc, share):
     '''update investor'''
     assert ikyc.isRegistered(id_)
     ikyc.updateInvestor(id_, 2, 4, 1234567890, {'from': accounts[0]})

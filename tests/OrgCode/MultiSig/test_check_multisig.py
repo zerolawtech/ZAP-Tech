@@ -19,8 +19,8 @@ def cust(OwnedCustodian):
 
 
 @pytest.fixture(scope="module")
-def token2(SecurityToken, org):
-    yield accounts[0].deploy(SecurityToken, org, "Test Token2", "TS2", 1000000)
+def share2(BookShare, org):
+    yield accounts[0].deploy(BookShare, org, "Test Share2", "TS2", 1000000)
 
 
 def test_setCountry(multisig, org):
@@ -47,16 +47,16 @@ def test_addCustodian(multisig, org, cust):
     multisig(org.addCustodian, cust)
 
 
-def test_addToken(multisig, org, token2):
-    multisig(org.addToken, token2)
+def test_addOrgShare(multisig, org, share2):
+    multisig(org.addOrgShare, share2)
 
 
 def test_setEntityRestriction(multisig, org):
     multisig(org.setEntityRestriction, "0x11", True)
 
 
-def test_setTokenRestriction(multisig, org, token):
-    multisig(org.setTokenRestriction, token, False)
+def test_setOrgShareRestriction(multisig, org, share):
+    multisig(org.setOrgShareRestriction, share, False)
 
 
 def test_setGlobalRestriction(multisig, org):

@@ -31,11 +31,11 @@ def test_repeat_addr(org):
         org.addAuthority([accounts[-1], accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})
 
 
-def test_known_address(org, token, id1):
+def test_known_address(org, share, id1):
     '''known address'''
     with pytest.reverts("dev: known address"):
         org.addAuthority([accounts[0]], [], 2000000000, 1, {'from': accounts[0]})
-    token.mint(accounts[1], 100, {'from': accounts[0]})
+    share.mint(accounts[1], 100, {'from': accounts[0]})
     with pytest.reverts("dev: known address"):
         org.addAuthority([accounts[1]], [], 2000000000, 1, {'from': accounts[0]})
 

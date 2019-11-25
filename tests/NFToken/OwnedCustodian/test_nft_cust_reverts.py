@@ -14,7 +14,7 @@ def test_zero(nft, cust):
     '''Custodian transfer internal - zero value'''
     nft.transfer(accounts[2], 10000, {'from': accounts[0]})
     nft.transfer(cust, 5000, {'from': accounts[2]})
-    with pytest.reverts("Cannot send 0 tokens"):
+    with pytest.reverts("Cannot send 0 shares"):
         cust.transferInternal(nft, accounts[2], accounts[3], 0, {'from': accounts[0]})
 
 

@@ -22,39 +22,39 @@ def gov(org):
     yield g
 
 
-def test_authorized_supply(token):
+def test_authorized_supply(share):
     '''modify authorized supply'''
-    token.modifyAuthorizedSupply(10000, {'from': accounts[0]})
-    assert token.authorizedSupply() == 10000
-    assert token.totalSupply() == 0
-    token.modifyAuthorizedSupply(0, {'from': accounts[0]})
-    assert token.authorizedSupply() == 0
-    assert token.totalSupply() == 0
-    token.modifyAuthorizedSupply(1234567, {'from': accounts[0]})
-    assert token.authorizedSupply(), 1234567
-    assert token.totalSupply() == 0
-    token.modifyAuthorizedSupply(2400000000, {'from': accounts[0]})
-    assert token.authorizedSupply(), 2400000000
-    assert token.totalSupply() == 0
+    share.modifyAuthorizedSupply(10000, {'from': accounts[0]})
+    assert share.authorizedSupply() == 10000
+    assert share.totalSupply() == 0
+    share.modifyAuthorizedSupply(0, {'from': accounts[0]})
+    assert share.authorizedSupply() == 0
+    assert share.totalSupply() == 0
+    share.modifyAuthorizedSupply(1234567, {'from': accounts[0]})
+    assert share.authorizedSupply(), 1234567
+    assert share.totalSupply() == 0
+    share.modifyAuthorizedSupply(2400000000, {'from': accounts[0]})
+    assert share.authorizedSupply(), 2400000000
+    assert share.totalSupply() == 0
 
 
-def test_authorized_supply_governance_false(token, gov):
+def test_authorized_supply_governance_false(share, gov):
     '''modify authorized supply - blocked by governance module'''
     gov.setResult(False, {'from': accounts[0]})
     with pytest.reverts("Action has not been approved"):
-        token.modifyAuthorizedSupply(10000, {'from': accounts[0]})
+        share.modifyAuthorizedSupply(10000, {'from': accounts[0]})
 
 
-def test_authorized_supply_governance_true(token, gov):
+def test_authorized_supply_governance_true(share, gov):
     '''modify authorized supply - allowed by governance module'''
     gov.setResult(True, {'from': accounts[0]})
-    token.modifyAuthorizedSupply(10000, {'from': accounts[0]})
+    share.modifyAuthorizedSupply(10000, {'from': accounts[0]})
 
 
-def test_authorized_supply_governance_removed(org, token, gov):
+def test_authorized_supply_governance_removed(org, share, gov):
     '''modify authorized supply - removed governance module'''
     gov.setResult(False, {'from': accounts[0]})
     with pytest.reverts("Action has not been approved"):
-        token.modifyAuthorizedSupply(10000, {'from': accounts[0]})
+        share.modifyAuthorizedSupply(10000, {'from': accounts[0]})
     org.setGovernance("0" * 40, {'from': accounts[0]})
-    token.modifyAuthorizedSupply(10000, {'from': accounts[0]})
+    share.modifyAuthorizedSupply(10000, {'from': accounts[0]})

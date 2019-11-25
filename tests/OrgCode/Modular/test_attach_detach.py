@@ -36,8 +36,8 @@ def TestModule():
 
 
 @pytest.fixture(scope="module")
-def module_token(TestModule, token):
-    module = accounts[0].deploy(TestModule, token)
+def module_share(TestModule, share):
+    module = accounts[0].deploy(TestModule, share)
     yield module
 
 
@@ -47,67 +47,67 @@ def module_org(TestModule, org):
     yield module
 
 
-def test_attach_token(org, token, module_token):
-    '''attach a token module'''
-    assert token.isActiveModule(module_token) is False
-    org.attachModule(token, module_token, {'from': accounts[0]})
-    assert token.isActiveModule(module_token) is True
+def test_attach_share(org, share, module_share):
+    '''attach a share module'''
+    assert share.isActiveModule(module_share) is False
+    org.attachModule(share, module_share, {'from': accounts[0]})
+    assert share.isActiveModule(module_share) is True
 
 
-def test_detach_token(org, token, module_token):
-    '''detach a token module'''
-    org.attachModule(token, module_token, {'from': accounts[0]})
-    org.detachModule(token, module_token, {'from': accounts[0]})
-    assert token.isActiveModule(module_token) is False
+def test_detach_share(org, share, module_share):
+    '''detach a share module'''
+    org.attachModule(share, module_share, {'from': accounts[0]})
+    org.detachModule(share, module_share, {'from': accounts[0]})
+    assert share.isActiveModule(module_share) is False
 
 
-def test_attach_via_token(token, module_token):
-    '''cannot attach directly via token'''
+def test_attach_via_share(share, module_share):
+    '''cannot attach directly via share'''
     with pytest.reverts("dev: only org"):
-        token.attachModule(module_token, {'from': accounts[0]})
+        share.attachModule(module_share, {'from': accounts[0]})
 
 
-def test_detach_via_token(org, token, module_token):
-    '''cannot detach directly via token'''
-    org.attachModule(token, module_token, {'from': accounts[0]})
+def test_detach_via_share(org, share, module_share):
+    '''cannot detach directly via share'''
+    org.attachModule(share, module_share, {'from': accounts[0]})
     with pytest.reverts("dev: only org"):
-        token.detachModule(module_token, {'from': accounts[0]})
+        share.detachModule(module_share, {'from': accounts[0]})
 
 
-def test_attach_org(org, token, module_org):
+def test_attach_org(org, share, module_org):
     '''attach an org module'''
-    assert token.isActiveModule(module_org) is False
-    org.attachModule(token, module_org, {'from': accounts[0]})
-    assert token.isActiveModule(module_org) is True
+    assert share.isActiveModule(module_org) is False
+    org.attachModule(share, module_org, {'from': accounts[0]})
+    assert share.isActiveModule(module_org) is True
 
 
-def test_detach_org(org, token, module_org):
+def test_detach_org(org, share, module_org):
     '''detach an org module'''
-    org.attachModule(token, module_org, {'from': accounts[0]})
-    org.detachModule(token, module_org, {'from': accounts[0]})
-    assert token.isActiveModule(module_org) is False
+    org.attachModule(share, module_org, {'from': accounts[0]})
+    org.detachModule(share, module_org, {'from': accounts[0]})
+    assert share.isActiveModule(module_org) is False
 
 
-def test_already_active(org, token, module_org, module_token):
+def test_already_active(org, share, module_org, module_share):
     '''attach already active module'''
-    org.attachModule(token, module_org, {'from': accounts[0]})
+    org.attachModule(share, module_org, {'from': accounts[0]})
     with pytest.reverts("dev: already active"):
-        org.attachModule(token, module_org, {'from': accounts[0]})
-    org.attachModule(token, module_token, {'from': accounts[0]})
+        org.attachModule(share, module_org, {'from': accounts[0]})
+    org.attachModule(share, module_share, {'from': accounts[0]})
     with pytest.reverts("dev: already active"):
-        org.attachModule(token, module_token, {'from': accounts[0]})
+        org.attachModule(share, module_share, {'from': accounts[0]})
 
 
-def test_token_locked(org, token, module_token):
-    '''attach and detach - locked token'''
-    org.setTokenRestriction(token, True, {'from': accounts[0]})
-    org.attachModule(token, module_token, {'from': accounts[0]})
-    org.detachModule(token, module_token, {'from': accounts[0]})
+def test_share_locked(org, share, module_share):
+    '''attach and detach - locked share'''
+    org.setOrgShareRestriction(share, True, {'from': accounts[0]})
+    org.attachModule(share, module_share, {'from': accounts[0]})
+    org.detachModule(share, module_share, {'from': accounts[0]})
 
 
-def test_attach_unknown_target(org, module_token):
+def test_attach_unknown_target(org, module_share):
     '''attach and detach - unknown target'''
     with pytest.reverts("dev: unknown target"):
-        org.attachModule(accounts[0], module_token, {'from': accounts[0]})
+        org.attachModule(accounts[0], module_share, {'from': accounts[0]})
     with pytest.reverts("dev: unknown target"):
-        org.detachModule(accounts[0], module_token, {'from': accounts[0]})
+        org.detachModule(accounts[0], module_share, {'from': accounts[0]})

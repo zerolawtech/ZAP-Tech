@@ -6,10 +6,10 @@ from brownie import accounts
 
 
 # def test_setup():
-#     global org, token, options, id1
-#     token, org, _ = main(SecurityToken, (1,), (1,))
-#     options = accounts[0].deploy(VestedOptions, token, org, 1, 10, 6, accounts[0])
-#     org.attachModule(token, options, {'from': accounts[0]})
+#     global org, share, options, id1
+#     share, org, _ = main(BookShare, (1,), (1,))
+#     options = accounts[0].deploy(VestedOptions, share, org, 1, 10, 6, accounts[0])
+#     org.attachModule(share, options, {'from': accounts[0]})
 #     id1 = org.getID(accounts[1])
 
 

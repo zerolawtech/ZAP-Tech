@@ -37,81 +37,81 @@ contract TestModule {{
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, org, nft, token):
-    token.mint(org, 100000, {'from': accounts[0]})
+def setup(approve_many, org, nft, share):
+    share.mint(org, 100000, {'from': accounts[0]})
     nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
-def test_is_permitted(org, token):
+def test_is_permitted(org, share):
     '''check permitted'''
     source = module_source.format('0xbb2a8522')
     project = compile_source(source)
-    module = project.TestModule.deploy(token, {'from': accounts[0]})
-    assert not token.isPermittedModule(module, "0xbb2a8522")
-    org.attachModule(token, module, {'from': accounts[0]})
-    assert token.isPermittedModule(module, "0xbb2a8522")
-    org.detachModule(token, module, {'from': accounts[0]})
-    assert not token.isPermittedModule(module, "0xbb2a8522")
+    module = project.TestModule.deploy(share, {'from': accounts[0]})
+    assert not share.isPermittedModule(module, "0xbb2a8522")
+    org.attachModule(share, module, {'from': accounts[0]})
+    assert share.isPermittedModule(module, "0xbb2a8522")
+    org.detachModule(share, module, {'from': accounts[0]})
+    assert not share.isPermittedModule(module, "0xbb2a8522")
 
 
-def test_token_detachModule(org, token):
+def test_share_detachModule(org, share):
     '''detach module'''
     source = module_source.format('0xbb2a8522')
     project = compile_source(source)
-    module = project.TestModule.deploy(token, {'from': accounts[0]})
+    module = project.TestModule.deploy(share, {'from': accounts[0]})
     with pytest.reverts():
-        module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
-    org.attachModule(token, module, {'from': accounts[0]})
-    module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
+        module.test(share.detachModule.encode_input(module), {'from': accounts[0]})
+    org.attachModule(share, module, {'from': accounts[0]})
+    module.test(share.detachModule.encode_input(module), {'from': accounts[0]})
     with pytest.reverts():
-        module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
+        module.test(share.detachModule.encode_input(module), {'from': accounts[0]})
 
 
-def test_token_transferFrom(org, token):
-    '''token transferFrom'''
-    token.transfer(accounts[2], 5000, {'from': accounts[0]})
+def test_share_transferFrom(org, share):
+    '''share transferFrom'''
+    share.transfer(accounts[2], 5000, {'from': accounts[0]})
     _check_permission(
         org,
-        token,
+        share,
         '0x23b872dd',
-        token.transferFrom.encode_input(accounts[2], accounts[3], 3000)
+        share.transferFrom.encode_input(accounts[2], accounts[3], 3000)
     )
-    assert token.balanceOf(accounts[2]) == 2000
-    assert token.balanceOf(accounts[3]) == 3000
+    assert share.balanceOf(accounts[2]) == 2000
+    assert share.balanceOf(accounts[3]) == 3000
 
 
-def test_token_modifyAuthorizedSupply(org, token):
-    '''token modifyAuthorizedSupply'''
+def test_share_modifyAuthorizedSupply(org, share):
+    '''share modifyAuthorizedSupply'''
     _check_permission(
         org,
-        token,
+        share,
         '0xc39f42ed',
-        token.modifyAuthorizedSupply.encode_input("10 ether")
+        share.modifyAuthorizedSupply.encode_input("10 ether")
     )
-    assert token.authorizedSupply() == "10 ether"
+    assert share.authorizedSupply() == "10 ether"
 
 
-def test_token_mint(org, token):
-    '''token mint'''
+def test_share_mint(org, share):
+    '''share mint'''
     _check_permission(
         org,
-        token,
+        share,
         '0x40c10f19',
-        token.mint.encode_input(accounts[3], 10000)
+        share.mint.encode_input(accounts[3], 10000)
     )
-    assert token.balanceOf(accounts[3]) == 10000
+    assert share.balanceOf(accounts[3]) == 10000
 
 
-def test_token_burn(org, token):
-    '''token burn'''
-    token.transfer(accounts[2], 5000, {'from': accounts[0]})
+def test_share_burn(org, share):
+    '''share burn'''
+    share.transfer(accounts[2], 5000, {'from': accounts[0]})
     _check_permission(
         org,
-        token,
+        share,
         '0x9dc29fac',
-        token.burn.encode_input(accounts[2], 3000)
+        share.burn.encode_input(accounts[2], 3000)
     )
-    assert token.balanceOf(accounts[2]) == 2000
+    assert share.balanceOf(accounts[2]) == 2000
 
 
 def test_nft_mint(org, nft):

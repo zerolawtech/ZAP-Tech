@@ -6,9 +6,9 @@ from brownie import accounts, rpc
 
 
 @pytest.fixture(scope="module")
-def cp(MultiCheckpointModule, org, token):
+def cp(MultiCheckpointModule, org, share):
     cp = accounts[0].deploy(MultiCheckpointModule, org)
-    org.attachModule(token, cp, {'from': accounts[0]})
+    org.attachModule(share, cp, {'from': accounts[0]})
     yield cp
 
 

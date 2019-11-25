@@ -6,7 +6,7 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(org, token):
+def setup(org, share):
     for i in range(10):
         accounts.add()
     sigs = (
@@ -110,7 +110,7 @@ def test_add_known(org, id1):
         )
 
 
-def test_add_other(set_countries, org, kyc, token, id1):
+def test_add_other(set_countries, org, kyc, share, id1):
     '''add already associated address'''
     kyc.addInvestor(
         b'investor1',
@@ -121,7 +121,7 @@ def test_add_other(set_countries, org, kyc, token, id1):
         (accounts[1],),
         {'from': accounts[0]}
     )
-    token.mint(accounts[1], 100, {'from': accounts[0]})
+    share.mint(accounts[1], 100, {'from': accounts[0]})
     org.addAuthorityAddresses(id1, (accounts[-10],), {'from': accounts[0]})
     with pytest.reverts("dev: known address"):
         org.addAuthorityAddresses(id1, (accounts[-10],), {'from': accounts[0]})

@@ -38,8 +38,8 @@ contract TestModule {{
 
 
 @pytest.fixture(scope="module", autouse=True)
-def permissions_setup(token, cust):
-    token.transfer(cust, 10000, {'from': accounts[2]})
+def permissions_setup(share, cust):
+    share.transfer(cust, 10000, {'from': accounts[2]})
 
 
 @pytest.fixture(scope="module")
@@ -62,7 +62,7 @@ def test_is_permitted(cust):
     assert not cust.isPermittedModule(module, "0xbeabacc8")
 
 
-def test_token_detachModule(cust):
+def test_share_detachModule(cust):
     '''detach module'''
     source = module_source.format('0xbb2a8522')
     project = compile_source(source)
@@ -75,23 +75,23 @@ def test_token_detachModule(cust):
         module.test(cust.detachModule.encode_input(module), {'from': accounts[0]})
 
 
-def test_custodian_transfer(check_permission, token, cust):
+def test_custodian_transfer(check_permission, share, cust):
     '''custodian transfer'''
     check_permission(
         "0xbeabacc8",
-        cust.transfer.encode_input(token, accounts[2], 4000)
+        cust.transfer.encode_input(share, accounts[2], 4000)
     )
-    assert token.balanceOf(accounts[2]) == 4000
-    assert token.custodianBalanceOf(accounts[2], cust) == 6000
+    assert share.balanceOf(accounts[2]) == 4000
+    assert share.custodianBalanceOf(accounts[2], cust) == 6000
 
 
-def test_custodian_transferInternal(check_permission, token, cust):
+def test_custodian_transferInternal(check_permission, share, cust):
     check_permission(
         "0x2f98a4c3",
-        cust.transferInternal.encode_input(token, accounts[2], accounts[3], 4000)
+        cust.transferInternal.encode_input(share, accounts[2], accounts[3], 4000)
     )
-    assert token.custodianBalanceOf(accounts[2], cust) == 6000
-    assert token.custodianBalanceOf(accounts[3], cust) == 4000
+    assert share.custodianBalanceOf(accounts[2], cust) == 6000
+    assert share.custodianBalanceOf(accounts[3], cust) == 4000
 
 
 def _check_permission(cust, sig, calldata):

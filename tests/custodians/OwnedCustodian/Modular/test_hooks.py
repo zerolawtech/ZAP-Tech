@@ -50,31 +50,31 @@ def check_hooks(cust):
     yield functools.partial(_hook, cust)
 
 
-def test_custodian_sentTokens(check_hooks, token, cust):
-    source = '''sentTokens(
-        address _token,
+def test_custodian_sentShares(check_hooks, share, cust):
+    source = '''sentShares(
+        address _share,
         address _to,
         uint256 _value'''
-    token.transfer(cust, 10000, {'from': accounts[0]})
-    check_hooks(cust.transfer, (token, accounts[0], 100), source, "0xb4684410")
+    share.transfer(cust, 10000, {'from': accounts[0]})
+    check_hooks(cust.transfer, (share, accounts[0], 100), source, "0xa110724f")
 
 
-def test_custodian_receivedTokens(check_hooks, token, cust):
-    source = '''receivedTokens(
-        address _token,
+def test_custodian_receivedShares(check_hooks, share, cust):
+    source = '''receivedShares(
+        address _share,
         address _from,
         uint256 _value'''
-    check_hooks(token.transfer, (cust, 1000), source, "0xb15bcbc4")
+    check_hooks(share.transfer, (cust, 1000), source, "0xa000ff88")
 
 
-def test_custodian_internalTransfer(check_hooks, token, cust):
+def test_custodian_internalTransfer(check_hooks, share, cust):
     source = '''internalTransfer(
-        address _token,
+        address _share,
         address _from,
         address _to,
         uint256 _value'''
-    token.transfer(cust, 10000, {'from': accounts[0]})
-    check_hooks(cust.transferInternal, (token, accounts[0], accounts[2], 100), source, "0x44a29e2a")
+    share.transfer(cust, 10000, {'from': accounts[0]})
+    check_hooks(cust.transferInternal, (share, accounts[0], accounts[2], 100), source, "0x44a29e2a")
 
 
 def _hook(cust, fn, args, source, sig):

@@ -5,77 +5,77 @@ import pytest
 from brownie import accounts
 
 
-def test_mint_zero(org, token):
-    '''mint 0 tokens'''
+def test_mint_zero(org, share):
+    '''mint 0 shares'''
     with pytest.reverts("dev: mint 0"):
-        token.mint(org, 0, {'from': accounts[0]})
-    token.mint(org, 10000, {'from': accounts[0]})
+        share.mint(org, 0, {'from': accounts[0]})
+    share.mint(org, 10000, {'from': accounts[0]})
     with pytest.reverts("dev: mint 0"):
-        token.mint(org, 0, {'from': accounts[0]})
+        share.mint(org, 0, {'from': accounts[0]})
 
 
-def test_burn_zero(org, token):
-    '''burn 0 tokens'''
+def test_burn_zero(org, share):
+    '''burn 0 shares'''
     with pytest.reverts("dev: burn 0"):
-        token.burn(org, 0, {'from': accounts[0]})
-    token.mint(org, 10000, {'from': accounts[0]})
+        share.burn(org, 0, {'from': accounts[0]})
+    share.mint(org, 10000, {'from': accounts[0]})
     with pytest.reverts("dev: burn 0"):
-        token.burn(org, 0, {'from': accounts[0]})
+        share.burn(org, 0, {'from': accounts[0]})
 
 
-def test_authorized_below_total(org, token):
+def test_authorized_below_total(org, share):
     '''authorized supply below total supply'''
-    token.mint(org, 100000, {'from': accounts[0]})
+    share.mint(org, 100000, {'from': accounts[0]})
     with pytest.reverts("dev: auth below total"):
-        token.modifyAuthorizedSupply(10000, {'from': accounts[0]})
+        share.modifyAuthorizedSupply(10000, {'from': accounts[0]})
 
 
-def test_total_above_authorized(org, token):
+def test_total_above_authorized(org, share):
     '''total supply above authorized'''
-    token.modifyAuthorizedSupply(10000, {'from': accounts[0]})
+    share.modifyAuthorizedSupply(10000, {'from': accounts[0]})
     with pytest.reverts("dev: exceed auth"):
-        token.mint(org, 20000, {'from': accounts[0]})
-    token.mint(org, 6000, {'from': accounts[0]})
+        share.mint(org, 20000, {'from': accounts[0]})
+    share.mint(org, 6000, {'from': accounts[0]})
     with pytest.reverts("dev: exceed auth"):
-        token.mint(org, 6000, {'from': accounts[0]})
-    token.mint(org, 4000, {'from': accounts[0]})
+        share.mint(org, 6000, {'from': accounts[0]})
+    share.mint(org, 4000, {'from': accounts[0]})
     with pytest.reverts("dev: exceed auth"):
-        token.mint(org, 1, {'from': accounts[0]})
+        share.mint(org, 1, {'from': accounts[0]})
     with pytest.reverts("dev: mint 0"):
-        token.mint(org, 0, {'from': accounts[0]})
+        share.mint(org, 0, {'from': accounts[0]})
 
 
-def test_burn_exceeds_balance(org, token):
+def test_burn_exceeds_balance(org, share):
     '''burn exceeds balance'''
     with pytest.reverts():
-        token.burn(org, 100, {'from': accounts[0]})
-    token.mint(org, 4000, {'from': accounts[0]})
+        share.burn(org, 100, {'from': accounts[0]})
+    share.mint(org, 4000, {'from': accounts[0]})
     with pytest.reverts():
-        token.burn(org, 5000, {'from': accounts[0]})
-    token.burn(org, 3000, {'from': accounts[0]})
+        share.burn(org, 5000, {'from': accounts[0]})
+    share.burn(org, 3000, {'from': accounts[0]})
     with pytest.reverts():
-        token.burn(org, 1001, {'from': accounts[0]})
-    token.burn(org, 1000, {'from': accounts[0]})
+        share.burn(org, 1001, {'from': accounts[0]})
+    share.burn(org, 1000, {'from': accounts[0]})
     with pytest.reverts():
-        token.burn(org, 100, {'from': accounts[0]})
+        share.burn(org, 100, {'from': accounts[0]})
 
 
-def test_mint_to_custodian(org, token, cust):
+def test_mint_to_custodian(org, share, cust):
     '''mint to custodian'''
     with pytest.reverts("dev: custodian"):
-        token.mint(cust, 6000, {'from': accounts[0]})
+        share.mint(cust, 6000, {'from': accounts[0]})
 
 
-def test_burn_from_custodian(org, token, cust):
+def test_burn_from_custodian(org, share, cust):
     '''burn from custodian'''
-    token.mint(org, 10000, {'from': accounts[0]})
-    token.transfer(cust, 10000, {'from': accounts[0]})
+    share.mint(org, 10000, {'from': accounts[0]})
+    share.transfer(cust, 10000, {'from': accounts[0]})
     with pytest.reverts("dev: custodian"):
-        token.burn(cust, 5000, {'from': accounts[0]})
+        share.burn(cust, 5000, {'from': accounts[0]})
 
 
-def test_global_lock(org, token, id1):
-    '''mint - token lock'''
-    org.setTokenRestriction(token, True, {'from': accounts[0]})
-    with pytest.reverts("dev: token locked"):
-        token.mint(accounts[1], 1, {'from': accounts[0]})
+def test_global_lock(org, share, id1):
+    '''mint - share lock'''
+    org.setOrgShareRestriction(share, True, {'from': accounts[0]})
+    with pytest.reverts("dev: share locked"):
+        share.mint(accounts[1], 1, {'from': accounts[0]})

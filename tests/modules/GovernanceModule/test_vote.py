@@ -6,9 +6,9 @@ from brownie import accounts, rpc
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(proposal, gov, token, token2):
-    gov.newVote("0x1234", 5000, 0, [token], [1], {'from': accounts[0]})
-    gov.newVote("0x1234", 5000, 0, [token, token2], [1, 2], {'from': accounts[0]})
+def setup(proposal, gov, share, share2):
+    gov.newVote("0x1234", 5000, 0, [share], [1], {'from': accounts[0]})
+    gov.newVote("0x1234", 5000, 0, [share, share2], [1, 2], {'from': accounts[0]})
 
 
 def test_vote(gov):

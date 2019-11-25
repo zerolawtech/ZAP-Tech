@@ -7,9 +7,9 @@ from brownie import accounts, rpc
 
 
 @pytest.fixture(scope="module")
-def options(VestedOptions, org, token):
-    o = accounts[0].deploy(VestedOptions, token, org, 1, 100, 6, accounts[0])
-    org.attachModule(token, o, {'from': accounts[0]})
+def options(VestedOptions, org, share):
+    o = accounts[0].deploy(VestedOptions, share, org, 1, 100, 6, accounts[0])
+    org.attachModule(share, o, {'from': accounts[0]})
     yield o
 
 

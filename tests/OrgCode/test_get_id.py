@@ -6,9 +6,9 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(org, token, kyc2):
+def setup(org, share, kyc2):
     org.setVerifier(kyc2, False, {'from': accounts[0]})
-    token.mint(org, 1000000, {'from': accounts[0]})
+    share.mint(org, 1000000, {'from': accounts[0]})
 
 
 @pytest.fixture(scope="module")

@@ -33,20 +33,20 @@ def test_global_lock_org(org, nft):
 def test_nft_lock(org, nft):
     '''nft lock - investor / investor'''
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
-    org.setTokenRestriction(nft, True, {'from': accounts[0]})
-    with pytest.reverts("Transfers locked: Token"):
+    org.setOrgShareRestriction(nft, True, {'from': accounts[0]})
+    with pytest.reverts("Transfers locked: Share"):
         nft.transfer(accounts[2], 1000, {'from': accounts[1]})
-    org.setTokenRestriction(nft, False, {'from': accounts[0]})
+    org.setOrgShareRestriction(nft, False, {'from': accounts[0]})
     nft.transfer(accounts[2], 1000, {'from': accounts[1]})
 
 
 def test_nft_lock_org(org, nft):
     '''nft lock - org / investor'''
-    org.setTokenRestriction(nft, True, {'from': accounts[0]})
+    org.setOrgShareRestriction(nft, True, {'from': accounts[0]})
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
-    with pytest.reverts("Transfers locked: Token"):
+    with pytest.reverts("Transfers locked: Share"):
         nft.transfer(accounts[0], 1000, {'from': accounts[1]})
-    org.setTokenRestriction(nft, False, {'from': accounts[0]})
+    org.setOrgShareRestriction(nft, False, {'from': accounts[0]})
     nft.transfer(accounts[0], 1000, {'from': accounts[1]})
 
 

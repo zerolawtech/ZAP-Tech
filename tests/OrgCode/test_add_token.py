@@ -10,7 +10,7 @@ contract TestGovernance {
     bool result;
     constructor(address _org) public { org = _org; }
     function setResult(bool _result) external { result = _result; }
-    function addToken(address) external returns (bool) { return result; }
+    function addOrgShare(address) external returns (bool) { return result; }
 }'''
 
 
@@ -23,48 +23,48 @@ def gov(org):
 
 
 @pytest.fixture(scope="module")
-def token2(SecurityToken, org, accounts, token):
-    t = accounts[0].deploy(SecurityToken, org, "Test Token2", "TS2", 1000000)
+def share2(BookShare, org, accounts, share):
+    t = accounts[0].deploy(BookShare, org, "Test Share2", "TS2", 1000000)
     yield t
 
 
-def test_add_token(org, token2):
-    '''add token'''
-    org.addToken(token2, {'from': accounts[0]})
+def test_add_share(org, share2):
+    '''add share'''
+    org.addOrgShare(share2, {'from': accounts[0]})
 
 
-def test_add_token_twice(org, token):
-    '''add token - already added'''
+def test_add_share_twice(org, share):
+    '''add share - already added'''
     with pytest.reverts("dev: already set"):
-        org.addToken(token, {'from': accounts[0]})
+        org.addOrgShare(share, {'from': accounts[0]})
 
 
-def test_add_token_wrong_org(org, OrgCode, SecurityToken):
-    '''add token - wrong org'''
+def test_add_share_wrong_org(org, OrgCode, BookShare):
+    '''add share - wrong org'''
     org2 = accounts[0].deploy(OrgCode, [accounts[0]], 1)
-    token = accounts[0].deploy(SecurityToken, org2, "ABC", "ABC Token", 18)
+    share = accounts[0].deploy(BookShare, org2, "ABC", "ABC Share", 18)
     with pytest.reverts("dev: wrong owner"):
-        org.addToken(token, {'from': accounts[0]})
+        org.addOrgShare(share, {'from': accounts[0]})
 
 
-def test_add_token_governance_true(org, gov, token2):
-    '''add token - governance allows'''
+def test_add_share_governance_true(org, gov, share2):
+    '''add share - governance allows'''
     org.setGovernance(gov, {'from': accounts[0]})
     gov.setResult(True, {'from': accounts[0]})
-    org.addToken(token2, {'from': accounts[0]})
+    org.addOrgShare(share2, {'from': accounts[0]})
 
 
-def test_add_token_governance_false(org, gov, token2):
-    '''add token - governance allows'''
+def test_add_share_governance_false(org, gov, share2):
+    '''add share - governance allows'''
     gov.setResult(False, {'from': accounts[0]})
     with pytest.reverts("Action has not been approved"):
-        org.addToken(token2, {'from': accounts[0]})
+        org.addOrgShare(share2, {'from': accounts[0]})
 
 
-def test_add_token_governance_removed(org, gov, token2):
-    '''add token - governance allows'''
+def test_add_share_governance_removed(org, gov, share2):
+    '''add share - governance allows'''
     gov.setResult(False, {'from': accounts[0]})
     with pytest.reverts("Action has not been approved"):
-        org.addToken(token2, {'from': accounts[0]})
+        org.addOrgShare(share2, {'from': accounts[0]})
     org.setGovernance("0" * 40, {'from': accounts[0]})
-    org.addToken(token2, {'from': accounts[0]})
+    org.addOrgShare(share2, {'from': accounts[0]})

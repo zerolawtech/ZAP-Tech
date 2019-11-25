@@ -7,9 +7,9 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module")
-def cp(MultiCheckpointModule, org, token):
+def cp(MultiCheckpointModule, org, share):
     cp = accounts[0].deploy(MultiCheckpointModule, org)
-    org.attachModule(token, cp, {'from': accounts[0]})
+    org.attachModule(share, cp, {'from': accounts[0]})
     yield cp
 
 
@@ -21,17 +21,17 @@ def gov(GovernanceModule, org, cp):
 
 
 @pytest.fixture(scope="module")
-def token2(SecurityToken, org, cp):
-    t = accounts[0].deploy(SecurityToken, org, "", "", 1000000)
-    org.addToken(t, {'from': accounts[0]})
+def share2(BookShare, org, cp):
+    t = accounts[0].deploy(BookShare, org, "", "", 1000000)
+    org.addOrgShare(t, {'from': accounts[0]})
     org.attachModule(t, cp, {'from': accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
-def token3(SecurityToken, org, cp):
-    t = accounts[0].deploy(SecurityToken, org, "", "", 1000000)
-    org.addToken(t, {'from': accounts[0]})
+def share3(BookShare, org, cp):
+    t = accounts[0].deploy(BookShare, org, "", "", 1000000)
+    org.addOrgShare(t, {'from': accounts[0]})
     org.attachModule(t, cp, {'from': accounts[0]})
     yield t
 
@@ -42,15 +42,15 @@ def cptime():
 
 
 @pytest.fixture(scope="module")
-def proposal(approve_many, cp, token, token2, token3, gov, cptime):
+def proposal(approve_many, cp, share, share2, share3, gov, cptime):
     for i in range(1, 4):
-        token.mint(accounts[i], 1000, {'from': accounts[0]})
+        share.mint(accounts[i], 1000, {'from': accounts[0]})
     for i in range(3, 6):
-        token2.mint(accounts[i], 1000, {'from': accounts[0]})
-    token3.mint(accounts[5], 1000, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token2, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token3, cptime, {'from': accounts[0]})
+        share2.mint(accounts[i], 1000, {'from': accounts[0]})
+    share3.mint(accounts[5], 1000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share2, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share3, cptime, {'from': accounts[0]})
     gov.newProposal(
         "0x1234",
         cptime,

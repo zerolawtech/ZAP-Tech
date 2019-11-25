@@ -6,8 +6,8 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
 def test_zero(nft, cust):
@@ -25,10 +25,10 @@ def test_exceed(nft, cust):
     with pytest.reverts("Insufficient Custodial Balance"):
         cust.transferInternal(nft, accounts[2], accounts[3], 6000, {'from': accounts[0]})
 
-def test_cust_to_cust(OwnedCustodian, issuer, nft, cust):
+def test_cust_to_cust(OwnedCustodian, org, nft, cust):
     '''custodian to custodian'''
     cust2 = accounts[0].deploy(OwnedCustodian, [accounts[0]], 1)
-    issuer.addCustodian(cust2, {'from': accounts[0]})
+    org.addCustodian(cust2, {'from': accounts[0]})
     nft.transfer(accounts[2], 10000, {'from': accounts[0]})
     nft.transfer(cust, 5000, {'from': accounts[2]})
     with pytest.reverts("Custodian to Custodian"):

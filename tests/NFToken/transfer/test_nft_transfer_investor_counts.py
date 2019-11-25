@@ -6,12 +6,12 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
-def test_issuer_to_investor(check_counts, nft):
-    '''investor counts - issuer/investor transfers'''
+def test_org_to_investor(check_counts, nft):
+    '''investor counts - org/investor transfers'''
     check_counts()
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
     check_counts(one=(1, 1, 0))

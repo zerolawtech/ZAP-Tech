@@ -6,11 +6,11 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(id1, id2, issuer, token):
-    token.mint(issuer, 100000, {'from': accounts[0]})
+def setup(id1, id2, org, token):
+    token.mint(org, 100000, {'from': accounts[0]})
 
 
-def test_issuer_txfrom(token, cust):
+def test_org_txfrom(token, cust):
     '''Issuer transferFrom custodian'''
     token.transfer(accounts[1], 10000, {'from': accounts[0]})
     token.transfer(cust, 10000, {'from': accounts[1]})

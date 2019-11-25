@@ -7,32 +7,32 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module")
-def cp(MultiCheckpointModule, issuer, token):
-    cp = accounts[0].deploy(MultiCheckpointModule, issuer)
-    issuer.attachModule(token, cp, {'from': accounts[0]})
+def cp(MultiCheckpointModule, org, token):
+    cp = accounts[0].deploy(MultiCheckpointModule, org)
+    org.attachModule(token, cp, {'from': accounts[0]})
     yield cp
 
 
 @pytest.fixture(scope="module")
-def gov(GovernanceModule, issuer, cp):
-    gov = accounts[0].deploy(GovernanceModule, issuer, cp)
-    issuer.setGovernance(gov, {'from': accounts[0]})
+def gov(GovernanceModule, org, cp):
+    gov = accounts[0].deploy(GovernanceModule, org, cp)
+    org.setGovernance(gov, {'from': accounts[0]})
     yield gov
 
 
 @pytest.fixture(scope="module")
-def token2(SecurityToken, issuer, cp):
-    t = accounts[0].deploy(SecurityToken, issuer, "", "", 1000000)
-    issuer.addToken(t, {'from': accounts[0]})
-    issuer.attachModule(t, cp, {'from': accounts[0]})
+def token2(SecurityToken, org, cp):
+    t = accounts[0].deploy(SecurityToken, org, "", "", 1000000)
+    org.addToken(t, {'from': accounts[0]})
+    org.attachModule(t, cp, {'from': accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
-def token3(SecurityToken, issuer, cp):
-    t = accounts[0].deploy(SecurityToken, issuer, "", "", 1000000)
-    issuer.addToken(t, {'from': accounts[0]})
-    issuer.attachModule(t, cp, {'from': accounts[0]})
+def token3(SecurityToken, org, cp):
+    t = accounts[0].deploy(SecurityToken, org, "", "", 1000000)
+    org.addToken(t, {'from': accounts[0]})
+    org.attachModule(t, cp, {'from': accounts[0]})
     yield t
 
 

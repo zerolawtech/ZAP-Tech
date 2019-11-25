@@ -3,17 +3,17 @@
 from brownie import accounts
 
 
-def test_mint_issuer(check_counts, approve_many, issuer, nft):
-    '''mint to issuer'''
-    nft.mint(issuer, 1000, 0, "0x00", {'from': accounts[0]})
+def test_mint_org(check_counts, approve_many, org, nft):
+    '''mint to org'''
+    nft.mint(org, 1000, 0, "0x00", {'from': accounts[0]})
     check_counts()
-    nft.mint(issuer, 9000, 0, "0x00", {'from': accounts[0]})
+    nft.mint(org, 9000, 0, "0x00", {'from': accounts[0]})
     check_counts()
 
 
-def test_burn_issuer(check_counts, issuer, nft):
-    '''burn from issuer'''
-    nft.mint(issuer, 10000, 0, "0x00", {'from': accounts[0]})
+def test_burn_org(check_counts, org, nft):
+    '''burn from org'''
+    nft.mint(org, 10000, 0, "0x00", {'from': accounts[0]})
     nft.burn(1, 2001, {'from': accounts[0]})
     check_counts()
     nft.burn(2001, 10001, {'from': accounts[0]})

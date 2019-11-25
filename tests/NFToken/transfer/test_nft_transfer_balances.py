@@ -6,8 +6,8 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
 def test_zero_nfts(nft):
@@ -35,8 +35,8 @@ def test_insufficient_balance_investor(nft):
         nft.transfer(accounts[2], 2000, {'from': accounts[1]})
 
 
-def test_insufficient_balance_issuer(nft):
-    '''insufficient balance - issuer to investor'''
+def test_insufficient_balance_org(nft):
+    '''insufficient balance - org to investor'''
     with pytest.reverts("Insufficient Balance"):
         nft.transfer(accounts[1], 20000000000, {'from': accounts[0]})
 
@@ -50,30 +50,30 @@ def test_balance(nft):
     assert nft.balanceOf(accounts[2]) == 400
 
 
-def test_balance_issuer(issuer, nft):
-    '''issuer balances'''
+def test_balance_org(org, nft):
+    '''org balances'''
     assert nft.balanceOf(accounts[0]) == 0
-    assert nft.balanceOf(issuer) == 100000
+    assert nft.balanceOf(org) == 100000
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
     assert nft.balanceOf(accounts[0]) == 0
-    assert nft.balanceOf(issuer) == 99000
+    assert nft.balanceOf(org) == 99000
     nft.transfer(accounts[0], 1000, {'from': accounts[1]})
     assert nft.balanceOf(accounts[0]) == 0
-    assert nft.balanceOf(issuer) == 100000
+    assert nft.balanceOf(org) == 100000
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
-    nft.transfer(issuer, 1000, {'from': accounts[1]})
+    nft.transfer(org, 1000, {'from': accounts[1]})
     assert nft.balanceOf(accounts[0]) == 0
-    assert nft.balanceOf(issuer) == 100000
+    assert nft.balanceOf(org) == 100000
 
 
-def test_authority_permission(issuer, nft):
-    '''issuer subauthority balances'''
-    issuer.addAuthority([accounts[-1]], ["0xa9059cbb"], 2000000000, 1, {'from': accounts[0]})
+def test_authority_permission(org, nft):
+    '''org subauthority balances'''
+    org.addAuthority([accounts[-1]], ["0xa9059cbb"], 2000000000, 1, {'from': accounts[0]})
     nft.transfer(accounts[1], 1000, {'from': accounts[-1]})
     assert nft.balanceOf(accounts[0]) == 0
     assert nft.balanceOf(accounts[-1]) == 0
-    assert nft.balanceOf(issuer) == 99000
+    assert nft.balanceOf(org) == 99000
     nft.transfer(accounts[-1], 1000, {'from': accounts[1]})
     assert nft.balanceOf(accounts[0]) == 0
     assert nft.balanceOf(accounts[-1]) == 0
-    assert nft.balanceOf(issuer) == 100000
+    assert nft.balanceOf(org) == 100000

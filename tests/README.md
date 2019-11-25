@@ -21,7 +21,7 @@ Tests for SFT are sorted by the main contract being tested, then optionally by t
 
 ## Test Folders
 
-* `IssuingEntity`: Tests that target [IssuingEntity](../contracts/IssuingEntity.sol).
+* `OrgCode`: Tests that target [OrgCode](../contracts/OrgCode.sol).
 * `KYCIssuer`: Tests that target [KYCIssuer](../contracts/KYCIssuer.sol).
 * `KYCRegistrar`: Tests that target [KYCRegistrar](../contracts/KYCRegistrar.sol).
 * `NFToken`: Tests that target [NFToken](../contracts/NFToken.sol).

@@ -60,4 +60,4 @@ def test_same_addr(nft):
     with pytest.reverts("Cannot send to self"):
         nft.transferRange(accounts[2], 11000, 12000, {'from': accounts[2]})
 
-# TODO issuer send / receive ?
+# TODO org send / receive ?

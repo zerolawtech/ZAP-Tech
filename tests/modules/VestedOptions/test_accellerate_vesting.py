@@ -4,12 +4,12 @@ from brownie import accounts
 
 
 # def test_setup():
-#     global issuer, token, options, id1, id2, id3
-#     token, issuer, _ = main(SecurityToken, (1, 2, 3), (1,))
-#     options = accounts[0].deploy(VestedOptions, token, issuer, 1, 10, 6, accounts[8])
-#     issuer.attachModule(token, options, {'from': accounts[0]})
-#     id1 = issuer.getID(accounts[1])
-#     id2 = issuer.getID(accounts[2])
+#     global org, token, options, id1, id2, id3
+#     token, org, _ = main(SecurityToken, (1, 2, 3), (1,))
+#     options = accounts[0].deploy(VestedOptions, token, org, 1, 10, 6, accounts[8])
+#     org.attachModule(token, options, {'from': accounts[0]})
+#     id1 = org.getID(accounts[1])
+#     id2 = org.getID(accounts[2])
 
 
 def test_accellerate_fully_unvested(options, id1, issueoptions, sleep):

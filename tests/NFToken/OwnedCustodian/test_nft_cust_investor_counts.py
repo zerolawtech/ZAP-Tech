@@ -6,8 +6,8 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
 def test_into_custodian(check_counts, nft, cust):
@@ -31,7 +31,7 @@ def test_cust_internal(check_counts, nft, cust):
     check_counts(one=(1, 0, 1), two=(1, 1, 0))
 
 
-def test_cust_out(check_counts, issuer, nft, cust):
+def test_cust_out(check_counts, org, nft, cust):
     '''Transfer out of custodian - investor'''
     nft.transfer(accounts[1], 10000, {'from': accounts[0]})
     nft.transfer(cust, 10000, {'from': accounts[1]})
@@ -39,34 +39,34 @@ def test_cust_out(check_counts, issuer, nft, cust):
     check_counts(one=(1, 0, 1))
     cust.transfer(nft, accounts[2], 10000, {'from': accounts[0]})
     check_counts(one=(1, 0, 1))
-    nft.transfer(issuer, 10000, {'from': accounts[2]})
+    nft.transfer(org, 10000, {'from': accounts[2]})
     check_counts()
 
 
-def test_issuer_cust_in(check_counts, nft, cust):
-    '''Transfers into custodian - issuer'''
+def test_org_cust_in(check_counts, nft, cust):
+    '''Transfers into custodian - org'''
     nft.transfer(cust, 10000, {'from': accounts[0]})
     check_counts()
     nft.transfer(cust, 90000, {'from': accounts[0]})
     check_counts()
 
 
-def test_issuer_cust_internal(check_counts, issuer, nft, cust):
-    '''Custodian internal transfers - issuer / investor'''
+def test_org_cust_internal(check_counts, org, nft, cust):
+    '''Custodian internal transfers - org / investor'''
     nft.transfer(cust, 10000, {'from': accounts[0]})
-    cust.transferInternal(nft, issuer, accounts[1], 10000, {'from': accounts[0]})
+    cust.transferInternal(nft, org, accounts[1], 10000, {'from': accounts[0]})
     check_counts(one=(1, 1, 0))
-    cust.transferInternal(nft, accounts[1], issuer, 5000, {'from': accounts[0]})
+    cust.transferInternal(nft, accounts[1], org, 5000, {'from': accounts[0]})
     check_counts(one=(1, 1, 0))
     cust.transferInternal(nft, accounts[1], accounts[0], 5000, {'from': accounts[0]})
     check_counts()
 
 
-def test_issuer_cust_out(check_counts, issuer, nft, cust):
-    '''Transfers out of custodian - issuer'''
+def test_org_cust_out(check_counts, org, nft, cust):
+    '''Transfers out of custodian - org'''
     nft.transfer(cust, 10000, {'from': accounts[0]})
     check_counts()
-    cust.transfer(nft, issuer, 3000, {'from': accounts[0]})
+    cust.transfer(nft, org, 3000, {'from': accounts[0]})
     check_counts()
     cust.transfer(nft, accounts[0], 7000, {'from': accounts[0]})
     check_counts()

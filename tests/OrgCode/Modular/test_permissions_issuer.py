@@ -37,41 +37,41 @@ contract TestModule {{
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft, token):
-    token.mint(issuer, 100000, {'from': accounts[0]})
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft, token):
+    token.mint(org, 100000, {'from': accounts[0]})
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
-def test_is_permitted(issuer, token):
+def test_is_permitted(org, token):
     '''check permitted'''
     source = module_source.format('0xbb2a8522')
     project = compile_source(source)
     module = project.TestModule.deploy(token, {'from': accounts[0]})
     assert not token.isPermittedModule(module, "0xbb2a8522")
-    issuer.attachModule(token, module, {'from': accounts[0]})
+    org.attachModule(token, module, {'from': accounts[0]})
     assert token.isPermittedModule(module, "0xbb2a8522")
-    issuer.detachModule(token, module, {'from': accounts[0]})
+    org.detachModule(token, module, {'from': accounts[0]})
     assert not token.isPermittedModule(module, "0xbb2a8522")
 
 
-def test_token_detachModule(issuer, token):
+def test_token_detachModule(org, token):
     '''detach module'''
     source = module_source.format('0xbb2a8522')
     project = compile_source(source)
     module = project.TestModule.deploy(token, {'from': accounts[0]})
     with pytest.reverts():
         module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
-    issuer.attachModule(token, module, {'from': accounts[0]})
+    org.attachModule(token, module, {'from': accounts[0]})
     module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
     with pytest.reverts():
         module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
 
 
-def test_token_transferFrom(issuer, token):
+def test_token_transferFrom(org, token):
     '''token transferFrom'''
     token.transfer(accounts[2], 5000, {'from': accounts[0]})
     _check_permission(
-        issuer,
+        org,
         token,
         '0x23b872dd',
         token.transferFrom.encode_input(accounts[2], accounts[3], 3000)
@@ -80,10 +80,10 @@ def test_token_transferFrom(issuer, token):
     assert token.balanceOf(accounts[3]) == 3000
 
 
-def test_token_modifyAuthorizedSupply(issuer, token):
+def test_token_modifyAuthorizedSupply(org, token):
     '''token modifyAuthorizedSupply'''
     _check_permission(
-        issuer,
+        org,
         token,
         '0xc39f42ed',
         token.modifyAuthorizedSupply.encode_input("10 ether")
@@ -91,10 +91,10 @@ def test_token_modifyAuthorizedSupply(issuer, token):
     assert token.authorizedSupply() == "10 ether"
 
 
-def test_token_mint(issuer, token):
+def test_token_mint(org, token):
     '''token mint'''
     _check_permission(
-        issuer,
+        org,
         token,
         '0x40c10f19',
         token.mint.encode_input(accounts[3], 10000)
@@ -102,11 +102,11 @@ def test_token_mint(issuer, token):
     assert token.balanceOf(accounts[3]) == 10000
 
 
-def test_token_burn(issuer, token):
+def test_token_burn(org, token):
     '''token burn'''
     token.transfer(accounts[2], 5000, {'from': accounts[0]})
     _check_permission(
-        issuer,
+        org,
         token,
         '0x9dc29fac',
         token.burn.encode_input(accounts[2], 3000)
@@ -114,10 +114,10 @@ def test_token_burn(issuer, token):
     assert token.balanceOf(accounts[2]) == 2000
 
 
-def test_nft_mint(issuer, nft):
+def test_nft_mint(org, nft):
     '''nft mint'''
     _check_permission(
-        issuer,
+        org,
         nft,
         "0x15077ec8",
         nft.mint.encode_input(accounts[2], 10000, 0, "0xff11")
@@ -125,21 +125,21 @@ def test_nft_mint(issuer, nft):
     assert nft.balanceOf(accounts[2]) == 10000
 
 
-def test_nft_burn(issuer, nft):
+def test_nft_burn(org, nft):
     '''nft burn'''
     _check_permission(
-        issuer,
+        org,
         nft,
         "0x9a0d378b",
         nft.burn.encode_input(1337, 31337)
     )
-    assert nft.balanceOf(issuer) == 70000
+    assert nft.balanceOf(org) == 70000
 
 
-def test_nft_modifyRange(issuer, nft):
+def test_nft_modifyRange(org, nft):
     '''nft modifyRange'''
     _check_permission(
-        issuer,
+        org,
         nft,
         "0x712a516a",
         nft.modifyRange.encode_input(1, 0, "0xabcd")
@@ -147,10 +147,10 @@ def test_nft_modifyRange(issuer, nft):
     assert nft.getRange(1)[1:5] == (1, 100001, 0, "0xabcd")
 
 
-def test_nft_modifyRanges(issuer, nft):
+def test_nft_modifyRanges(org, nft):
     '''nft modifyRanges'''
     _check_permission(
-        issuer,
+        org,
         nft,
         "0x786500aa",
         nft.modifyRanges.encode_input(100, 200, 0, "0x1111")
@@ -160,7 +160,7 @@ def test_nft_modifyRanges(issuer, nft):
     assert nft.getRange(200)[1:5] == (200, 100001, 0, "0x0000")
 
 
-def _check_permission(issuer, contract, sig, calldata):
+def _check_permission(org, contract, sig, calldata):
 
     # deploy the module
     source = module_source.format(sig)
@@ -172,10 +172,10 @@ def _check_permission(issuer, contract, sig, calldata):
         module.test(calldata, {'from': accounts[0]})
 
     # attach the module and check that the call now succeeds
-    issuer.attachModule(contract, module, {'from': accounts[0]})
+    org.attachModule(contract, module, {'from': accounts[0]})
     module.test(calldata, {'from': accounts[0]})
 
     # detach the module and check that the call fails again
-    issuer.detachModule(contract, module, {'from': accounts[0]})
+    org.detachModule(contract, module, {'from': accounts[0]})
     with pytest.reverts():
         module.test(calldata, {'from': accounts[0]})

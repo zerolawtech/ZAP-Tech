@@ -6,11 +6,11 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
-def test_issuer_txfrom(nft, cust):
+def test_org_txfrom(nft, cust):
     '''Issuer transferFrom custodian'''
     nft.transfer(accounts[1], 10000, {'from': accounts[0]})
     nft.transfer(cust, 10000, {'from': accounts[1]})

@@ -65,7 +65,7 @@ contract TestModule {
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(id1, id2, issuer, nft):
+def setup(id1, id2, org, nft):
     nft.mint(accounts[1], 100, 0, "0x0000", {'from': accounts[0]})  # 1   - 100
     nft.mint(accounts[1], 100, 0, "0xaa01", {'from': accounts[0]})  # 101 - 200
     nft.mint(accounts[1], 100, 0, "0xaa02", {'from': accounts[0]})  # 201 - 300
@@ -75,10 +75,10 @@ def setup(id1, id2, issuer, nft):
 
 
 @pytest.fixture(scope="module")
-def module(nft, issuer):
+def module(nft, org):
     project = compile_source(module_source)
     m = project.TestModule.deploy(nft, {'from': accounts[0]})
-    issuer.attachModule(nft, m, {'from': accounts[0]})
+    org.attachModule(nft, m, {'from': accounts[0]})
     yield m
 
 

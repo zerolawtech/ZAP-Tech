@@ -8,9 +8,9 @@ optmonths = [0, 100, 100, 100, 100, 100, 0, 0, 0, 0, 0]
 
 
 @pytest.fixture(scope="module")
-def options(VestedOptions, issuer, token):
-    options = accounts[0].deploy(VestedOptions, token, issuer, 1, 10, 6, accounts[0])
-    issuer.attachModule(token, options, {'from': accounts[0]})
+def options(VestedOptions, org, token):
+    options = accounts[0].deploy(VestedOptions, token, org, 1, 10, 6, accounts[0])
+    org.attachModule(token, options, {'from': accounts[0]})
     yield options
 
 

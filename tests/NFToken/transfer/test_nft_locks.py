@@ -6,47 +6,47 @@ from brownie import accounts, rpc
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
-def test_global_lock(issuer, nft):
+def test_global_lock(org, nft):
     '''global lock - investor / investor'''
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
-    issuer.setGlobalRestriction(True, {'from': accounts[0]})
+    org.setGlobalRestriction(True, {'from': accounts[0]})
     with pytest.reverts("Transfers locked: Issuer"):
         nft.transfer(accounts[2], 1000, {'from': accounts[1]})
-    issuer.setGlobalRestriction(False, {'from': accounts[0]})
+    org.setGlobalRestriction(False, {'from': accounts[0]})
     nft.transfer(accounts[2], 1000, {'from': accounts[1]})
 
 
-def test_global_lock_issuer(issuer, nft):
-    '''global lock - issuer / investor'''
-    issuer.setGlobalRestriction(True, {'from': accounts[0]})
+def test_global_lock_org(org, nft):
+    '''global lock - org / investor'''
+    org.setGlobalRestriction(True, {'from': accounts[0]})
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
     with pytest.reverts("Transfers locked: Issuer"):
         nft.transfer(accounts[0], 1000, {'from': accounts[1]})
-    issuer.setGlobalRestriction(False, {'from': accounts[0]})
+    org.setGlobalRestriction(False, {'from': accounts[0]})
     nft.transfer(accounts[0], 1000, {'from': accounts[1]})
 
 
-def test_nft_lock(issuer, nft):
+def test_nft_lock(org, nft):
     '''nft lock - investor / investor'''
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
-    issuer.setTokenRestriction(nft, True, {'from': accounts[0]})
+    org.setTokenRestriction(nft, True, {'from': accounts[0]})
     with pytest.reverts("Transfers locked: Token"):
         nft.transfer(accounts[2], 1000, {'from': accounts[1]})
-    issuer.setTokenRestriction(nft, False, {'from': accounts[0]})
+    org.setTokenRestriction(nft, False, {'from': accounts[0]})
     nft.transfer(accounts[2], 1000, {'from': accounts[1]})
 
 
-def test_nft_lock_issuer(issuer, nft):
-    '''nft lock - issuer / investor'''
-    issuer.setTokenRestriction(nft, True, {'from': accounts[0]})
+def test_nft_lock_org(org, nft):
+    '''nft lock - org / investor'''
+    org.setTokenRestriction(nft, True, {'from': accounts[0]})
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
     with pytest.reverts("Transfers locked: Token"):
         nft.transfer(accounts[0], 1000, {'from': accounts[1]})
-    issuer.setTokenRestriction(nft, False, {'from': accounts[0]})
+    org.setTokenRestriction(nft, False, {'from': accounts[0]})
     nft.transfer(accounts[0], 1000, {'from': accounts[1]})
 
 

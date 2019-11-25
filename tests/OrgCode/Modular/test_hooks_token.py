@@ -46,9 +46,9 @@ contract TestModule {{
 
 
 @pytest.fixture(scope="module", autouse=True)
-def testhook(approve_many, issuer, token):
-    token.mint(issuer, 100000, {'from': accounts[0]})
-    hook = functools.partial(_hook, issuer, token)
+def testhook(approve_many, org, token):
+    token.mint(org, 100000, {'from': accounts[0]})
+    hook = functools.partial(_hook, org, token)
     yield hook
 
 
@@ -86,7 +86,7 @@ def test_transferTokensCustodian(testhook, token, cust):
     testhook(cust.transferInternal, (token, accounts[2], accounts[3], 100), source, "0x8b5f1240")
 
 
-def test_totalSupplyChanged(testhook, issuer, token, cust):
+def test_totalSupplyChanged(testhook, org, token, cust):
     source = '''totalSupplyChanged(
         address _addr,
         bytes32 _id,
@@ -94,20 +94,20 @@ def test_totalSupplyChanged(testhook, issuer, token, cust):
         uint16 _country,
         uint256 _old,
         uint256 _new'''
-    testhook(token.burn, (issuer, 1000), source, "0x741b5078")
+    testhook(token.burn, (org, 1000), source, "0x741b5078")
     testhook(token.mint, (accounts[2], 1000), source, "0x741b5078")
 
 
-def _hook(issuer, token, fn, args, source, sig):
+def _hook(org, token, fn, args, source, sig):
     args = list(args) + [{'from': accounts[0]}]
     source = module_source.format(sig, source)
     project = compile_source(source)
     module = project.TestModule.deploy(token, {'from': accounts[0]})
     fn(*args)
-    issuer.attachModule(token, module, {'from': accounts[0]})
+    org.attachModule(token, module, {'from': accounts[0]})
     fn(*args)
     module.setReturn(False, {'from': accounts[0]})
     with pytest.reverts():
         fn(*args)
-    issuer.detachModule(token, module, {'from': accounts[0]})
+    org.detachModule(token, module, {'from': accounts[0]})
     fn(*args)

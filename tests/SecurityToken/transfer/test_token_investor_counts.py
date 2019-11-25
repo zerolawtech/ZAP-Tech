@@ -6,12 +6,12 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, token):
-    token.mint(issuer, 1000000, {'from': accounts[0]})
+def setup(approve_many, org, token):
+    token.mint(org, 1000000, {'from': accounts[0]})
 
 
-def test_issuer_to_investor(check_counts, token):
-    '''investor counts - issuer/investor transfers'''
+def test_org_to_investor(check_counts, token):
+    '''investor counts - org/investor transfers'''
     check_counts()
     token.transfer(accounts[1], 1000, {'from': accounts[0]})
     check_counts(one=(1, 1, 0))

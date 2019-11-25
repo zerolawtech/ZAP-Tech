@@ -3,14 +3,14 @@
 from brownie import accounts
 
 
-def test_mint_to_issuer(approve_many, issuer, nft):
-    '''mint to issuer'''
-    nft.mint(issuer, 1000, 0, "0x00", {'from': accounts[0]})
+def test_mint_to_org(approve_many, org, nft):
+    '''mint to org'''
+    nft.mint(org, 1000, 0, "0x00", {'from': accounts[0]})
     assert nft.totalSupply() == 1000
-    assert nft.balanceOf(issuer), 1000
-    nft.mint(issuer, 2000, 0, "0x00", {'from': accounts[0]})
+    assert nft.balanceOf(org), 1000
+    nft.mint(org, 2000, 0, "0x00", {'from': accounts[0]})
     assert nft.totalSupply() == 3000
-    assert nft.balanceOf(issuer) == 3000
+    assert nft.balanceOf(org) == 3000
 
 
 def test_mint_to_investors(nft):
@@ -32,18 +32,18 @@ def test_mint_to_investors(nft):
     assert nft.balanceOf(accounts[2]) == 6000
 
 
-def test_burn_from_issuer(issuer, nft):
-    '''burn from issuer'''
-    nft.mint(issuer, 10000, 0, "0x00", {'from': accounts[0]})
+def test_burn_from_org(org, nft):
+    '''burn from org'''
+    nft.mint(org, 10000, 0, "0x00", {'from': accounts[0]})
     nft.burn(1, 1001, {'from': accounts[0]})
     assert nft.totalSupply() == 9000
-    assert nft.balanceOf(issuer) == 9000
+    assert nft.balanceOf(org) == 9000
     nft.burn(1001, 5001, {'from': accounts[0]})
     assert nft.totalSupply() == 5000
-    assert nft.balanceOf(issuer) == 5000
+    assert nft.balanceOf(org) == 5000
     nft.burn(5001, 10001, {'from': accounts[0]})
     assert nft.totalSupply() == 0
-    assert nft.balanceOf(issuer) == 0
+    assert nft.balanceOf(org) == 0
 
 
 def test_burn_from_investors(nft):
@@ -84,13 +84,13 @@ def test_authorized_supply(nft):
     assert nft.totalSupply() == 0
 
 
-def test_mint_zero(issuer, nft):
+def test_mint_zero(org, nft):
     '''mint, burn, mint'''
-    nft.mint(issuer, 10000, 0, "0x00", {'from': accounts[0]})
+    nft.mint(org, 10000, 0, "0x00", {'from': accounts[0]})
     assert nft.totalSupply() == 10000
     nft.burn(1, 10001, {'from': accounts[0]})
     assert nft.totalSupply() == 0
-    nft.mint(issuer, 10000, 0, "0x00", {'from': accounts[0]})
+    nft.mint(org, 10000, 0, "0x00", {'from': accounts[0]})
     assert nft.totalSupply() == 10000
-    assert nft.rangesOf(issuer) == ((10001, 20001,),)
+    assert nft.rangesOf(org) == ((10001, 20001,),)
     assert nft.getRange(1)[0] == '0x0000000000000000000000000000000000000000'

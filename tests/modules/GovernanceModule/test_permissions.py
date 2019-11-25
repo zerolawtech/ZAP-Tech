@@ -13,18 +13,18 @@ def setup(token, token2, gov, cp, id1, cptime):
 
 
 @pytest.fixture(scope="module")
-def vote(gov, issuer, token, cptime):
-    yield functools.partial(_vote, gov, issuer, token, cptime)
+def vote(gov, org, token, cptime):
+    yield functools.partial(_vote, gov, org, token, cptime)
 
 
-def _vote(gov, issuer, token, cptime, approval_abi):
+def _vote(gov, org, token, cptime, approval_abi):
     gov.newProposal(
         "0xffff",
         cptime,
         cptime + 100,
         0,
         "test proposal",
-        issuer,
+        org,
         approval_abi,
         {'from': accounts[0]}
     )
@@ -53,17 +53,17 @@ def test_modify_authorized_supply_approved(vote, token, token2, gov):
         token.modifyAuthorizedSupply(200000000, {'from': accounts[0]})
 
 
-def test_add_token_not_approved(SecurityToken, issuer):
-    t = accounts[0].deploy(SecurityToken, issuer, "", "", 1000000)
+def test_add_token_not_approved(SecurityToken, org):
+    t = accounts[0].deploy(SecurityToken, org, "", "", 1000000)
     with pytest.reverts():
-        issuer.addToken(t, {'from': accounts[0]})
+        org.addToken(t, {'from': accounts[0]})
 
 
-def test_add_token_approved(SecurityToken, vote, issuer, gov):
-    token3 = accounts[0].deploy(SecurityToken, issuer, "", "", 1000000)
+def test_add_token_approved(SecurityToken, vote, org, gov):
+    token3 = accounts[0].deploy(SecurityToken, org, "", "", 1000000)
     vote(gov.addToken.encode_input(token3))
-    token4 = accounts[0].deploy(SecurityToken, issuer, "", "", 1000000)
+    token4 = accounts[0].deploy(SecurityToken, org, "", "", 1000000)
     # wrong token
     with pytest.reverts():
-        issuer.addToken(token4, {'from': accounts[0]})
-    issuer.addToken(token3, {'from': accounts[0]})
+        org.addToken(token4, {'from': accounts[0]})
+    org.addToken(token3, {'from': accounts[0]})

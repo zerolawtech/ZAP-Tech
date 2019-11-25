@@ -44,9 +44,9 @@ def test_add_investor_rating_zero(ikyc):
         )
 
 
-def test_add_investor_authority_id(ikyc, issuer):
+def test_add_investor_authority_id(ikyc, org):
     '''add investor - known authority ID'''
-    oid = issuer.ownerID()
+    oid = org.ownerID()
     with pytest.reverts("dev: authority ID"):
         ikyc.addInvestor(oid, 1, 1, 1, 9999999999, (accounts[2],), {'from': accounts[0]})
 
@@ -67,9 +67,9 @@ def test_update_investor(ikyc, token):
     assert ikyc.getRegion(id_) == "0x000002"
 
 
-def test_update_investor_unknown_id(ikyc, issuer):
+def test_update_investor_unknown_id(ikyc, org):
     '''update investor - unknown ID'''
-    oid = issuer.ownerID()
+    oid = org.ownerID()
     with pytest.reverts("dev: unknown ID"):
         ikyc.updateInvestor("0x1234", 1, 1, 9999999999, {'from': accounts[0]})
     with pytest.reverts("dev: unknown ID"):

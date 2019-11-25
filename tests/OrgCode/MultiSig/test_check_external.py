@@ -6,11 +6,11 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(id1, id2, issuer, nft, token):
+def setup(id1, id2, org, nft, token):
     for i in range(6):
         accounts.add()
         accounts[0].transfer(accounts[-1], "1 ether")
-    issuer.addAuthority(accounts[-6:-3], [], 2000000000, 1, {'from': accounts[0]})
+    org.addAuthority(accounts[-6:-3], [], 2000000000, 1, {'from': accounts[0]})
     token.mint(accounts[2], 1000, {'from': accounts[0]})
     nft.mint(accounts[2], 1000, 0, "0x00", {'from': accounts[0]})
 

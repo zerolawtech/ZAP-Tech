@@ -6,20 +6,20 @@ from brownie import accounts
 
 
 
-def test_mint_issuer(check_counts, issuer, token):
-    '''mint to issuer'''
-    token.mint(issuer, 1000, {'from': accounts[0]})
+def test_mint_org(check_counts, org, token):
+    '''mint to org'''
+    token.mint(org, 1000, {'from': accounts[0]})
     check_counts()
-    token.mint(issuer, 9000, {'from': accounts[0]})
+    token.mint(org, 9000, {'from': accounts[0]})
     check_counts()
 
 
-def test_burn_issuer(check_counts, issuer, token):
-    '''burn from issuer'''
-    token.mint(issuer, 10000, {'from': accounts[0]})
-    token.burn(issuer, 2000, {'from': accounts[0]})
+def test_burn_org(check_counts, org, token):
+    '''burn from org'''
+    token.mint(org, 10000, {'from': accounts[0]})
+    token.burn(org, 2000, {'from': accounts[0]})
     check_counts()
-    token.burn(issuer, 8000, {'from': accounts[0]})
+    token.burn(org, 8000, {'from': accounts[0]})
     check_counts()
 
 

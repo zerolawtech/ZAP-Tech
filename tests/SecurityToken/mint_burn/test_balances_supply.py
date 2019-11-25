@@ -3,14 +3,14 @@
 from brownie import accounts
 
 
-def test_mint_to_issuer(issuer, token):
-    '''mint to issuer'''
-    token.mint(issuer, 1000, {'from': accounts[0]})
+def test_mint_to_org(org, token):
+    '''mint to org'''
+    token.mint(org, 1000, {'from': accounts[0]})
     assert token.totalSupply() == 1000
-    assert token.balanceOf(issuer) == 1000
-    token.mint(issuer, 2000, {'from': accounts[0]})
+    assert token.balanceOf(org) == 1000
+    token.mint(org, 2000, {'from': accounts[0]})
     assert token.totalSupply() == 3000
-    assert token.balanceOf(issuer) == 3000
+    assert token.balanceOf(org) == 3000
 
 
 def test_mint_to_investors(id1, id2, token):
@@ -32,18 +32,18 @@ def test_mint_to_investors(id1, id2, token):
     assert token.balanceOf(accounts[2]) == 6000
 
 
-def test_burn_from_issuer(id1, id2, issuer, token):
-    '''burn from issuer'''
-    token.mint(issuer, 10000, {'from': accounts[0]})
-    token.burn(issuer, 1000, {'from': accounts[0]})
+def test_burn_from_org(id1, id2, org, token):
+    '''burn from org'''
+    token.mint(org, 10000, {'from': accounts[0]})
+    token.burn(org, 1000, {'from': accounts[0]})
     assert token.totalSupply() == 9000
-    assert token.balanceOf(issuer) == 9000
-    token.burn(issuer, 4000, {'from': accounts[0]})
+    assert token.balanceOf(org) == 9000
+    token.burn(org, 4000, {'from': accounts[0]})
     assert token.totalSupply() == 5000
-    assert token.balanceOf(issuer) == 5000
-    token.burn(issuer, 5000, {'from': accounts[0]})
+    assert token.balanceOf(org) == 5000
+    token.burn(org, 5000, {'from': accounts[0]})
     assert token.totalSupply() == 0
-    assert token.balanceOf(issuer) == 0
+    assert token.balanceOf(org) == 0
 
 
 def test_burn_from_investors(token):

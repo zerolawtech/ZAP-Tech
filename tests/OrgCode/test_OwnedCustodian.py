@@ -26,57 +26,57 @@ def testcust(TestCustodian):
     yield cust
 
 
-def test_add(id1, id2, issuer, testcust):
+def test_add(id1, id2, org, testcust):
     '''add custodian'''
-    issuer.addCustodian(testcust, {'from': accounts[0]})
-    assert issuer.getID(testcust) == testcust.ownerID()
+    org.addCustodian(testcust, {'from': accounts[0]})
+    assert org.getID(testcust) == testcust.ownerID()
 
 
-def test_add_twice(issuer, testcust, TestCustodian):
+def test_add_twice(org, testcust, TestCustodian):
     '''add custodian - already added'''
-    issuer.addCustodian(testcust, {'from': accounts[0]})
+    org.addCustodian(testcust, {'from': accounts[0]})
     with pytest.reverts("dev: known address"):
-        issuer.addCustodian(testcust, {'from': accounts[0]})
+        org.addCustodian(testcust, {'from': accounts[0]})
     c = accounts[1].deploy(TestCustodian)
     with pytest.reverts("dev: known ID"):
-        issuer.addCustodian(c, {'from': accounts[0]})
+        org.addCustodian(c, {'from': accounts[0]})
 
 
-def test_add_zero_id(issuer, testcust):
+def test_add_zero_id(org, testcust):
     '''add custodian - zero id'''
     testcust.setID(0, {'from': accounts[0]})
     with pytest.reverts("dev: zero ID"):
-        issuer.addCustodian(testcust, {'from': accounts[0]})
+        org.addCustodian(testcust, {'from': accounts[0]})
 
 
-def test_add_investor_id(token, issuer, testcust):
+def test_add_investor_id(token, org, testcust):
     '''custodian / investor collision - investor seen first'''
     token.mint(accounts[2], 100, {'from': accounts[0]})
-    id_ = issuer.getID.call(accounts[2])
+    id_ = org.getID.call(accounts[2])
     testcust.setID(id_, {'from': accounts[0]})
     with pytest.reverts("dev: known ID"):
-        issuer.addCustodian(testcust, {'from': accounts[0]})
+        org.addCustodian(testcust, {'from': accounts[0]})
 
 
-def test_add_investor_id2(token, issuer, testcust):
+def test_add_investor_id2(token, org, testcust):
     '''custodian / investor collision - custodian seen first'''
-    token.mint(issuer, 100, {'from': accounts[0]})
-    id_ = issuer.getID.call(accounts[2])
+    token.mint(org, 100, {'from': accounts[0]})
+    id_ = org.getID.call(accounts[2])
     testcust.setID(id_, {'from': accounts[0]})
-    issuer.addCustodian(testcust, {'from': accounts[0]})
+    org.addCustodian(testcust, {'from': accounts[0]})
     with pytest.reverts():
         token.transfer(accounts[2], 100, {'from': accounts[0]})
 
 
-def test_cust_auth_id(issuer, token, testcust, rpc):
+def test_cust_auth_id(org, token, testcust, rpc):
     '''custodian / authority collisions'''
-    issuer.addAuthority([accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})
-    id_ = issuer.getID(accounts[-1])
+    org.addAuthority([accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})
+    id_ = org.getID(accounts[-1])
     testcust.setID(id_, {'from': accounts[0]})
     with pytest.reverts("dev: authority ID"):
-        issuer.addCustodian(testcust, {'from': accounts[0]})
+        org.addCustodian(testcust, {'from': accounts[0]})
     rpc.revert()
     testcust.setID(id_, {'from': accounts[0]})
-    issuer.addCustodian(testcust, {'from': accounts[0]})
+    org.addCustodian(testcust, {'from': accounts[0]})
     with pytest.reverts("dev: known ID"):
-        issuer.addAuthority([accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})
+        org.addAuthority([accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})

@@ -6,8 +6,8 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
 
 
@@ -40,17 +40,17 @@ def test_transfer_from_same_id(kyc, nft):
     nft.transferFrom(accounts[1], accounts[2], 500, {'from': accounts[-1]})
 
 
-def test_transfer_from_issuer(nft):
-    '''issuer transferFrom'''
+def test_transfer_from_org(nft):
+    '''org transferFrom'''
     nft.transferFrom(accounts[1], accounts[2], 1000, {'from': accounts[0]})
 
 
-def test_authority_permission(issuer, nft):
+def test_authority_permission(org, nft):
     '''authority transferFrom permission'''
-    issuer.addAuthority([accounts[-1]], ["0x23b872dd"], 2000000000, 1, {'from': accounts[0]})
+    org.addAuthority([accounts[-1]], ["0x23b872dd"], 2000000000, 1, {'from': accounts[0]})
     nft.transferFrom(accounts[1], accounts[2], 500, {'from': accounts[-1]})
-    issuer.setAuthoritySignatures(
-        issuer.getID(accounts[-1]),
+    org.setAuthoritySignatures(
+        org.getID(accounts[-1]),
         ["0x23b872dd"],
         False,
         {'from': accounts[0]}

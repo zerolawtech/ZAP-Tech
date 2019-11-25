@@ -18,43 +18,43 @@ def isolation(fn_isolation):
 # token deployments / linking
 
 @pytest.fixture(scope="module")
-def token(SecurityToken, issuer, accounts):
-    t = accounts[0].deploy(SecurityToken, issuer, "Test Token", "TST", 1000000)
-    issuer.addToken(t, {'from': accounts[0]})
+def token(SecurityToken, org, accounts):
+    t = accounts[0].deploy(SecurityToken, org, "Test Token", "TST", 1000000)
+    org.addToken(t, {'from': accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
-def token2(SecurityToken, issuer, accounts, token):
-    t = accounts[0].deploy(SecurityToken, issuer, "Test Token2", "TS2", 1000000)
-    issuer.addToken(t, {'from': accounts[0]})
+def token2(SecurityToken, org, accounts, token):
+    t = accounts[0].deploy(SecurityToken, org, "Test Token2", "TS2", 1000000)
+    org.addToken(t, {'from': accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
-def nft(NFToken, issuer, accounts):
-    token = accounts[0].deploy(NFToken, issuer, "Test NFT", "NFT", 1000000)
-    issuer.addToken(token, {'from': accounts[0]})
+def nft(NFToken, org, accounts):
+    token = accounts[0].deploy(NFToken, org, "Test NFT", "NFT", 1000000)
+    org.addToken(token, {'from': accounts[0]})
     yield token
 
 
 @pytest.fixture(scope="module")
-def issuer(IssuingEntity, accounts):
-    issuer = accounts[0].deploy(IssuingEntity, [accounts[0]], 1)
-    yield issuer
+def org(OrgCode, accounts):
+    org = accounts[0].deploy(OrgCode, [accounts[0]], 1)
+    yield org
 
 
 @pytest.fixture(scope="module")
-def kyc(KYCRegistrar, issuer, accounts):
+def kyc(KYCRegistrar, org, accounts):
     kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
-    issuer.setRegistrar(kyc, False, {'from': accounts[0]})
+    org.setVerifier(kyc, False, {'from': accounts[0]})
     yield kyc
 
 
 @pytest.fixture(scope="module")
-def cust(OwnedCustodian, accounts, issuer):
+def cust(OwnedCustodian, accounts, org):
     accounts[0].deploy(OwnedCustodian, [accounts[0]], 1)
-    issuer.addCustodian(OwnedCustodian[0], {'from': accounts[0]})
+    org.addCustodian(OwnedCustodian[0], {'from': accounts[0]})
     yield OwnedCustodian[0]
 
 
@@ -62,13 +62,13 @@ def cust(OwnedCustodian, accounts, issuer):
 
 
 @pytest.fixture(scope="module")
-def ownerid(issuer):
-    yield issuer.ownerID()
+def ownerid(org):
+    yield org.ownerID()
 
 
 @pytest.fixture(scope="module")
-def set_countries(issuer):
-    issuer.setCountries((1, 2, 3), (1, 1, 1), (0, 0, 0), {'from': accounts[0]})
+def set_countries(org):
+    org.setCountries((1, 2, 3), (1, 1, 1), (0, 0, 0), {'from': accounts[0]})
 
 
 @pytest.fixture(scope="module")
@@ -103,16 +103,16 @@ def _add_investor(kyc, i, country, rating):
 
 
 @pytest.fixture
-def check_counts(issuer, approve_many, no_call_coverage):
-    yield functools.partial(_check_countries, issuer)
+def check_counts(org, approve_many, no_call_coverage):
+    yield functools.partial(_check_countries, org)
 
 
-def _check_countries(issuer, one=(0, 0, 0), two=(0, 0, 0), three=(0, 0, 0)):
-    assert issuer.getInvestorCounts()[0][:3] == (
+def _check_countries(org, one=(0, 0, 0), two=(0, 0, 0), three=(0, 0, 0)):
+    assert org.getInvestorCounts()[0][:3] == (
         one[0] + two[0] + three[0],
         one[1] + two[1] + three[1],
         one[2] + two[2] + three[2]
     )
-    assert issuer.getCountry(1)[1][:3] == one
-    assert issuer.getCountry(2)[1][:3] == two
-    assert issuer.getCountry(3)[1][:3] == three
+    assert org.getCountry(1)[1][:3] == one
+    assert org.getCountry(2)[1][:3] == two
+    assert org.getCountry(3)[1][:3] == three

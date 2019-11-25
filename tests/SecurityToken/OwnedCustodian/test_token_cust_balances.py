@@ -7,8 +7,8 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, token):
-    token.mint(issuer, 100000, {'from': accounts[0]})
+def setup(approve_many, org, token):
+    token.mint(org, 100000, {'from': accounts[0]})
 
 
 @pytest.fixture(scope="module")
@@ -53,49 +53,49 @@ def test_cust_out(balance, token, cust):
     assert token.balanceOf(cust) == 0
 
 
-def test_issuer_cust_in(balance, issuer, token, cust):
-    '''Transfers into custodian - issuer'''
+def test_org_cust_in(balance, org, token, cust):
+    '''Transfers into custodian - org'''
     token.transfer(cust, 10000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 90000, 10000)
+    balance(org, 90000, 10000)
     assert token.balanceOf(cust) == 10000
     token.transfer(cust, 90000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 0, 100000)
+    balance(org, 0, 100000)
     assert token.balanceOf(cust) == 100000
 
 
-def test_issuer_cust_internal(balance, issuer, token, cust):
-    '''Custodian internal transfers - issuer / investor'''
+def test_org_cust_internal(balance, org, token, cust):
+    '''Custodian internal transfers - org / investor'''
     token.transfer(cust, 10000, {'from': accounts[0]})
-    cust.transferInternal(token, issuer, accounts[1], 10000, {'from': accounts[0]})
+    cust.transferInternal(token, org, accounts[1], 10000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 90000, 0)
+    balance(org, 90000, 0)
     balance(accounts[1], 0, 10000)
     assert token.balanceOf(cust) == 10000
-    cust.transferInternal(token, accounts[1], issuer, 5000, {'from': accounts[0]})
+    cust.transferInternal(token, accounts[1], org, 5000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 90000, 5000)
+    balance(org, 90000, 5000)
     balance(accounts[1], 0, 5000)
     assert token.balanceOf(cust) == 10000
     cust.transferInternal(token, accounts[1], accounts[0], 5000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 90000, 10000)
+    balance(org, 90000, 10000)
     balance(accounts[1], 0, 0)
     assert token.balanceOf(cust) == 10000
 
 
-def test_issuer_cust_out(balance, issuer, token, cust):
-    '''Transfers out of custodian - issuer'''
+def test_org_cust_out(balance, org, token, cust):
+    '''Transfers out of custodian - org'''
     token.transfer(cust, 10000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 90000, 10000)
+    balance(org, 90000, 10000)
     assert token.balanceOf(cust) == 10000
-    cust.transfer(token, issuer, 3000, {'from': accounts[0]})
+    cust.transfer(token, org, 3000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 93000, 7000)
+    balance(org, 93000, 7000)
     assert token.balanceOf(cust) == 7000
     cust.transfer(token, accounts[0], 7000, {'from': accounts[0]})
     balance(accounts[0], 0, 0)
-    balance(issuer, 100000, 0)
+    balance(org, 100000, 0)
     assert token.balanceOf(cust) == 0

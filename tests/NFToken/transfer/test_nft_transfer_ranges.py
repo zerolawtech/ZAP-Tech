@@ -7,18 +7,18 @@ from brownie import accounts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
 @pytest.fixture
-def transfer(no_call_coverage, issuer, nft):
-    yield functools.partial(_transfer, issuer, nft)
+def transfer(no_call_coverage, org, nft):
+    yield functools.partial(_transfer, org, nft)
 
 
 @pytest.fixture
-def ts(issuer, nft):
-    yield functools.partial(_totalSupply, issuer, nft)
+def ts(org, nft):
+    yield functools.partial(_totalSupply, org, nft)
 
 
 def test_simple(transfer):
@@ -82,10 +82,10 @@ def test_one(transfer, ts):
     ts(6)
 
 
-def test_split(transfer, nft, issuer, skip_coverage):
+def test_split(transfer, nft, org, skip_coverage):
     '''many ranges'''
     nft.modifyAuthorizedSupply("1000 gwei", {'from': accounts[0]})
-    nft.mint(issuer, "100 gwei", 0, "0x00", {'from': accounts[0]})
+    nft.mint(org, "100 gwei", 0, "0x00", {'from': accounts[0]})
     for i in range(2, 7):
         transfer(0, 1, 12345678)
         transfer(0, i, 12345678)
@@ -97,21 +97,21 @@ def test_split(transfer, nft, issuer, skip_coverage):
         transfer(i, 6, nft.balanceOf(accounts[i]))
 
 
-def _totalSupply(issuer, nft, limit):
-    b = nft.balanceOf(issuer)
+def _totalSupply(org, nft, limit):
+    b = nft.balanceOf(org)
     for i in range(limit):
         c = nft.balanceOf(accounts[i])
         b += c
     assert nft.totalSupply() == b
 
 
-def _transfer(issuer, nft, from_, to, amount):
+def _transfer(org, nft, from_, to, amount):
     if from_ == 0:
-        from_bal = nft.balanceOf(issuer)
+        from_bal = nft.balanceOf(org)
     else:
         from_bal = nft.balanceOf(accounts[from_])
     if to == 0:
-        to_bal = nft.balanceOf(issuer)
+        to_bal = nft.balanceOf(org)
     else:
         to_bal = nft.balanceOf(accounts[to])
     nft.transfer(accounts[to], amount, {'from': accounts[from_]})

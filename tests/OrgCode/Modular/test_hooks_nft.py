@@ -45,11 +45,11 @@ contract TestModule {{
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(approve_many, issuer, nft):
-    nft.mint(issuer, 100000, 0, "0x00", {'from': accounts[0]})
+def setup(approve_many, org, nft):
+    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
 
 
-def test_checkTransfer(issuer, nft):
+def test_checkTransfer(org, nft):
     source = '''checkTransfer(
         address[2] _addr,
         bytes32 _authID,
@@ -57,10 +57,10 @@ def test_checkTransfer(issuer, nft):
         uint8[2] _rating,
         uint16[2] _country,
         uint256 _value'''
-    _hook(issuer, nft, nft.checkTransfer, (accounts[0], accounts[1], 1000), source, "0x70aaf928")
+    _hook(org, nft, nft.checkTransfer, (accounts[0], accounts[1], 1000), source, "0x70aaf928")
 
 
-def test_checkTransferRange(issuer, nft):
+def test_checkTransferRange(org, nft):
     source = '''checkTransferRange(
         address[2] _addr,
         bytes32 _authID,
@@ -72,26 +72,26 @@ def test_checkTransferRange(issuer, nft):
     project = compile_source(source)
     module = project.TestModule.deploy(nft, {'from': accounts[0]})
     nft.transferRange(accounts[1], 100, 200, {'from': accounts[0]})
-    issuer.attachModule(nft, module, {'from': accounts[0]})
+    org.attachModule(nft, module, {'from': accounts[0]})
     nft.transferRange(accounts[1], 300, 400, {'from': accounts[0]})
     module.setReturn(False, {'from': accounts[0]})
     with pytest.reverts():
         nft.transferRange(accounts[1], 500, 600, {'from': accounts[0]})
-    issuer.detachModule(nft, module, {'from': accounts[0]})
+    org.detachModule(nft, module, {'from': accounts[0]})
     nft.transferRange(accounts[1], 500, 600, {'from': accounts[0]})
 
 
-def test_transferTokenRange(issuer, nft):
+def test_transferTokenRange(org, nft):
     source = '''transferTokenRange(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
         uint16[2] _country,
         uint48[2] _range'''
-    _hook(issuer, nft, nft.transfer, (accounts[1], 1000), source, "0xead529f5")
+    _hook(org, nft, nft.transfer, (accounts[1], 1000), source, "0xead529f5")
 
 
-def test_transferTokensCustodian(issuer, nft, cust):
+def test_transferTokensCustodian(org, nft, cust):
     source = '''transferTokensCustodian(
         address _custodian,
         address[2] _addr,
@@ -102,7 +102,7 @@ def test_transferTokensCustodian(issuer, nft, cust):
     nft.transfer(accounts[2], 10000, {'from': accounts[0]})
     nft.transfer(cust, 5000, {'from': accounts[2]})
     _hook(
-        issuer,
+        org,
         nft,
         cust.transferInternal,
         (nft, accounts[2], accounts[3], 100),
@@ -111,7 +111,7 @@ def test_transferTokensCustodian(issuer, nft, cust):
     )
 
 
-def test_totalSupplyChanged(issuer, nft):
+def test_totalSupplyChanged(org, nft):
     source = '''totalSupplyChanged(
         address _addr,
         bytes32 _id,
@@ -119,33 +119,33 @@ def test_totalSupplyChanged(issuer, nft):
         uint16 _country,
         uint256 _old,
         uint256 _new'''
-    _burn(issuer, nft, source, "0x741b5078")
-    _hook(issuer, nft, nft.mint, (accounts[2], 1000, 0, "0x00"), source, "0x741b5078")
+    _burn(org, nft, source, "0x741b5078")
+    _hook(org, nft, nft.mint, (accounts[2], 1000, 0, "0x00"), source, "0x741b5078")
 
 
-def _hook(issuer, contract, fn, args, source, sig):
+def _hook(org, contract, fn, args, source, sig):
     args = list(args) + [{'from': accounts[0]}]
     source = module_source.format(sig, source)
     project = compile_source(source)
     module = project.TestModule.deploy(contract, {'from': accounts[0]})
     fn(*args)
-    issuer.attachModule(contract, module, {'from': accounts[0]})
+    org.attachModule(contract, module, {'from': accounts[0]})
     fn(*args)
     module.setReturn(False, {'from': accounts[0]})
     with pytest.reverts():
         fn(*args)
-    issuer.detachModule(contract, module, {'from': accounts[0]})
+    org.detachModule(contract, module, {'from': accounts[0]})
     fn(*args)
 
 
-def _burn(issuer, nft, source, sig):
+def _burn(org, nft, source, sig):
     project = compile_source(module_source.format(sig, source))
     module = project.TestModule.deploy(nft, {'from': accounts[0]})
     nft.burn(100, 200, {'from': accounts[0]})
-    issuer.attachModule(nft, module, {'from': accounts[0]})
+    org.attachModule(nft, module, {'from': accounts[0]})
     nft.burn(300, 400, {'from': accounts[0]})
     module.setReturn(False, {'from': accounts[0]})
     with pytest.reverts():
         nft.burn(500, 600, {'from': accounts[0]})
-    issuer.detachModule(nft, module, {'from': accounts[0]})
+    org.detachModule(nft, module, {'from': accounts[0]})
     nft.burn(500, 600, {'from': accounts[0]})

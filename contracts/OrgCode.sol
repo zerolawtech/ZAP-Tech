@@ -625,14 +625,14 @@ contract OrgCode is MultiSig {
         require(shares[msg.sender].set);
         /* If org is not the authority, check the sender is not restricted */
         if (_authID != ownerID) {
-            require(!locked, "Transfers locked: Issuer");
+            require(!locked, "Transfers locked: Org");
             require(!shares[msg.sender].restricted, "Transfers locked: Share");
-            require(!accounts[_id[SENDER]].restricted, "Sender restricted: Issuer");
+            require(!accounts[_id[SENDER]].restricted, "Sender restricted: Org");
             require(_permitted[SENDER], "Sender restricted: Verifier");
             require(!accounts[_authID].restricted, "Authority restricted");
         }
         /* Always check the receiver is not restricted. */
-        require(!accounts[_id[RECEIVER]].restricted, "Receiver restricted: Issuer");
+        require(!accounts[_id[RECEIVER]].restricted, "Receiver restricted: Org");
         require(_permitted[RECEIVER], "Receiver restricted: Verifier");
         if (_id[SENDER] != _id[RECEIVER]) {
             /*

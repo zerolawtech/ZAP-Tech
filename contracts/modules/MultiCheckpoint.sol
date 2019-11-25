@@ -1,15 +1,15 @@
 pragma solidity 0.4.25;
 
 import "../open-zeppelin/SafeMath.sol";
-import {IssuerModuleBase} from "./bases/Module.sol";
+import {OrgModuleBase} from "./bases/Module.sol";
 
 import "../interfaces/IOrgShare.sol";
 
 /**
     @title MultiCheckpoint Module
-    @dev Issuer level module used to record and access checkpoints across many OrgShares
+    @dev Org level module used to record and access checkpoints across many OrgShares
 */
-contract MultiCheckpointModule is IssuerModuleBase {
+contract MultiCheckpointModule is OrgModuleBase {
 
     using SafeMath for uint256;
 
@@ -37,7 +37,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         @notice Base constructor
         @param _owner OrgCode contract address
      */
-    constructor(address _owner) IssuerModuleBase(_owner) public {
+    constructor(address _owner) OrgModuleBase(_owner) public {
         return;
     }
 

@@ -11,7 +11,7 @@ def setup(id1, id2, org, share):
 
 
 def test_org_txfrom(share, cust):
-    '''Issuer transferFrom custodian'''
+    '''Org transferFrom custodian'''
     share.transfer(accounts[1], 10000, {'from': accounts[0]})
     share.transfer(cust, 10000, {'from': accounts[1]})
     share.transferFrom(cust, accounts[1], 5000, {'from': accounts[0]})

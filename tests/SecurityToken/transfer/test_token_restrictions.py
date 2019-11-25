@@ -15,7 +15,7 @@ def test_sender_restricted(kyc, org, share):
     id_ = kyc.getID(accounts[1])
     share.transfer(accounts[1], 1000, {'from': accounts[0]})
     org.setEntityRestriction(id_, True, {'from': accounts[0]})
-    with pytest.reverts("Sender restricted: Issuer"):
+    with pytest.reverts("Sender restricted: Org"):
         share.transfer(accounts[2], 1000, {'from': accounts[1]})
     org.setEntityRestriction(id_, False, {'from': accounts[0]})
     share.transfer(accounts[2], 1000, {'from': accounts[1]})
@@ -53,7 +53,7 @@ def test_sender_restricted_kyc_addr(kyc, share):
 def test_receiver_restricted_org(kyc, org, share):
     '''receiver restricted'''
     org.setEntityRestriction(org.getID(accounts[1]), True, {'from': accounts[0]})
-    with pytest.reverts("Receiver restricted: Issuer"):
+    with pytest.reverts("Receiver restricted: Org"):
         share.transfer(accounts[1], 1000, {'from': accounts[0]})
 
 

@@ -116,7 +116,7 @@ contract BookShare is OrgShareBase {
         returns (address[2])
     {
         require(_value > 0, "Cannot send 0 shares");
-        /* Issuer shares are held at the OrgCode contract address */
+        /* Org shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
             _addr[SENDER] = address(org);
         }

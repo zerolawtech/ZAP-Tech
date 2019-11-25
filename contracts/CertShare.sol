@@ -238,7 +238,7 @@ contract CertShare is OrgShareBase {
         require(_value > 0, "Cannot send 0 shares");
         require(uint48(_value) == _value, "Value too large");
 
-        /* Issuer shares are held at the OrgCode contract address */
+        /* Org shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
             _addr[SENDER] = address(org);
         }
@@ -848,7 +848,7 @@ contract CertShare is OrgShareBase {
             uint16[2] memory _country
         ) = org.transferShares(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
 
-        /* Issuer shares are held at the OrgCode contract address */
+        /* Org shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
             _addr[SENDER] = address(org);
         } else {

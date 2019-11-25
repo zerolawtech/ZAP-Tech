@@ -141,7 +141,7 @@ contract CertShareModuleBase is OrgShareModuleBase {
 
 }
 
-contract IssuerModuleBase is ModuleBase {
+contract OrgModuleBase is ModuleBase {
 
     IOrgCode public org;
     mapping (address => bool) parents;

@@ -14,7 +14,7 @@ def test_global_lock(org, share):
     '''global lock - investor / investor'''
     share.transfer(accounts[1], 1000, {'from': accounts[0]})
     org.setGlobalRestriction(True, {'from': accounts[0]})
-    with pytest.reverts("Transfers locked: Issuer"):
+    with pytest.reverts("Transfers locked: Org"):
         share.transfer(accounts[2], 1000, {'from': accounts[1]})
     org.setGlobalRestriction(False, {'from': accounts[0]})
     share.transfer(accounts[2], 1000, {'from': accounts[1]})
@@ -24,7 +24,7 @@ def test_global_lock_org(org, share):
     '''global lock - org / investor'''
     org.setGlobalRestriction(True, {'from': accounts[0]})
     share.transfer(accounts[1], 1000, {'from': accounts[0]})
-    with pytest.reverts("Transfers locked: Issuer"):
+    with pytest.reverts("Transfers locked: Org"):
         share.transfer(accounts[0], 1000, {'from': accounts[1]})
     org.setGlobalRestriction(False, {'from': accounts[0]})
     share.transfer(accounts[0], 1000, {'from': accounts[1]})

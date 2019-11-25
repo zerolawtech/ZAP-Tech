@@ -14,7 +14,7 @@ def test_global_lock(org, nft):
     '''global lock - investor / investor'''
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
     org.setGlobalRestriction(True, {'from': accounts[0]})
-    with pytest.reverts("Transfers locked: Issuer"):
+    with pytest.reverts("Transfers locked: Org"):
         nft.transfer(accounts[2], 1000, {'from': accounts[1]})
     org.setGlobalRestriction(False, {'from': accounts[0]})
     nft.transfer(accounts[2], 1000, {'from': accounts[1]})
@@ -24,7 +24,7 @@ def test_global_lock_org(org, nft):
     '''global lock - org / investor'''
     org.setGlobalRestriction(True, {'from': accounts[0]})
     nft.transfer(accounts[1], 1000, {'from': accounts[0]})
-    with pytest.reverts("Transfers locked: Issuer"):
+    with pytest.reverts("Transfers locked: Org"):
         nft.transfer(accounts[0], 1000, {'from': accounts[1]})
     org.setGlobalRestriction(False, {'from': accounts[0]})
     nft.transfer(accounts[0], 1000, {'from': accounts[1]})

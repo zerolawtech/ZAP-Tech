@@ -16,13 +16,13 @@ def setup(approve_many, org, nft, cust):
 
 def test_from_org(nft, cust):
     '''restricted custodian - org to custodian'''
-    with pytest.reverts("Receiver restricted: Issuer"):
+    with pytest.reverts("Receiver restricted: Org"):
         nft.transfer(cust, 1000, {'from': accounts[0]})
 
 
 def test_from_investor(nft, cust):
     '''restricted custodian - investor to custodian'''
-    with pytest.reverts("Receiver restricted: Issuer"):
+    with pytest.reverts("Receiver restricted: Org"):
         nft.transfer(cust, 1000, {'from': accounts[2]})
 
 
@@ -34,13 +34,13 @@ def test_transferInternal(nft, cust):
 
 def test_to_org(nft, cust):
     '''restricted custodian - to org'''
-    with pytest.reverts("Sender restricted: Issuer"):
+    with pytest.reverts("Sender restricted: Org"):
         cust.transfer(nft, accounts[0], 500, {'from': accounts[0]})
 
 
 def test_to_investor(nft, cust):
     '''restricted custodian - to investor'''
-    with pytest.reverts("Sender restricted: Issuer"):
+    with pytest.reverts("Sender restricted: Org"):
         cust.transfer(nft, accounts[2], 500, {'from': accounts[0]})
 
 

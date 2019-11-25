@@ -11,7 +11,7 @@ def setup(approve_many, org, nft):
 
 
 def test_org_txfrom(nft, cust):
-    '''Issuer transferFrom custodian'''
+    '''Org transferFrom custodian'''
     nft.transfer(accounts[1], 10000, {'from': accounts[0]})
     nft.transfer(cust, 10000, {'from': accounts[1]})
     nft.transferFrom(cust, accounts[1], 5000, {'from': accounts[0]})

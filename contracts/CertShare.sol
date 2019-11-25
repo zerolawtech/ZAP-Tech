@@ -195,7 +195,7 @@ contract CertShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.checkTransfer(_from, _from, _to, _zero);
+        ) = orgCode.checkTransfer(_from, _from, _to, _zero);
         _checkTransfer(
             _authID,
             _id,
@@ -240,10 +240,10 @@ contract CertShare is OrgShareBase {
 
         /* Org shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
-            _addr[SENDER] = address(org);
+            _addr[SENDER] = address(orgCode);
         }
         if (_id[RECEIVER] == ownerID) {
-            _addr[RECEIVER] = address(org);
+            _addr[RECEIVER] = address(orgCode);
         }
         require(_addr[SENDER] != _addr[RECEIVER], "Cannot send to self");
 
@@ -359,7 +359,7 @@ contract CertShare is OrgShareBase {
         require(upperBound + _value > upperBound); // dev: overflow
         require(upperBound + _value <= 2**48 - 2); // dev: upper bound
         require(_time == 0 || _time > now); // dev: time
-        org.checkTransfer(address(org), address(org), _owner, false);
+        orgCode.checkTransfer(address(orgCode), address(orgCode), _owner, false);
         uint48 _start = uint48(upperBound + 1);
         uint48 _stop = _start + _value;
         if (_compareRanges(shares[upperBound], _owner, _time, _tag, 0x00)) {
@@ -571,7 +571,7 @@ contract CertShare is OrgShareBase {
         /* If called by a module, the authority becomes the issuing contract. */
         /* msg.sig = 0x23b872dd */
         if (isPermittedModule(msg.sender, msg.sig)) {
-            address _auth = address(org);
+            address _auth = address(orgCode);
         } else {
             _auth = msg.sender;
         }
@@ -604,7 +604,7 @@ contract CertShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferShares(
+        ) = orgCode.transferShares(
             _auth,
             _addr[SENDER],
             _addr[RECEIVER],
@@ -629,7 +629,7 @@ contract CertShare is OrgShareBase {
             _authID != ownerID
         ) {
             /**
-                If the call was not made by the org or the sender and involves
+                If the call was not made by orgCode or the sender and involves
                 a change in ownership, subtract from the allowed mapping.
             */
             require(
@@ -718,7 +718,7 @@ contract CertShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferShares(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = orgCode.transferShares(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
 
         uint48[] memory _range;
         (_addr, _range) = _checkTransfer(
@@ -846,17 +846,17 @@ contract CertShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferShares(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = orgCode.transferShares(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
 
         /* Org shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
-            _addr[SENDER] = address(org);
+            _addr[SENDER] = address(orgCode);
         } else {
             /* prevent send from custodian */
             require(_rating[SENDER] > 0);
         }
         if (_id[RECEIVER] == ownerID) {
-            _addr[RECEIVER] = address(org);
+            _addr[RECEIVER] = address(orgCode);
         }
 
         require(

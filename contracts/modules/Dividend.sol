@@ -61,7 +61,7 @@ contract DividendModule is CheckpointModuleBase {
         require (address(this).balance > 0);
         claimExpiration = now.add(_claimPeriod);
         dividendAmount = address(this).balance;
-        totalSupply = totalSupply.sub(_getBalance(share.org()));
+        totalSupply = totalSupply.sub(_getBalance(orgShare.orgCode()));
         emit DividendIssued(now, msg.value);
         return true;
     }
@@ -96,7 +96,7 @@ contract DividendModule is CheckpointModuleBase {
         @param _beneficiary Address to send dividend to
      */
     function _claim(address _beneficiary) internal {
-        require(org.isRegisteredInvestor(_beneficiary));
+        require(orgCode.isRegisteredInvestor(_beneficiary));
         require (!claimed[_beneficiary]);
         uint256 _value = _getBalance(
             _beneficiary
@@ -150,7 +150,7 @@ contract DividendModule is CheckpointModuleBase {
         @param _custodian Custodian address
      */
     function _claimCustodian(address _beneficiary, address _custodian) internal {
-        require(org.isRegisteredInvestor(_beneficiary));
+        require(orgCode.isRegisteredInvestor(_beneficiary));
         require (!claimedCustodian[_beneficiary][_custodian]);
         uint256 _value = _getCustodianBalance(
             _beneficiary,
@@ -176,7 +176,7 @@ contract DividendModule is CheckpointModuleBase {
         if (!_onlyAuthority()) return false;
         emit DividendExpired(address(this).balance);
         msg.sender.transfer(address(this).balance);
-        require (share.detachModule(address(this)));
+        require (orgShare.detachModule(address(this)));
         return true;
     }
 

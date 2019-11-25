@@ -56,8 +56,8 @@ contract ModuleBase is ModuleBaseABC {
  */
 contract OrgShareModuleBase is ModuleBase {
 
-    IOrgShareBase share;
-    IOrgCode public org;
+    IOrgShareBase orgShare;
+    IOrgCode public orgCode;
 
     /**
         @notice Base constructor
@@ -71,13 +71,13 @@ contract OrgShareModuleBase is ModuleBase {
         public
         ModuleBase(_org)
     {
-        org = _org;
-        share = _share;
+        orgCode = _org;
+        orgShare = _share;
     }
 
     /** @dev Check that call originates from parent share contract */
     function _onlyShare() internal view {
-        require(msg.sender == address(share));
+        require(msg.sender == address(orgShare));
     }
 
     /**
@@ -85,7 +85,7 @@ contract OrgShareModuleBase is ModuleBase {
         @return Share address
     */
     function getOwner() public view returns (address) {
-        return address(share);
+        return address(orgShare);
     }
 
 }
@@ -96,7 +96,7 @@ contract OrgShareModuleBase is ModuleBase {
  */
 contract BookShareModuleBase is OrgShareModuleBase {
 
-    IBookShare public share;
+    IBookShare public orgShare;
 
     /**
         @notice Base constructor
@@ -110,7 +110,7 @@ contract BookShareModuleBase is OrgShareModuleBase {
         public
         OrgShareModuleBase(_share, _org)
     {
-        share = _share;
+        orgShare = _share;
     }
 
 }
@@ -122,7 +122,7 @@ contract BookShareModuleBase is OrgShareModuleBase {
  */
 contract CertShareModuleBase is OrgShareModuleBase {
 
-    ICertShare public share;
+    ICertShare public orgShare;
 
     /**
         @notice Base constructor
@@ -136,14 +136,14 @@ contract CertShareModuleBase is OrgShareModuleBase {
         public
         OrgShareModuleBase(_share, _org)
     {
-        share = _share;
+        orgShare = _share;
     }
 
 }
 
 contract OrgModuleBase is ModuleBase {
 
-    IOrgCode public org;
+    IOrgCode public orgCode;
     mapping (address => bool) parents;
 
     /**
@@ -151,13 +151,13 @@ contract OrgModuleBase is ModuleBase {
         @param _org IOrgCode contract address
      */
     constructor(address _org) public ModuleBase(_org) {
-        org = IOrgCode(_org);
+        orgCode = IOrgCode(_org);
     }
 
     /** @dev Check that call originates from share contract */
     function _onlyShare() internal {
         if (!parents[msg.sender]) {
-            parents[msg.sender] = org.isActiveOrgShare(msg.sender);
+            parents[msg.sender] = orgCode.isActiveOrgShare(msg.sender);
         }
         require (parents[msg.sender]);
     }

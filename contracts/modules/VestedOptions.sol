@@ -368,7 +368,7 @@ contract VestedOptions is BookShareModuleBase {
         o.unvested = o.unvested.add(_total);
         t.unvested = t.unvested.add(_total);
         total += _total;
-        require(share.authorizedSupply().sub(share.totalSupply()) >= total); // dev: exceeds authorized
+        require(orgShare.authorizedSupply().sub(orgShare.totalSupply()) >= total); // dev: exceeds authorized
         emit NewOptions( _id, _iso, _price, o.expiryDate, _amount, _monthsToVest);
         return true;
     }
@@ -469,7 +469,7 @@ contract VestedOptions is BookShareModuleBase {
     {
         require (ethPeg.mul(_amount).mul(_price) == msg.value, "Incorrect payment");
 
-        bytes32 _id = org.getID(msg.sender);
+        bytes32 _id = orgCode.getID(msg.sender);
         require(_updateOptionBase(_id, _price), "No options at this price");
 
         uint32 _remaining = _amount;
@@ -499,7 +499,7 @@ contract VestedOptions is BookShareModuleBase {
 
             /* transfer eth, mint shares */
             receiver.transfer(address(this).balance);
-            require(share.mint(msg.sender, _amount));
+            require(orgShare.mint(msg.sender, _amount));
             emit ExercisedOptions(_id, _price, _amount);
             return true;
         }
@@ -645,7 +645,7 @@ contract VestedOptions is BookShareModuleBase {
         returns (bool)
     {
         if (_old > _new) {
-            require(share.authorizedSupply().sub(share.totalSupply()) >= totalOptions());
+            require(orgShare.authorizedSupply().sub(orgShare.totalSupply()) >= totalOptions());
         }
         return true;
     }

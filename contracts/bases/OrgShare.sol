@@ -25,7 +25,7 @@ contract OrgShareBaseABC {
 contract OrgShareBase is OrgShareBaseABC, Modular {
 
     bytes32 public ownerID;
-    IOrgCode public org;
+    IOrgCode public orgCode;
 
     /* Assets cannot be fractionalized */
     uint8 public constant decimals = 0;
@@ -61,7 +61,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
     )
         public
     {
-        org = _org;
+        orgCode = _org;
         ownerID = _org.ownerID();
         name = _name;
         symbol = _symbol;
@@ -70,19 +70,19 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
 
     /**
         @notice Fetch circulating supply
-        @dev Circulating supply = total supply - amount retained by org
+        @dev Circulating supply = total supply - amount retained by orgCode
         @return integer
      */
     function circulatingSupply() external view returns (uint256) {
-        return totalSupply - balanceOf(address(org));
+        return totalSupply - balanceOf(address(orgCode));
     }
 
     /**
-        @notice Fetch the amount retained by org
+        @notice Fetch the amount retained by orgCode
         @return integer
      */
     function treasurySupply() external view returns (uint256) {
-        return balanceOf(address(org));
+        return balanceOf(address(orgCode));
     }
 
     /**
@@ -205,7 +205,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
 
     /**
         @notice Modify authorized Supply
-        @dev Callable by org or via module
+        @dev Callable by orgCode or via module
         @param _value New authorized supply value
         @return bool
      */
@@ -213,7 +213,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
         /* msg.sig = 0xc39f42ed */
         if (!_checkPermitted()) return false;
         require(_value >= totalSupply); // dev: auth below total
-        require(org.modifyAuthorizedSupply(_value));
+        require(orgCode.modifyAuthorizedSupply(_value));
         emit AuthorizedSupplyChanged(authorizedSupply, _value);
         authorizedSupply = _value;
         return true;
@@ -237,7 +237,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
             bytes32 _id,
             uint8 _rating,
             uint16 _country
-        ) = org.modifyShareTotalSupply(_owner, _old, _new);
+        ) = orgCode.modifyShareTotalSupply(_owner, _old, _new);
         /* bytes4 signature for share module totalSupplyChanged() */
         require(_callModules(
             0x741b5078,
@@ -254,7 +254,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
         @return bool success
      */
     function attachModule(address _module) external returns (bool) {
-        require(msg.sender == address(org)); // dev: only org
+        require(msg.sender == address(orgCode)); // dev: only orgCode
         _attachModule(_module);
         return true;
     }
@@ -269,7 +269,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
      */
     function detachModule(address _module) external returns (bool) {
         if (_module != msg.sender) {
-            require(msg.sender == address(org)); // dev: only org
+            require(msg.sender == address(orgCode)); // dev: only orgCode
         } else {
             /* msg.sig = 0xbb2a8522 */
             require(isPermittedModule(msg.sender, msg.sig));
@@ -279,13 +279,13 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
     }
 
     /**
-        @notice Checks that a call comes from a permitted module or the org
-        @dev If the caller is the org, requires multisig approval
+        @notice Checks that a call comes from a permitted module or orgCode
+        @dev If the caller is orgCode, requires multisig approval
         @return bool multisig approved
      */
     function _checkPermitted() internal returns (bool) {
         if (isPermittedModule(msg.sender, msg.sig)) return true;
-        return org.checkMultiSigExternal(
+        return orgCode.checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig

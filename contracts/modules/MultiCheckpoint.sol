@@ -353,7 +353,7 @@ contract MultiCheckpointModule is OrgModuleBase {
         returns (bool)
     {
         require(_time > now); // dev: time
-        require(org.isActiveOrgShare(_share)); // dev: share
+        require(orgCode.isActiveOrgShare(_share)); // dev: share
         if (!_share.isPermittedModule(msg.sender, 0x17020cc7)) {
             if (!_onlyAuthority()) return false;
         }

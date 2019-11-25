@@ -76,7 +76,7 @@ contract BookShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.checkTransfer(_from, _from, _to, _zero);
+        ) = orgCode.checkTransfer(_from, _from, _to, _zero);
         _checkTransfer(
             _authID,
             _id,
@@ -92,7 +92,7 @@ contract BookShare is OrgShareBase {
         @notice internal check of transfer permission
         @dev
             seperate from _checkTransferView so it can be called by transfer
-            related functions without the call to org.checkTransfer
+            related functions without the call to orgCode.checkTransfer
         @param _authID ID of caller
         @param _id ID array of investor IDs
         @param _cust Custodian address (0x00 if none)
@@ -118,10 +118,10 @@ contract BookShare is OrgShareBase {
         require(_value > 0, "Cannot send 0 shares");
         /* Org shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
-            _addr[SENDER] = address(org);
+            _addr[SENDER] = address(orgCode);
         }
         if (_id[RECEIVER] == ownerID) {
-            _addr[RECEIVER] = address(org);
+            _addr[RECEIVER] = address(orgCode);
         }
         if (_cust != 0x00) {
             /**
@@ -161,10 +161,10 @@ contract BookShare is OrgShareBase {
     /**
         @notice ERC-20 transferFrom standard
         @dev
-            * The org may use this function to transfer shares belonging to
+            * The orgCode may use this function to transfer shares belonging to
               any address.
             * Modules may call this function to transfer shares with the same
-              level of authority as the org.
+              level of authority as orgCode.
             * An investor with multiple addresses may use this to transfer shares
               from any address he controls, without giving prior approval to that
               address.
@@ -186,7 +186,7 @@ contract BookShare is OrgShareBase {
         /* If called by a module, the authority becomes the issuing contract. */
         /* msg.sig = 0x23b872dd */
         if (isPermittedModule(msg.sender, msg.sig)) {
-            address _auth = address(org);
+            address _auth = address(orgCode);
         } else {
             _auth = msg.sender;
         }
@@ -213,7 +213,7 @@ contract BookShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferShares(
+        ) = orgCode.transferShares(
             _auth,
             _addr[SENDER],
             _addr[RECEIVER],
@@ -245,7 +245,7 @@ contract BookShare is OrgShareBase {
             _authID != ownerID
         ) {
             /*
-                If the call was not made by the org or the sender and involves
+                If the call was not made by orgCode or the sender and involves
                 a change in ownership, subtract from the allowed mapping.
             */
             require(allowed[_addr[SENDER]][_auth] >= _value, "Insufficient allowance");
@@ -300,7 +300,7 @@ contract BookShare is OrgShareBase {
         returns (bool)
     {
         /*
-            transfer is presented to org.transferShares as a normal one so
+            transfer is presented to orgCode.transferShares as a normal one so
             zero[2:] can be set to false. set here to prevent stack depth error.
         */
         bool[4] memory _zero = [
@@ -314,7 +314,7 @@ contract BookShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferShares(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = orgCode.transferShares(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
 
         _addr = _checkTransfer(
             _authID,
@@ -342,7 +342,7 @@ contract BookShare is OrgShareBase {
 
     /**
         @notice Mint new shares and increase total supply
-        @dev Callable by the org or via module
+        @dev Callable by orgCode or via module
         @param _owner Owner of the shares
         @param _value Number of shares to mint
         @return bool
@@ -351,12 +351,7 @@ contract BookShare is OrgShareBase {
         /* msg.sig = 0x40c10f19 */
         if (!_checkPermitted()) return false;
         require(_value > 0); // dev: mint 0
-        org.checkTransfer(
-            address(org),
-            address(org),
-            _owner,
-            false
-        );
+        orgCode.checkTransfer(address(orgCode), address(orgCode), _owner, false);
         uint256 _old = balances[_owner];
         balances[_owner] = _old.add(_value);
         totalSupply = totalSupply.add(_value);
@@ -367,7 +362,7 @@ contract BookShare is OrgShareBase {
 
     /**
         @notice Burn shares and decrease total supply
-        @dev Callable by the org or via module
+        @dev Callable by the orgCode or via module
         @param _owner Owner of the shares
         @param _value Number of shares to burn
         @return bool

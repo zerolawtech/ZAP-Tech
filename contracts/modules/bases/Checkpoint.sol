@@ -39,7 +39,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         public
     {
         require (_checkpointTime >= now);
-        totalSupply = share.totalSupply();
+        totalSupply = orgShare.totalSupply();
         checkpointTime = _checkpointTime;
     }
 
@@ -82,7 +82,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
     function _getBalance(address _owner) internal view returns (uint256) {
         if (balances[_owner] > 0) return balances[_owner];
         if (zeroBalances[_owner]) return 0;
-        return share.balanceOf(_owner);
+        return orgShare.balanceOf(_owner);
     }
 
     /**
@@ -102,7 +102,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
     {
         if (custBalances[_owner][_cust] > 0) return custBalances[_owner][_cust];
         if (custZeroBalances[_owner][_cust]) return 0;
-        return share.custodianBalanceOf(_owner, _cust);
+        return orgShare.custodianBalanceOf(_owner, _cust);
     }
 
     /**
@@ -144,7 +144,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
             custBalances[_owner][_cust] > 0 ||
             custZeroBalances[_owner][_cust]
         ) return;
-        _value = share.custodianBalanceOf(_owner, _cust).add(_value);
+        _value = orgShare.custodianBalanceOf(_owner, _cust).add(_value);
         custBalances[_owner][_cust] = _value;
     }
 
@@ -165,7 +165,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
             custBalances[_owner][_cust] > 0 ||
             custZeroBalances[_owner][_cust]
         ) return;
-        uint256 _bal = share.custodianBalanceOf(_owner, _cust).sub(_value);
+        uint256 _bal = orgShare.custodianBalanceOf(_owner, _cust).sub(_value);
         if (_bal == 0) {
             custZeroBalances[_owner][_cust] == true;
         } else {
@@ -191,17 +191,17 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(share));
+        require(msg.sender == address(orgShare));
         if (now < checkpointTime) return true;
         if (_rating[0] == 0 && _id[0] != ownerID) {
             _custodianSent(_addr[1], _addr[0], _value);
         } else if (!_isBalanceSet(_addr[0])) {
-            balances[_addr[0]] = share.balanceOf(_addr[0]).add(_value);
+            balances[_addr[0]] = orgShare.balanceOf(_addr[0]).add(_value);
         }
         if (_rating[1] == 0 && _id[1] != ownerID) {
             _custodianReceived(_addr[0], _addr[1], _value);
         } else if (!_isBalanceSet(_addr[1])) {
-            _setBalance(_addr[1], share.balanceOf(_addr[1]).sub(_value));
+            _setBalance(_addr[1], orgShare.balanceOf(_addr[1]).sub(_value));
         }
         return true;
     }
@@ -224,7 +224,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(share));
+        require(msg.sender == address(orgShare));
         if (now >= checkpointTime) {
             _custodianSent(_addr[0], _cust, _value);
             _custodianReceived(_addr[1], _cust, _value);
@@ -250,7 +250,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(share));
+        require(msg.sender == address(orgShare));
         if (now < checkpointTime) {
             totalSupply = totalSupply.add(_new).sub(_old);
             return true;

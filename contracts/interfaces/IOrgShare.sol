@@ -34,7 +34,7 @@ contract IOrgShareBase {
     function isActiveModule (address _module) external view returns (bool);
     function isPermittedModule (address _module, bytes4 _sig) external view returns (bool);
     function name () external view returns (string);
-    function org () external view returns (address);
+    function orgCode () external view returns (address);
     function ownerID () external view returns (bytes32);
     function symbol () external view returns (string);
     function totalSupply () external view returns (uint256);

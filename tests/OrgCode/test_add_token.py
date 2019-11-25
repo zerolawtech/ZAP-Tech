@@ -6,9 +6,9 @@ from brownie import accounts, compile_source
 
 module_source = '''pragma solidity 0.4.25;
 contract TestGovernance {
-    address public org;
+    address public orgCode;
     bool result;
-    constructor(address _org) public { org = _org; }
+    constructor(address _org) public { orgCode = _org; }
     function setResult(bool _result) external { result = _result; }
     function addOrgShare(address) external returns (bool) { return result; }
 }'''

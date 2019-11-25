@@ -20,7 +20,7 @@ contract GovernanceModule {
 
     using SafeMath for uint256;
 
-    IOrgCode public org;
+    IOrgCode public orgCode;
     IMultiCheckpointModule public checkpoint;
 
     mapping (address => mapping (bytes => bool)) approval;
@@ -91,7 +91,7 @@ contract GovernanceModule {
         @param _org OrgCode contract address
      */
     constructor(IOrgCode _org, IMultiCheckpointModule _checkpoint) public {
-        org = _org;
+        orgCode = _org;
         checkpoint = _checkpoint;
     }
 
@@ -101,7 +101,7 @@ contract GovernanceModule {
         @return bool multisig approved
      */
     function _checkPermitted() internal returns (bool) {
-        return org.checkMultiSigExternal(
+        return orgCode.checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig

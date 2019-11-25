@@ -272,7 +272,7 @@ contract OrgCode is MultiSig {
     function setGovernance(IGovernance _governance) external returns (bool) {
         if (!_checkMultiSig()) return false;
         if (address(_governance) != 0x00) {
-            require (_governance.org() == address(this)); // dev: wrong org
+            require (_governance.orgCode() == address(this)); // dev: wrong org
         }
         governance = _governance;
         emit GovernanceSet(_governance);

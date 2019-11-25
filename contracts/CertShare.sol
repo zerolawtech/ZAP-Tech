@@ -1,14 +1,16 @@
 pragma solidity 0.4.25;
 
-import "./bases/Token.sol";
+import "./bases/OrgShare.sol";
+
+import "./interfaces/IOrgCode.sol";
 
 /**
-    @title Non-Fungible SecurityToken
+    @title Non-Fungible Shares Contract
     @dev
         Expands upon the ERC20 token standard
         https://theethereum.wiki/w/index.php/ERC20_Token_Standard
  */
-contract NFToken is TokenBase  {
+contract CertShare is OrgShareBase {
 
     uint256 constant SENDER = 0;
     uint256 constant RECEIVER = 1;
@@ -58,13 +60,13 @@ contract NFToken is TokenBase  {
         @param _authorizedSupply Initial authorized token supply
      */
     constructor(
-        OrgCode _org,
+        IOrgCode _org,
         string _name,
         string _symbol,
         uint256 _authorizedSupply
     )
         public
-        TokenBase(
+        OrgShareBase(
             _org,
             _name,
             _symbol,
@@ -315,7 +317,7 @@ contract NFToken is TokenBase  {
             if(!_checkTime(_startRange[i])) continue;
             Range storage r = rangeMap[_startRange[i]];
             if (r.custodian !=_cust) continue;
-            /** hook point for NFToken.checkTransferRange() */
+            /** hook point for CertShare.checkTransferRange() */
             if (_callModules(0x2d79c6d7, r.tag, abi.encode(
                 _authID,
                 _id,
@@ -793,7 +795,7 @@ contract NFToken is TokenBase  {
                 _stop,
                 _custodian
             );
-            /** hook point for NFToken.transferTokenRange() */
+            /** hook point for CertShare.transferTokenRange() */
             require(_callModules(
                 0xead529f5,
                 rangeMap[_range[i]].tag,
@@ -889,7 +891,7 @@ contract NFToken is TokenBase  {
             _range[1],
             _cust
         );
-        /* hook point for NFToken.transferTokenRange() */
+        /* hook point for CertShare.transferTokenRange() */
         require(_callModules(
             0xead529f5,
             rangeMap[_pointer].tag,

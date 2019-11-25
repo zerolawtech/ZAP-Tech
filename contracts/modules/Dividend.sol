@@ -3,6 +3,9 @@ pragma solidity 0.4.25;
 import "../open-zeppelin/SafeMath.sol";
 import "./bases/Checkpoint.sol";
 
+import "../interfaces/IOrgCode.sol";
+import "../interfaces/IOrgShare.sol";
+
 /**
     @title Ether Dividend Payment Module
     @dev attached at token
@@ -29,13 +32,13 @@ contract DividendModule is CheckpointModuleBase {
 
     /**
         @notice Base constructor
-        @param _token SecurityToken contract address
+        @param _token OrgShare contract address
         @param _org OrgCode contract address
         @param _checkpointTime Epoch time of balance checkpoint
      */
     constructor(
-        SecurityToken _token,
-        address _org,
+        IOrgShareBase _token,
+        IOrgCode _org,
         uint256 _checkpointTime
     )
         CheckpointModuleBase(_token, _org, _checkpointTime)

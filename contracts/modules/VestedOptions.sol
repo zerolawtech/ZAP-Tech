@@ -3,11 +3,14 @@ pragma solidity 0.4.25;
 import "./bases/Module.sol";
 import "../open-zeppelin/SafeMath.sol";
 
+import "../interfaces/IOrgCode.sol";
+import "../interfaces/IOrgShare.sol";
+
 /**
-    @title Vested Options Module
+    @title BookShare Vested Options Module
     @dev attached at token
  */
-contract VestedOptions is STModuleBase {
+contract VestedOptions is BookShareModuleBase {
 
     using SafeMath for uint256;
     using SafeMath32 for uint32;
@@ -108,15 +111,15 @@ contract VestedOptions is STModuleBase {
         @param _receiver address to send ETH to when options are exercised
      */
     constructor(
-        SecurityToken _token,
-        address _org,
+        IBookShare _token,
+        IOrgCode _org,
         uint32 _ethPeg,
         uint32 _expireMonths,
         uint32 _gracePeriodMonths,
         address _receiver
     )
         public
-        STModuleBase(_token, _org)
+        BookShareModuleBase(_token, _org)
     {
         require(_expireMonths > 0);
         require(_gracePeriodMonths > 0);
@@ -345,7 +348,7 @@ contract VestedOptions is STModuleBase {
         Option storage o = _saveOption(_id, _price, _iso);
 
         uint32 _total;
-        uint256[2] memory _max = [t.length - 1, uint256(expirationMonths)]; 
+        uint256[2] memory _max = [t.length - 1, uint256(expirationMonths)];
 
         for (uint256 i; i < _amount.length; i++) {
             require(_monthsToVest[i] < _max[1]); // dev: vest > expiration
@@ -577,7 +580,7 @@ contract VestedOptions is STModuleBase {
     function _accellerateOrTerminate(
         OptionBase storage b,
         uint32 _price,
-        uint32 _gracePeriod 
+        uint32 _gracePeriod
     )
         internal
         returns (uint32 _total)

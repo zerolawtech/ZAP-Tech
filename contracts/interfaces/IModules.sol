@@ -25,13 +25,13 @@ interface IBaseModule {
 }
 
 /**
-    @notice SecurityToken module interface
+    @notice BookShare module interface
     @dev These are all the possible hook point methods for token modules
 */
-contract ISTModule is IBaseModule {
-    
+contract IBookShareModule is IBaseModule {
+
     function token() external returns (address);
-    
+
     /**
         @notice Check if a transfer is possible
         @dev
@@ -129,12 +129,12 @@ contract ISTModule is IBaseModule {
 }
 
 /**
-    @notice NFToken module interface
+    @notice CertShare module interface
     @dev
-        These are all the possible hook point methods for NFToken modules
-        All SecurityToken module hook points are also available
+        These are all the possible hook point methods for CertShare modules
+        All BookShare module hook points are also available
 */
-contract INFTModule is ISTModule {
+contract ICertShareModule is IBookShareModule {
 
     /**
         @notice Check if a transfer is possible

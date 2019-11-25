@@ -7,7 +7,7 @@ import "./interfaces/IBaseCustodian.sol";
 import "./interfaces/IGovernance.sol";
 import "./interfaces/IIDVerifierBase.sol";
 import "./interfaces/IModules.sol";
-import "./interfaces/ITokenBase.sol";
+import "./interfaces/IOrgShare.sol";
 
 /** @title Issuing Entity */
 contract OrgCode is MultiSig {
@@ -206,7 +206,7 @@ contract OrgCode is MultiSig {
      */
     function addToken(address _token) external returns (bool) {
         if (!_checkMultiSig()) return false;
-        ITokenBase token = ITokenBase(_token);
+        IOrgShareBase token = IOrgShareBase(_token);
         require(!tokens[_token].set); // dev: already set
         require(token.ownerID() == ownerID); // dev: wrong owner
         require(token.circulatingSupply() == 0);
@@ -440,7 +440,7 @@ contract OrgCode is MultiSig {
 
     /**
         @notice Check if transfer is possible based on org level restrictions
-        @dev function is not called directly - see SecurityToken.checkTransfer
+        @dev function is not called directly - see OrgShare.checkTransfer
         @param _auth address of the caller attempting the transfer
         @param _from address of the sender
         @param _to address of the receiver
@@ -706,7 +706,7 @@ contract OrgCode is MultiSig {
 
     /**
         @notice Transfer tokens through the issuing entity level
-        @dev only callable through SecurityToken
+        @dev only callable through an OrgShare contract
         @param _auth Caller address
         @param _from Sender address
         @param _to Receiver address
@@ -892,7 +892,7 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Attach a module to OrgCode or SecurityToken
+        @notice Attach a module to OrgCode or OrgShares
         @dev
             Modules have a lot of permission and flexibility in what they
             can do. Only attach a module that has been properly auditted and
@@ -913,12 +913,12 @@ contract OrgCode is MultiSig {
         address _owner = _module.getOwner();
         require(tokens[_target].set); // dev: unknown target
         require (_owner == _target || _owner == address(this)); // dev: wrong owner
-        require(ITokenBase(_target).attachModule(_module));
+        require(IOrgShareBase(_target).attachModule(_module));
         return true;
     }
 
     /**
-        @notice Detach a module from OrgCode or SecurityToken
+        @notice Detach a module from OrgCode or OrgShare
         @dev This function may also be called by the module itself.
         @param _target Address of the contract where the module is attached
         @param _module Address of the module contract
@@ -933,7 +933,7 @@ contract OrgCode is MultiSig {
     {
         if (!_checkMultiSig()) return false;
         require(tokens[_target].set); // dev: unknown target
-        require(ITokenBase(_target).detachModule(_module));
+        require(IOrgShareBase(_target).detachModule(_module));
         return true;
     }
 

@@ -3,11 +3,13 @@ pragma solidity 0.4.25;
 import "../../open-zeppelin/SafeMath.sol";
 import "./Module.sol";
 
+import "../../interfaces/IOrgShare.sol";
+
 /**
     @title Checkpoint Module Base Contract
     @dev Inherited contract for token modules requiring a balance checkpoint
 */
-contract CheckpointModuleBase is STModuleBase {
+contract CheckpointModuleBase is OrgShareModuleBase {
 
     using SafeMath for uint256;
 
@@ -23,16 +25,16 @@ contract CheckpointModuleBase is STModuleBase {
 
     /**
         @notice Base constructor
-        @param _token SecurityToken contract address
+        @param _token OrgShare contract address
         @param _org OrgCode contract address
         @param _checkpointTime Epoch time of balance checkpoint
      */
     constructor(
-        SecurityToken _token,
-        address _org,
+        IOrgShareBase _token,
+        IOrgCode _org,
         uint256 _checkpointTime
     )
-        STModuleBase(_token, _org)
+        OrgShareModuleBase(_token, _org)
         public
     {
         require (_checkpointTime >= now);
@@ -61,12 +63,12 @@ contract CheckpointModuleBase is STModuleBase {
     {
         permissions = new bytes4[](1);
         permissions[0] = 0xbb2a8522;
-        
+
         hooks = new bytes4[](3);
         hooks[0] = 0x35a341da;
         hooks[1] = 0x8b5f1240;
         hooks[2] = 0x741b5078;
-        
+
         return (permissions, hooks, ~uint256(0));
     }
 

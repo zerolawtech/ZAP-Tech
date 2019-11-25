@@ -1,19 +1,31 @@
 pragma solidity 0.4.25;
 
 import "./Modular.sol";
-import "../OrgCode.sol";
+
+import "../interfaces/IOrgCode.sol";
 import "../interfaces/IBaseCustodian.sol";
 
 /**
-    @title Security Token Base
+    @title OrgShareBase Abstract Base Contract
+    @dev Methods in this ABC are defined in contracts that inherit OrgShareBase
+*/
+contract OrgShareBaseABC {
+    function balanceOf(address) public view returns (uint256);
+    function transfer(address, uint256) external returns (bool);
+    function transferFrom(address, address, uint256) external returns (bool);
+    function transferCustodian(address[2], uint256) public returns (bool);
+}
+
+/**
+    @title OrgShare Base Contract
     @dev
         Expands upon the ERC20 token standard
         https://theethereum.wiki/w/index.php/ERC20_Token_Standard
  */
-contract TokenBase is Modular {
+contract OrgShareBase is OrgShareBaseABC, Modular {
 
     bytes32 public ownerID;
-    OrgCode public org;
+    IOrgCode public org;
 
     /* Assets cannot be fractionalized */
     uint8 public constant decimals = 0;
@@ -43,7 +55,7 @@ contract TokenBase is Modular {
         @param _authorizedSupply Initial authorized token supply
      */
     constructor(
-        OrgCode _org,
+        IOrgCode _org,
         string _name,
         string _symbol,
         uint256 _authorizedSupply
@@ -73,11 +85,6 @@ contract TokenBase is Modular {
     function treasurySupply() external view returns (uint256) {
         return balanceOf(address(org));
     }
-
-    /**
-        @dev Implemented in inheriting contracts
-     */
-    function balanceOf(address) public view returns (uint256);
 
     /**
         @notice Fetch the current balance at an address within a given custodian

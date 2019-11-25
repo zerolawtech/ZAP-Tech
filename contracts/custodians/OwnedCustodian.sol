@@ -1,8 +1,9 @@
 pragma solidity 0.4.25;
 
-import "../SecurityToken.sol";
 import "../bases/Modular.sol";
 import "../bases/MultiSig.sol";
+
+import "../interfaces/IOrgShare.sol";
 
 /** @title Owned Custodian Contract */
 contract OwnedCustodian is Modular, MultiSig {
@@ -41,12 +42,12 @@ contract OwnedCustodian is Modular, MultiSig {
 
     /**
         @notice Fetch an investor's current token balance held by the custodian
-        @param _token address of the SecurityToken contract
+        @param _token address of the OrgShare contract
         @param _owner investor address
         @return integer
      */
     function balanceOf(
-        SecurityToken _token,
+        IOrgShareBase _token,
         address _owner
     )
         external
@@ -66,7 +67,7 @@ contract OwnedCustodian is Modular, MultiSig {
         @return bool success
      */
     function checkCustodianTransfer(
-        SecurityToken _token,
+        IOrgShareBase _token,
         address _from,
         address _to,
         uint256 _value
@@ -87,7 +88,7 @@ contract OwnedCustodian is Modular, MultiSig {
         @return bool success
      */
     function transfer(
-        SecurityToken _token,
+        IOrgShareBase _token,
         address _to,
         uint256 _value
     )
@@ -126,7 +127,7 @@ contract OwnedCustodian is Modular, MultiSig {
         external
         returns (bool)
     {
-        
+
         /* bytes4 signature for custodian module receivedTokens() */
         require(_callModules(
             0xb15bcbc4,
@@ -147,7 +148,7 @@ contract OwnedCustodian is Modular, MultiSig {
         @return bool success
      */
     function transferInternal(
-        SecurityToken _token,
+        IOrgShareBase _token,
         address _from,
         address _to,
         uint256 _value

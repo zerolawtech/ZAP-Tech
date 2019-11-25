@@ -7,4 +7,4 @@ These are inherited base contracts used by the core contracts.
 * `KYC.sol`: Common base for `IDVerifierOrg` and `IDVerifierRegistrar`.
 * `Modular.sol`: Modular functionality used by `OrgCode`, custodians, and token contracts.
 * `MultiSig.sol`: Multi-signature, multi-owner functionality used by `OrgCode` and custodian contracts.
-* `Token.sol`: Common base for `SecurityToken` and `NFToken`.
+* `OrgShare.sol`: Common base for `BookShare` and `CertShare`.

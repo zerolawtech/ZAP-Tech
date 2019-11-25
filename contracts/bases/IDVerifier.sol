@@ -1,8 +1,8 @@
 pragma solidity 0.4.25;
 
 /**
-    @title KYC Abstract Base Contract
-    @dev Methods in this ABC are defined in contracts that inherit KYCBase
+    @title IDVerifierBase Abstract Base Contract
+    @dev Methods in this ABC are defined in contracts that inherit IDVerifierBase
 */
 contract IDVerifierBaseABC {
 

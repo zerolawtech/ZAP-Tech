@@ -1,7 +1,9 @@
 pragma solidity 0.4.25;
 
 import "./open-zeppelin/SafeMath.sol";
-import "./bases/Token.sol";
+import "./bases/OrgShare.sol";
+
+import "./interfaces/IOrgCode.sol";
 
 /**
     @title Security Token
@@ -9,7 +11,7 @@ import "./bases/Token.sol";
         Expands upon the ERC20 token standard
         https://theethereum.wiki/w/index.php/ERC20_Token_Standard
  */
-contract SecurityToken is TokenBase {
+contract BookShare is OrgShareBase {
 
     using SafeMath for uint256;
 
@@ -27,13 +29,13 @@ contract SecurityToken is TokenBase {
         @param _authorizedSupply Initial authorized token supply
      */
     constructor(
-        OrgCode _org,
+        IOrgCode _org,
         string _name,
         string _symbol,
         uint256 _authorizedSupply
     )
         public
-        TokenBase(
+        OrgShareBase(
             _org,
             _name,
             _symbol,

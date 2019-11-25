@@ -1,9 +1,9 @@
 pragma solidity 0.4.25;
 
-
 import "../../bases/MultiSig.sol";
-import "../../OrgCode.sol";
-import "../../SecurityToken.sol";
+
+import "../../interfaces/IOrgCode.sol";
+import "../../interfaces/IOrgShare.sol";
 
 /**
     @title ModuleBase Abstract Base Contract
@@ -53,28 +53,28 @@ contract ModuleBase is ModuleBaseABC {
 
 
 /**
-    @title Token Module Base Contract
-    @dev Inherited contract for SecurityToken or NFToken modules
+    @title OrgShare Module Base Contract
+    @dev Inherited contract for BookShare and CertShare modules
  */
-contract STModuleBase is ModuleBase {
+contract OrgShareModuleBase is ModuleBase {
 
-    SecurityToken public token;
-    OrgCode public org;
+    IOrgShareBase token;
+    IOrgCode public org;
 
     /**
         @notice Base constructor
-        @param _token SecurityToken contract address
+        @param _token OrgShare contract address
         @param _org OrgCode contract address
      */
     constructor(
-        SecurityToken _token,
-        address _org
+        IOrgShareBase _token,
+        IOrgCode _org
     )
         public
         ModuleBase(_org)
     {
+        org = _org;
         token = _token;
-        org = OrgCode(_org);
     }
 
     /** @dev Check that call originates from parent token contract */
@@ -92,18 +92,68 @@ contract STModuleBase is ModuleBase {
 
 }
 
+/**
+    @title BookShare Module Base Contract
+    @dev Inherited contract for BookShare modules
+ */
+contract BookShareModuleBase is OrgShareModuleBase {
+
+    IBookShare public token;
+
+    /**
+        @notice Base constructor
+        @param _token BookShare contract address
+        @param _org OrgCode contract address
+     */
+    constructor(
+        IBookShare _token,
+        IOrgCode _org
+    )
+        public
+        OrgShareModuleBase(_token, _org)
+    {
+        token = _token;
+    }
+
+}
+
+
+/**
+    @title CertShare Module Base Contract
+    @dev Inherited contract for CertShare modules
+ */
+contract CertShareModuleBase is OrgShareModuleBase {
+
+    ICertShare public token;
+
+    /**
+        @notice Base constructor
+        @param _token CertShare contract address
+        @param _org OrgCode contract address
+     */
+    constructor(
+        ICertShare _token,
+        IOrgCode _org
+    )
+        public
+        OrgShareModuleBase(_token, _org)
+    {
+        token = _token;
+    }
+
+}
 
 contract IssuerModuleBase is ModuleBase {
 
-    OrgCode public org;
+    IOrgCode public org;
     mapping (address => bool) parents;
 
     /**
         @notice Base constructor
-        @param _org OrgCode contract address
+        @param _org IOrgCode contract address
      */
     constructor(address _org) public ModuleBase(_org) {
-        org = OrgCode(_org);
+        org = IOrgCode(_org);
     }
 
     /** @dev Check that call originates from token contract */

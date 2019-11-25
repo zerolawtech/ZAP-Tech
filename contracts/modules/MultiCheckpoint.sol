@@ -1,9 +1,9 @@
 pragma solidity 0.4.25;
 
 import "../open-zeppelin/SafeMath.sol";
-import "../bases/Token.sol";
 import "./bases/Module.sol";
 
+import "../interfaces/IOrgShare.sol";
 
 /**
     @title MultiCheckpoint Module
@@ -63,7 +63,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         hooks[0] = 0x35a341da;
         hooks[1] = 0x8b5f1240;
         hooks[2] = 0x741b5078;
-        
+
         return (permissions, hooks, ~uint256(0));
     }
 
@@ -112,7 +112,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         @return uint256 balance at checkpoint
      */
     function balanceAt(
-        TokenBase _token,
+        IOrgShareBase _token,
         address _owner,
         uint256 _time
     )
@@ -139,7 +139,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         @return uint256 balance at checkpoint
      */
     function custodianBalanceAt(
-        TokenBase _token,
+        IOrgShareBase _token,
         address _owner,
         address _cust,
         uint256 _time
@@ -237,7 +237,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         uint256 _previous = _advanceCheckpoints(msg.sender);
         if (_previous == 0) return true;
         Checkpoint storage c = checkpointData[msg.sender][_previous];
-        TokenBase _token = TokenBase(msg.sender);
+        IOrgShareBase _token = IOrgShareBase(msg.sender);
         uint256 _bal;
 
         if (_rating[0] == 0 && _id[0] != ownerID) {
@@ -280,7 +280,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         if (_previous == 0) return true;
         Checkpoint storage c = checkpointData[msg.sender][_previous];
 
-        TokenBase _token = TokenBase(msg.sender);
+        IOrgShareBase _token = IOrgShareBase(msg.sender);
         uint256 _bal = _token.custodianBalanceOf(_addr[0], _cust).add(_value);
         _setCustodianBalance(c, _addr[0], _cust, _bal);
         _bal = _token.custodianBalanceOf(_addr[1], _cust).sub(_value);
@@ -346,7 +346,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         @return bool success
      */
     function newCheckpoint(
-        TokenBase _token,
+        IOrgShareBase _token,
         uint64 _time
     )
         external

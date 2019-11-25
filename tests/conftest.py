@@ -45,8 +45,8 @@ def org(OrgCode, accounts):
 
 
 @pytest.fixture(scope="module")
-def kyc(KYCRegistrar, org, accounts):
-    kyc = accounts[0].deploy(KYCRegistrar, [accounts[0]], 1)
+def kyc(IDVerifierRegistrar, org, accounts):
+    kyc = accounts[0].deploy(IDVerifierRegistrar, [accounts[0]], 1)
     org.setVerifier(kyc, False, {'from': accounts[0]})
     yield kyc
 

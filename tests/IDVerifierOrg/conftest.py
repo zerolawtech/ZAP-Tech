@@ -4,8 +4,8 @@ import pytest
 
 
 @pytest.fixture(scope="module")
-def ikyc(KYCIssuer, org, accounts):
-    kyc = accounts[0].deploy(KYCIssuer, org)
+def ikyc(IDVerifierOrg, org, accounts):
+    kyc = accounts[0].deploy(IDVerifierOrg, org)
     org.setVerifier(kyc, False, {'from': accounts[0]})
     kyc.addInvestor(
         "investor1".encode(),

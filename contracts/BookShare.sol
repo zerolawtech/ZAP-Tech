@@ -276,7 +276,7 @@ contract BookShare is OrgShareBase {
 
         /* bytes4 signature for share module transferShares() */
         require(_callModules(
-            0x35a341da,
+            0x0675a5e0,
             0x00,
             abi.encode(_addr, _id, _rating, _country, _value)
         ));
@@ -333,7 +333,7 @@ contract BookShare is OrgShareBase {
         );
         /* bytes4 signature for share module transferSharesCustodian() */
         require(_callModules(
-            0x8b5f1240,
+            0xdc9d1da1,
             0x00,
             abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
         ));

@@ -61,7 +61,7 @@ contract IBookShareModule is IBaseModule {
         @notice Share transfer
         @dev
             Called a share transfer has completed
-            Hook signature: 0x35a341da
+            Hook signature: 0x0675a5e0
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
         @param _rating sender and receiver investor ratings
@@ -83,7 +83,7 @@ contract IBookShareModule is IBaseModule {
         @notice Share custodial internal transfer
         @dev
             Called a custodian internal share transfer has completed
-            Hook signature: 0x8b5f1240
+            Hook signature: 0xdc9d1da1
         @param _custodian custodian address
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
@@ -165,7 +165,7 @@ contract ICertShareModule is IBookShareModule {
         @notice Share range transfer
         @dev
             Called a range of shares has been transferred
-            Hook signature: 0xead529f5 (taggable)
+            Hook signature: 0x244d5002 (taggable)
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
         @param _rating sender and receiver investor ratings
@@ -195,7 +195,7 @@ contract ICustodianModule is IBaseModule {
         @notice Custodian sent shares
         @dev
             Called after a successful share transfer from the custodian.
-            Hook signature: 0xb4684410
+            Hook signature: 0xa110724f
         @param _share Share address
         @param _to Recipient address
         @param _value Amount of shares transfered
@@ -213,7 +213,7 @@ contract ICustodianModule is IBaseModule {
         @notice Custodian received shares
         @dev
             Called after a successful share transfer to the custodian.
-            Hook signature: 0xb15bcbc4
+            Hook signature: 0xa000ff88
         @param _share Share address
         @param _from Sender address
         @param _value Amount of shares transfered

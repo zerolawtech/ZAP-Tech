@@ -105,7 +105,7 @@ contract OwnedCustodian is Modular, MultiSig {
         require(_share.transfer(_to, _value));
         /* bytes4 signature for custodian module sentShares() */
         require(_callModules(
-            0xb4684410,
+            0xa110724f,
             0x00,
             abi.encode(_share, _to, _value)
         ));
@@ -130,7 +130,7 @@ contract OwnedCustodian is Modular, MultiSig {
 
         /* bytes4 signature for custodian module receivedShares() */
         require(_callModules(
-            0xb15bcbc4,
+            0xa000ff88,
             0x00,
             abi.encode(msg.sender, _from, _value)
         ));

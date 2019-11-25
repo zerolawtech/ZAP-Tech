@@ -44,8 +44,8 @@ contract MultiCheckpointModule is IssuerModuleBase {
     /**
         @notice supply permissions and hook points when attaching module
         @dev
-            hooks: 0x35a341da - transferShares
-                   0x8b5f1240 - transferSharesCustodian
+            hooks: 0x0675a5e0 - transferShares
+                   0xdc9d1da1 - transferSharesCustodian
                    0x741b5078 - totalSupplyChanged
             hookBools - all true
      */
@@ -60,8 +60,8 @@ contract MultiCheckpointModule is IssuerModuleBase {
     )
     {
         hooks = new bytes4[](3);
-        hooks[0] = 0x35a341da;
-        hooks[1] = 0x8b5f1240;
+        hooks[0] = 0x0675a5e0;
+        hooks[1] = 0xdc9d1da1;
         hooks[2] = 0x741b5078;
 
         return (permissions, hooks, ~uint256(0));

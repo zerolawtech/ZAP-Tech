@@ -684,7 +684,7 @@ contract CertShare is OrgShareBase {
         }
         /* bytes4 signature for share module transferShares() */
         require(_callModules(
-            0x35a341da,
+            0x0675a5e0,
             0x00,
             abi.encode(_addr, _id, _rating, _country, _value)
         ));
@@ -735,7 +735,7 @@ contract CertShare is OrgShareBase {
         custBalances[_addr[RECEIVER]][msg.sender] += _value;
         /* bytes4 signature for share module transferSharesCustodian() */
         require(_callModules(
-            0x8b5f1240,
+            0xdc9d1da1,
             0x00,
             abi.encode(msg.sender, _addr, _id, _rating, _country, _value)
         ));
@@ -796,7 +796,7 @@ contract CertShare is OrgShareBase {
             );
             /** hook point for CertShare.transferShareRange() */
             require(_callModules(
-                0xead529f5,
+                0x244d5002,
                 rangeMap[_range[i]].tag,
                 abi.encode(_addr, _id, _rating, _country, uint48[2]([_start, _stop]))
             ));
@@ -892,7 +892,7 @@ contract CertShare is OrgShareBase {
         );
         /* hook point for CertShare.transferShareRange() */
         require(_callModules(
-            0xead529f5,
+            0x244d5002,
             rangeMap[_pointer].tag,
             abi.encode(_addr, _id,  _rating, _country, _range)
         ));

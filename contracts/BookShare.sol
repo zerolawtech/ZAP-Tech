@@ -3,6 +3,7 @@ pragma solidity 0.4.25;
 import "./open-zeppelin/SafeMath.sol";
 import "./bases/OrgShare.sol";
 
+import "./interfaces/ICustodian.sol";
 import "./interfaces/IOrgCode.sol";
 
 /**
@@ -271,7 +272,7 @@ contract BookShare is OrgShareBase {
             custBalances[_addr[SENDER]][_addr[RECEIVER]] = (
                 custBalances[_addr[SENDER]][_addr[RECEIVER]].add(_value)
             );
-            require(IBaseCustodian(_addr[RECEIVER]).receiveTransfer(_addr[SENDER], _value));
+            require(ICustodian(_addr[RECEIVER]).receiveTransfer(_addr[SENDER], _value));
         }
 
         /* bytes4 signature for share module transferShares() */

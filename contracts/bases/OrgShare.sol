@@ -3,7 +3,6 @@ pragma solidity 0.4.25;
 import "./Modular.sol";
 
 import "../interfaces/IOrgCode.sol";
-import "../interfaces/IBaseCustodian.sol";
 
 /**
     @title OrgShareBase Abstract Base Contract

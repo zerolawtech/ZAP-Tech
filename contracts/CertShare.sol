@@ -2,6 +2,7 @@ pragma solidity 0.4.25;
 
 import "./bases/OrgShare.sol";
 
+import "./interfaces/ICustodian.sol";
 import "./interfaces/IOrgCode.sol";
 
 /**
@@ -680,7 +681,7 @@ contract CertShare is OrgShareBase {
             _cust = _addr[RECEIVER];
             _addr[RECEIVER] = _addr[SENDER];
             custBalances[_addr[SENDER]][_cust] += _value;
-            require(IBaseCustodian(_cust).receiveTransfer(_addr[SENDER], _value));
+            require(ICustodian(_cust).receiveTransfer(_addr[SENDER], _value));
         }
         /* bytes4 signature for share module transferShares() */
         require(_callModules(

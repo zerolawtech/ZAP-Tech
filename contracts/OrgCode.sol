@@ -3,9 +3,9 @@ pragma solidity 0.4.25;
 import "./bases/MultiSig.sol";
 import "./open-zeppelin/SafeMath.sol";
 
-import "./interfaces/IBaseCustodian.sol";
+import "./interfaces/ICustodian.sol";
 import "./interfaces/IGovernance.sol";
-import "./interfaces/IIDVerifierBase.sol";
+import "./interfaces/IIDVerifier.sol";
 import "./interfaces/IModules.sol";
 import "./interfaces/IOrgShare.sol";
 
@@ -45,7 +45,7 @@ contract OrgCode is MultiSig {
     }
 
     struct VerifierContract {
-        IIDVerifierBase addr;
+        IIDVerifier addr;
         bool restricted;
     }
 
@@ -88,7 +88,7 @@ contract OrgCode is MultiSig {
         public
     {
         /* First verifier is empty so Account.regKey == 0 means it is unset. */
-        verifiers.push(VerifierContract(IIDVerifierBase(0), false));
+        verifiers.push(VerifierContract(IIDVerifier(0), false));
         idMap[address(this)].id = ownerID;
     }
 
@@ -251,7 +251,7 @@ contract OrgCode is MultiSig {
      */
     function addCustodian(address _custodian) external returns (bool) {
         if (!_checkMultiSig()) return false;
-        bytes32 _id = IBaseCustodian(_custodian).ownerID();
+        bytes32 _id = ICustodian(_custodian).ownerID();
         require(_id != 0); // dev: zero ID
         require(idMap[_custodian].id == 0); // dev: known address
         require(!accounts[_id].set); // dev: known ID
@@ -286,7 +286,7 @@ contract OrgCode is MultiSig {
         @return bool success
      */
     function setVerifier(
-        IIDVerifierBase _verifier,
+        IIDVerifier _verifier,
         bool _restricted
     )
         external
@@ -566,7 +566,7 @@ contract OrgCode is MultiSig {
         )
     {
         /* If both investors are in the same verifier, call getInvestors */
-        IIDVerifierBase r = verifiers[_key[SENDER]].addr;
+        IIDVerifier r = verifiers[_key[SENDER]].addr;
         if (_key[SENDER] > 0 && _key[SENDER] == _key[RECEIVER]) {
             (
                 ,

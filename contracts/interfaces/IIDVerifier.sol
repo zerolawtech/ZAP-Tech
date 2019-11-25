@@ -1,6 +1,11 @@
 pragma solidity 0.4.25;
 
-interface IIDVerifierBase {
+/** @title IDVerifier Interface
+    @dev
+        this is a minimal interface that can be used to interact with both
+        IDVerifierOrg and IDVerifierRegistrar contracts
+ */
+interface IIDVerifier {
     event InvestorRestriction (bytes32 indexed id, bool restricted, bytes32 indexed authority);
     event NewInvestor (bytes32 indexed id, uint16 indexed country, bytes3 region, uint8 rating, uint40 expires, bytes32 indexed authority);
     event RegisteredAddresses (bytes32 indexed id, address[] addr, bytes32 indexed authority);

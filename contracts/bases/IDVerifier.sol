@@ -4,7 +4,7 @@ pragma solidity 0.4.25;
     @title KYC Abstract Base Contract
     @dev Methods in this ABC are defined in contracts that inherit KYCBase
 */
-contract KYCBaseABC {
+contract IDVerifierBaseABC {
 
     function addInvestor(bytes32, uint16, bytes3, uint8, uint40, address[]) external returns (bool);
     function updateInvestor(bytes32, bytes3, uint8, uint40) external returns (bool);
@@ -16,10 +16,10 @@ contract KYCBaseABC {
 }
 
 /**
-    @title KYC Base
-    @dev Shared methods for KYCIssuer and KYCRegistrar
+    @title Verifier Base
+    @dev Shared methods for IDVerifierOrg and IDVerifierRegistrar
 */
-contract KYCBase is KYCBaseABC {
+contract IDVerifierBase is IDVerifierBaseABC {
 
     struct Address {
         bytes32 id;
@@ -76,7 +76,7 @@ contract KYCBase is KYCBaseABC {
         @param _country Investor country code
         @param _region Investor region code
         @param _rating Investor rating (accreditted, qualified, etc)
-        @param _expires Registry expiration in epoch time
+        @param _expires Record expiration in epoch time
     */
     function _setInvestor(
         bytes32 _authID,
@@ -111,7 +111,7 @@ contract KYCBase is KYCBaseABC {
         @notice Fetch investor information using an address
         @dev
             This call increases gas efficiency around token transfers
-            by minimizing the amount of calls to the registrar
+            by minimizing the amount of calls to the verifier
         @param _addr Address to query
         @return bytes32 investor ID
         @return bool investor permission from isPermitted()
@@ -140,7 +140,7 @@ contract KYCBase is KYCBaseABC {
         @notice Use addresses to fetch information on 2 investors
         @dev
             This call is increases gas efficiency around token transfers
-            by minimizing the amount of calls to the registrar.
+            by minimizing the amount of calls to the verifier.
         @param _from first address to query
         @param _to second address to query
         @return bytes32 array of investor ID
@@ -186,7 +186,7 @@ contract KYCBase is KYCBaseABC {
         @notice Fetch investor ID from an address
         @dev
             This cannot revert on fail because OrgCode may call multiple
-            registrar contracts. A response of 0x00 is means the address is
+            verifier contracts. A response of 0x00 is means the address is
             not registered.
         @param _addr Address to query
         @return bytes32 investor ID

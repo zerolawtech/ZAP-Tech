@@ -565,7 +565,7 @@ contract OrgCode is MultiSig {
             uint16[2] _country
         )
     {
-        /* If both investors are in the same registry, call getInvestors */
+        /* If both investors are in the same verifier, call getInvestors */
         IIDVerifierBase r = verifiers[_key[SENDER]].addr;
         if (_key[SENDER] > 0 && _key[SENDER] == _key[RECEIVER]) {
             (
@@ -576,7 +576,7 @@ contract OrgCode is MultiSig {
             ) = r.getInvestors(_addr[SENDER], _addr[RECEIVER]);
             return (_permitted, _rating, _country);
         }
-        /* Otherwise, call getInvestor at each registry */
+        /* Otherwise, call getInvestor at each verifier */
         if (_key[SENDER] != 0) {
             (
                 ,

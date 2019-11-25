@@ -1,18 +1,19 @@
 pragma solidity 0.4.25;
 
-import "./bases/KYC.sol";
-import "./bases/MultiSig.sol";
+import "./bases/IDVerifier.sol";
 
-/** @title Simplified KYC Contract for Single Issuer */
-contract KYCIssuer is KYCBase {
+import "./interfaces/IOrgCode.sol";
 
-    MultiSig public org;
+/** @title Simplified IDVerifier Contract for Single Org */
+contract IDVerifierOrg is IDVerifierBase {
+
+    IOrgCode public org;
 
     /**
-        @notice KYC registrar constructor
+        @notice IDVerifier constructor
         @param _org OrgCode contract address
      */
-    constructor (MultiSig _org) public {
+    constructor (IOrgCode _org) public {
         org = _org;
     }
 
@@ -53,7 +54,7 @@ contract KYCIssuer is KYCBase {
     }
 
     /**
-        @notice Add investor to this registrar
+        @notice Add investor to this verifier
         @dev
             Investor ID is a hash formed via a concatenation of PII
             Country and region codes are based on the ISO 3166 standard
@@ -62,7 +63,7 @@ contract KYCIssuer is KYCBase {
         @param _country Investor country code
         @param _region Investor region code
         @param _rating Investor rating (accreditted, qualified, etc)
-        @param _expires Registry expiration in epoch time
+        @param _expires Record expiration in epoch time
         @param _addr Array of addresses to register to investor
         @return bool success
     */
@@ -100,7 +101,7 @@ contract KYCIssuer is KYCBase {
         @param _id Investor ID
         @param _region Investor region
         @param _rating Investor rating
-        @param _expires Registry expiration in epoch time
+        @param _expires Record expiration in epoch time
         @return bool success
      */
     function updateInvestor(
@@ -183,7 +184,7 @@ contract KYCIssuer is KYCBase {
         address[] _addr
     )
         external
-        returns (bool) 
+        returns (bool)
     {
         if (!_onlyAuthority()) return false;
         for (uint256 i; i < _addr.length; i++) {

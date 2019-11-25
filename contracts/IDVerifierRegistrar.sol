@@ -1,9 +1,9 @@
 pragma solidity 0.4.25;
 
-import "./bases/KYC.sol";
+import "./bases/IDVerifier.sol";
 
-/** @title KYC Registrar */
-contract KYCRegistrar is KYCBase {
+/** @title ID Verifier */
+contract IDVerifierRegistrar is IDVerifierBase {
 
     bytes32 ownerID;
 
@@ -35,7 +35,7 @@ contract KYCRegistrar is KYCBase {
     );
 
     /**
-        @notice KYC registrar constructor
+        @notice IDVerifier constructor
         @param _owners Array of addresses for owning authority
         @param _threshold multisig threshold for owning authority
      */
@@ -72,7 +72,7 @@ contract KYCRegistrar is KYCBase {
         }
         a.multiSigAuth[_callHash].push(msg.sender);
         emit MultiSigCall(
-            _id, 
+            _id,
             msg.sig,
             _callHash,
             msg.sender,
@@ -108,7 +108,7 @@ contract KYCRegistrar is KYCBase {
         address[] _addr
     )
         internal
-        returns (uint32 _count) 
+        returns (uint32 _count)
     {
         for (uint256 i; i < _addr.length; i++) {
             Address storage _inv = idMap[_addr[i]];
@@ -165,7 +165,7 @@ contract KYCRegistrar is KYCBase {
     }
 
     /**
-        @notice Add a new authority to this registrar
+        @notice Add a new authority to this verifier
         @param _addr Array of addressses to register as authority
         @param _countries Array of country codes the authority is approved for
         @param _threshold Minimum number of calls to a method for multisig
@@ -261,7 +261,7 @@ contract KYCRegistrar is KYCBase {
     }
 
     /**
-        @notice Add investor to this registrar
+        @notice Add investor to this verifier
         @dev
             Investor ID is a hash formed via a concatenation of PII
             Country and region codes are based on the ISO 3166 standard
@@ -270,7 +270,7 @@ contract KYCRegistrar is KYCBase {
         @param _country Investor country code
         @param _region Investor region code
         @param _rating Investor rating (accreditted, qualified, etc)
-        @param _expires Registry expiration in epoch time
+        @param _expires Record expiration in epoch time
         @param _addr Array of addresses to register to investor
         @return bool success
     */
@@ -302,7 +302,7 @@ contract KYCRegistrar is KYCBase {
         @param _id Investor ID
         @param _region Investor region
         @param _rating Investor rating
-        @param _expires Registry expiration in epoch time
+        @param _expires Record expiration in epoch time
         @return bool success
      */
     function updateInvestor(
@@ -422,7 +422,7 @@ contract KYCRegistrar is KYCBase {
         address[] _addr
     )
         external
-        returns (bool) 
+        returns (bool)
     {
         if (!_checkMultiSig(false)) return false;
         if (authorityData[_id].addressCount > 0) {

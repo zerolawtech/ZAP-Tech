@@ -7,7 +7,7 @@ import "../../interfaces/IOrgShare.sol";
 
 /**
     @title Checkpoint Module Base Contract
-    @dev Inherited contract for token modules requiring a balance checkpoint
+    @dev Inherited contract for share modules requiring a balance checkpoint
 */
 contract CheckpointModuleBase is OrgShareModuleBase {
 
@@ -19,26 +19,26 @@ contract CheckpointModuleBase is OrgShareModuleBase {
     mapping (address => uint256) balances;
     mapping (address => bool) zeroBalances;
 
-    /* token holder, custodian contract */
+    /* share holder, custodian contract */
     mapping (address => mapping(address => uint256)) custBalances;
     mapping (address => mapping(address => bool)) custZeroBalances;
 
     /**
         @notice Base constructor
-        @param _token OrgShare contract address
+        @param _share OrgShare contract address
         @param _org OrgCode contract address
         @param _checkpointTime Epoch time of balance checkpoint
      */
     constructor(
-        IOrgShareBase _token,
+        IOrgShareBase _share,
         IOrgCode _org,
         uint256 _checkpointTime
     )
-        OrgShareModuleBase(_token, _org)
+        OrgShareModuleBase(_share, _org)
         public
     {
         require (_checkpointTime >= now);
-        totalSupply = token.totalSupply();
+        totalSupply = share.totalSupply();
         checkpointTime = _checkpointTime;
     }
 
@@ -46,8 +46,8 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         @notice supply permissions and hook points when attaching module
         @dev
             permissions: 0xbb2a8522 - detachModule
-            hooks: 0x35a341da - transferTokens
-                   0x8b5f1240 - transferTokensCustodian
+            hooks: 0x35a341da - transferShares
+                   0x8b5f1240 - transferSharesCustodian
                    0x741b5078 - totalSupplyChanged
             hookBools - all true
      */
@@ -81,7 +81,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
     function _getBalance(address _owner) internal view returns (uint256) {
         if (balances[_owner] > 0) return balances[_owner];
         if (zeroBalances[_owner]) return 0;
-        return token.balanceOf(_owner);
+        return share.balanceOf(_owner);
     }
 
     /**
@@ -101,7 +101,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
     {
         if (custBalances[_owner][_cust] > 0) return custBalances[_owner][_cust];
         if (custZeroBalances[_owner][_cust]) return 0;
-        return token.custodianBalanceOf(_owner, _cust);
+        return share.custodianBalanceOf(_owner, _cust);
     }
 
     /**
@@ -127,7 +127,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
     }
 
     /**
-        @notice Store custodian checkpoint balance after tokens are sent
+        @notice Store custodian checkpoint balance after shares are sent
         @param _owner Address of owner
         @param _cust Address of custodian
         @param _value Amount transferred
@@ -143,12 +143,12 @@ contract CheckpointModuleBase is OrgShareModuleBase {
             custBalances[_owner][_cust] > 0 ||
             custZeroBalances[_owner][_cust]
         ) return;
-        _value = token.custodianBalanceOf(_owner, _cust).add(_value);
+        _value = share.custodianBalanceOf(_owner, _cust).add(_value);
         custBalances[_owner][_cust] = _value;
     }
 
     /**
-        @notice Store custodian checkpoint balance after tokens are received
+        @notice Store custodian checkpoint balance after shares are received
         @param _owner Address of owner
         @param _cust Address of custodian
         @param _value Amount transferred
@@ -164,7 +164,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
             custBalances[_owner][_cust] > 0 ||
             custZeroBalances[_owner][_cust]
         ) return;
-        uint256 _bal = token.custodianBalanceOf(_owner, _cust).sub(_value);
+        uint256 _bal = share.custodianBalanceOf(_owner, _cust).sub(_value);
         if (_bal == 0) {
             custZeroBalances[_owner][_cust] == true;
         } else {
@@ -180,7 +180,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         @param _value Amount transferred
         @return bool
      */
-    function transferTokens(
+    function transferShares(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
@@ -190,17 +190,17 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(token));
+        require(msg.sender == address(share));
         if (now < checkpointTime) return true;
         if (_rating[0] == 0 && _id[0] != ownerID) {
             _custodianSent(_addr[1], _addr[0], _value);
         } else if (!_isBalanceSet(_addr[0])) {
-            balances[_addr[0]] = token.balanceOf(_addr[0]).add(_value);
+            balances[_addr[0]] = share.balanceOf(_addr[0]).add(_value);
         }
         if (_rating[1] == 0 && _id[1] != ownerID) {
             _custodianReceived(_addr[0], _addr[1], _value);
         } else if (!_isBalanceSet(_addr[1])) {
-            _setBalance(_addr[1], token.balanceOf(_addr[1]).sub(_value));
+            _setBalance(_addr[1], share.balanceOf(_addr[1]).sub(_value));
         }
         return true;
     }
@@ -212,7 +212,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         @param _value Amount transferred
         @return bool
      */
-    function transferTokensCustodian(
+    function transferSharesCustodian(
         address _cust,
         address[2] _addr,
         bytes32[2],
@@ -223,7 +223,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(token));
+        require(msg.sender == address(share));
         if (now >= checkpointTime) {
             _custodianSent(_addr[0], _cust, _value);
             _custodianReceived(_addr[1], _cust, _value);
@@ -249,7 +249,7 @@ contract CheckpointModuleBase is OrgShareModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(token));
+        require(msg.sender == address(share));
         if (now < checkpointTime) {
             totalSupply = totalSupply.add(_new).sub(_old);
             return true;

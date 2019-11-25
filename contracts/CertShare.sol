@@ -5,7 +5,7 @@ import "./bases/OrgShare.sol";
 import "./interfaces/IOrgCode.sol";
 
 /**
-    @title Non-Fungible Shares Contract
+    @title Non-Fungible Certificated OrgShare Contract
     @dev
         Expands upon the ERC20 token standard
         https://theethereum.wiki/w/index.php/ERC20_Token_Standard
@@ -19,7 +19,7 @@ contract CertShare is OrgShareBase {
     uint256 constant SCOPING_MULTIPLIER = 16;
 
     uint48 upperBound;
-    uint48[281474976710656] tokens;
+    uint48[281474976710656] shares;
     mapping (uint48 => Range) rangeMap;
     mapping (address => Balance) balances;
 
@@ -52,12 +52,11 @@ contract CertShare is OrgShareBase {
     );
 
     /**
-        @notice Security token constructor
-        @dev Initially the total supply is credited to the org
+        @notice CertShare constructor
         @param _org Address of the org's OrgCode contract
-        @param _name Name of the token
+        @param _name Name of the OrgShare class
         @param _symbol Unique ticker symbol
-        @param _authorizedSupply Initial authorized token supply
+        @param _authorizedSupply Initial authorized total supply
      */
     constructor(
         IOrgCode _org,
@@ -93,7 +92,7 @@ contract CertShare is OrgShareBase {
 
     /**
         @notice Fetch information about a range
-        @param _idx Token index number
+        @param _idx Share index number
         @return owner, start of range, stop of range, time restriction, tag
      */
     function getRange(
@@ -117,7 +116,7 @@ contract CertShare is OrgShareBase {
     }
 
     /**
-        @notice Fetch the token ranges owned by an address
+        @notice Fetch the share ranges owned by an address
         @param _owner Address to query
         @return Array of [(start, stop),..]
      */
@@ -126,7 +125,7 @@ contract CertShare is OrgShareBase {
     }
 
     /**
-        @notice Fetch the token ranges owned by an address and held by a custodian
+        @notice Fetch the share ranges owned by an address and held by a custodian
         @param _owner Address to query
         @param _custodian Address of custodian
         @return Array of [(start, stop),..]
@@ -236,10 +235,10 @@ contract CertShare is OrgShareBase {
         )
     {
         /* Sending 0 balance is blocked to reduce logic around investor limits */
-        require(_value > 0, "Cannot send 0 tokens");
+        require(_value > 0, "Cannot send 0 shares");
         require(uint48(_value) == _value, "Value too large");
 
-        /* Issuer tokens are held at the OrgCode contract address */
+        /* Issuer shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
             _addr[SENDER] = address(org);
         }
@@ -267,7 +266,7 @@ contract CertShare is OrgShareBase {
         for (uint256 i; i < _range.length; i++) {
             _range[i] = b.ranges[i];
         }
-        /* bytes4 signature for token module checkTransfer() */
+        /* bytes4 signature for share module checkTransfer() */
         require(_callModules(
             0x70aaf928,
             0x00,
@@ -334,15 +333,15 @@ contract CertShare is OrgShareBase {
                 _count++;
             }
         }
-        revert("Insufficient transferable tokens");
+        revert("Insufficient transferable shares");
     }
 
     /**
-        @notice Mints new tokens
-        @param _owner Address to assign new tokens to
-        @param _value Number of tokens to mint
-        @param _time Time restriction to apply to tokens
-        @param _tag Tag to apply to tokens
+        @notice Mints new shares
+        @param _owner Address to assign new shares to
+        @param _value Number of shares to mint
+        @param _time Time restriction to apply to shares
+        @param _tag Tag to apply to shares
         @return Bool success
      */
     function mint(
@@ -363,9 +362,9 @@ contract CertShare is OrgShareBase {
         org.checkTransfer(address(org), address(org), _owner, false);
         uint48 _start = uint48(upperBound + 1);
         uint48 _stop = _start + _value;
-        if (_compareRanges(tokens[upperBound], _owner, _time, _tag, 0x00)) {
+        if (_compareRanges(shares[upperBound], _owner, _time, _tag, 0x00)) {
             /* merge with previous range */
-            uint48 _pointer = tokens[upperBound];
+            uint48 _pointer = shares[upperBound];
             rangeMap[_pointer].stop = _stop;
         } else {
             /* create new range */
@@ -386,7 +385,7 @@ contract CertShare is OrgShareBase {
     }
 
     /**
-        @notice Burns tokens
+        @notice Burns shares
         @dev Cannot burn multiple ranges in a single call
         @param _start Start index of range to burn
         @param _stop Stop index of range to burn
@@ -438,13 +437,13 @@ contract CertShare is OrgShareBase {
         /* msg.sig = 0x712a516a */
         if (!_checkPermitted()) return false;
         _checkBounds(_pointer);
-        require(tokens[_pointer] == _pointer);
+        require(shares[_pointer] == _pointer);
         Range storage r = rangeMap[_pointer];
         require(r.owner != 0x00);
         require(_time == 0 || _time > now);
-        if (_compareRanges(tokens[_pointer-1], r.owner, _time, _tag, r.custodian)) {
+        if (_compareRanges(shares[_pointer-1], r.owner, _time, _tag, r.custodian)) {
             /* merge with previous range */
-            uint48 _prev = tokens[_pointer-1];
+            uint48 _prev = shares[_pointer-1];
             _setRangePointers(_prev, _pointer, 0);
             _setRangePointers(_pointer, r.stop, 0);
             _setRangePointers(_prev, r.stop, _prev);
@@ -555,10 +554,10 @@ contract CertShare is OrgShareBase {
 
     /**
         @notice ERC-20 transferFrom standard
-        @dev This will transfer tokens starting from balance.ranges[0]
+        @dev This will transfer shares starting from balance.ranges[0]
         @param _from Sender address
         @param _to Receipient address
-        @param _value Number of tokens to send
+        @param _value Number of shares to send
         @return bool success
      */
     function transferFrom(
@@ -605,7 +604,7 @@ contract CertShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferTokens(
+        ) = org.transferShares(
             _auth,
             _addr[SENDER],
             _addr[RECEIVER],
@@ -683,7 +682,7 @@ contract CertShare is OrgShareBase {
             custBalances[_addr[SENDER]][_cust] += _value;
             require(IBaseCustodian(_cust).receiveTransfer(_addr[SENDER], _value));
         }
-        /* bytes4 signature for token module transferTokens() */
+        /* bytes4 signature for share module transferShares() */
         require(_callModules(
             0x35a341da,
             0x00,
@@ -696,7 +695,7 @@ contract CertShare is OrgShareBase {
         @notice Custodian transfer function
         @dev
             called by Custodian.transferInternal to change ownership within
-            the custodian contract without moving any tokens
+            the custodian contract without moving any shares
         @param _addr Sender/Receiver addresses
         @param _value Amount to transfer
         @return bool
@@ -719,7 +718,7 @@ contract CertShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferTokens(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = org.transferShares(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
 
         uint48[] memory _range;
         (_addr, _range) = _checkTransfer(
@@ -734,7 +733,7 @@ contract CertShare is OrgShareBase {
 
         custBalances[_addr[SENDER]][msg.sender] -= _value;
         custBalances[_addr[RECEIVER]][msg.sender] += _value;
-        /* bytes4 signature for token module transferTokensCustodian() */
+        /* bytes4 signature for share module transferSharesCustodian() */
         require(_callModules(
             0x8b5f1240,
             0x00,
@@ -795,7 +794,7 @@ contract CertShare is OrgShareBase {
                 _stop,
                 _custodian
             );
-            /** hook point for CertShare.transferTokenRange() */
+            /** hook point for CertShare.transferShareRange() */
             require(_callModules(
                 0xead529f5,
                 rangeMap[_range[i]].tag,
@@ -809,8 +808,8 @@ contract CertShare is OrgShareBase {
     }
 
     /**
-        @notice transfer tokens with a specific index range
-        @dev Can send tokens into a custodian, but not out of one
+        @notice transfer shares with a specific index range
+        @dev Can send shares into a custodian, but not out of one
         @param _to Receipient address
         @param _start Transfer start index
         @param _stop Transfer stop index
@@ -847,9 +846,9 @@ contract CertShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferTokens(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = org.transferShares(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
 
-        /* Issuer tokens are held at the OrgCode contract address */
+        /* Issuer shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
             _addr[SENDER] = address(org);
         } else {
@@ -891,7 +890,7 @@ contract CertShare is OrgShareBase {
             _range[1],
             _cust
         );
-        /* hook point for CertShare.transferTokenRange() */
+        /* hook point for CertShare.transferShareRange() */
         require(_callModules(
             0xead529f5,
             rangeMap[_pointer].tag,
@@ -900,7 +899,7 @@ contract CertShare is OrgShareBase {
     }
 
     /**
-        @notice internal - transfer ownership of a single range of tokens
+        @notice internal - transfer ownership of a single range of shares
         @param _pointer Range array pointer
         @param _from Sender address
         @param _to Recipient address
@@ -920,7 +919,7 @@ contract CertShare is OrgShareBase {
     {
         Range storage r = rangeMap[_pointer];
         uint48 _rangeStop = r.stop;
-        uint48 _prev = tokens[_start-1];
+        uint48 _prev = shares[_start-1];
         bytes2 _tag = r.tag;
         emit TransferRange(_from, _to, _start, _stop, _stop-_start);
 
@@ -1060,11 +1059,11 @@ contract CertShare is OrgShareBase {
         @notice Splits a range
         @dev
             Called when a new tag is added, to prevent a balance range
-            where some tokens are tagged differently from others
+            where some shares are tagged differently from others
         @param _split Index to split the range at
      */
     function _splitRange(uint48 _split) internal {
-        if (tokens[_split-1] != 0 && tokens[_split] > tokens[_split-1]) return;
+        if (shares[_split-1] != 0 && shares[_split] > shares[_split-1]) return;
         uint48 _pointer = _getPointer(_split);
         Range storage r = rangeMap[_pointer];
         uint48 _stop = r.stop;
@@ -1107,8 +1106,8 @@ contract CertShare is OrgShareBase {
     /**
         @notice internal - replace value in balance range array
         @param _addr Balance addresss
-        @param _old Token index to remove
-        @param _new Token index to add
+        @param _old Share index to remove
+        @param _new Share index to add
      */
     function _replaceInBalanceRange(
         address _addr,
@@ -1141,37 +1140,37 @@ contract CertShare is OrgShareBase {
     }
 
     /**
-        @notice Modify pointers in the token range
+        @notice Modify pointers in the share range
         @param _start Start index of range
         @param _stop Stop index of range
         @param _value Pointer value
      */
     function _setRangePointers(uint48 _start, uint48 _stop, uint48 _value) internal {
-        tokens[_start] = _value;
+        shares[_start] = _value;
         _stop -= 1;
         if (_start == _stop) return;
-        tokens[_stop] = _value;
+        shares[_stop] = _value;
         uint256 _interval = SCOPING_MULTIPLIER;
         while (true) {
             uint256 i = (_stop / _interval * _interval);
             if (i == 0) return;
             _interval *= SCOPING_MULTIPLIER;
             if (i % _interval == 0) continue;
-            if (i > _start) tokens[i] = _value;
+            if (i > _start) shares[i] = _value;
         }
     }
 
     /**
         @notice Find an array range pointer
         @dev
-            Given a token index, this will iterate through the range
+            Given a share index, this will iterate through the range
             and return the mapping pointer that the index is present within.
-        @param i Token index
+        @param i Share index
      */
     function _getPointer(uint256 i) internal view returns (uint48) {
         uint256 _increment = 1;
         while (true) {
-            if (tokens[i] != 0x00) return tokens[i];
+            if (shares[i] != 0x00) return shares[i];
             if (i % (_increment * SCOPING_MULTIPLIER) == 0) {
                 _increment *= SCOPING_MULTIPLIER;
                 require(i <= upperBound); // dev: exceeds upper bound

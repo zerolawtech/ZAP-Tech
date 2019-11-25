@@ -39,7 +39,7 @@ contract OrgCode is MultiSig {
         address custodian;
     }
 
-    struct Token {
+    struct Share {
         bool set;
         bool restricted;
     }
@@ -56,7 +56,7 @@ contract OrgCode is MultiSig {
     uint32[8] limits;
     mapping (uint16 => Country) countries;
     mapping (bytes32 => Account) accounts;
-    mapping (address => Token) tokens;
+    mapping (address => Share) shares;
     mapping (string => bytes32) documentHashes;
 
     event CountryModified(
@@ -70,9 +70,9 @@ contract OrgCode is MultiSig {
     event GovernanceSet(address indexed governance);
     event VerifierSet(address indexed verifier, bool restricted);
     event CustodianAdded(address indexed custodian);
-    event TokenAdded(address indexed token);
+    event ShareAdded(address indexed share);
     event EntityRestriction(bytes32 indexed id, bool restricted);
-    event TokenRestriction(address indexed token, bool restricted);
+    event ShareRestriction(address indexed share, bool restricted);
     event GlobalRestriction(bool restricted);
 
     /**
@@ -104,12 +104,12 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Check if a token is associated to this contract and unrestricted
-        @param _token address to check
+        @notice Check if a share is associated to this contract and unrestricted
+        @param _share address to check
         @return boolean
      */
-    function isActiveToken(address _token) external view returns (bool) {
-        return tokens[_token].set && !tokens[_token].restricted;
+    function isActiveOrgShare(address _share) external view returns (bool) {
+        return shares[_share].set && !shares[_share].restricted;
     }
 
     /**
@@ -199,22 +199,22 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Add a new security token contract
+        @notice Add a new OrgShare contract
         @dev Requires permission from governance module
-        @param _token Token contract address
+        @param _share Share contract address
         @return bool success
      */
-    function addToken(address _token) external returns (bool) {
+    function addOrgShare(address _share) external returns (bool) {
         if (!_checkMultiSig()) return false;
-        IOrgShareBase token = IOrgShareBase(_token);
-        require(!tokens[_token].set); // dev: already set
-        require(token.ownerID() == ownerID); // dev: wrong owner
-        require(token.circulatingSupply() == 0);
+        IOrgShareBase share = IOrgShareBase(_share);
+        require(!shares[_share].set); // dev: already set
+        require(share.ownerID() == ownerID); // dev: wrong owner
+        require(share.circulatingSupply() == 0);
         if (address(governance) != 0x00) {
-            require(governance.addToken(_token), "Action has not been approved");
+            require(governance.addOrgShare(_share), "Action has not been approved");
         }
-        tokens[_token].set = true;
-        emit TokenAdded(_token);
+        shares[_share].set = true;
+        emit ShareAdded(_share);
         return true;
     }
 
@@ -244,7 +244,7 @@ contract OrgCode is MultiSig {
         @notice Add a custodian
         @dev
             Custodians are entities such as broker or exchanges that are approved
-            to hold tokens for 1 or more beneficial owners.
+            to hold shares for one or more beneficial owners.
             https://sft-protocol.readthedocs.io/en/latest/custodian.html
         @param _custodian address of custodian contract
         @return bool success
@@ -403,31 +403,31 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Set restriction on a token
+        @notice Set restriction on all shares within an OrgShare contract
         @dev
-            Only the org can transfer restricted tokens. Useful in dealing
-            with a security breach or a token migration.
-        @param _token Address of the token
+            Only the org can transfer restricted shares. Useful in dealing
+            with a security breach or a contract migration.
+        @param _share Address of the share contract
         @param _restricted permission bool
         @return bool success
      */
-    function setTokenRestriction(
-        address _token,
+    function setOrgShareRestriction(
+        address _share,
         bool _restricted
     )
         external
         returns (bool)
     {
         if (!_checkMultiSig()) return false;
-        require(tokens[_token].set);
-        tokens[_token].restricted = _restricted;
-        emit TokenRestriction(_token, _restricted);
+        require(shares[_share].set);
+        shares[_share].restricted = _restricted;
+        emit ShareRestriction(_share, _restricted);
         return true;
     }
 
     /**
-        @notice Set restriction on all tokens for this org
-        @dev Only the org can transfer restricted tokens.
+        @notice Set restriction on all shares for this org
+        @dev Only the org can transfer restricted shares.
         @param _restricted permission bool
         @return bool success
      */
@@ -609,7 +609,7 @@ contract OrgCode is MultiSig {
         @param _permitted array of permission bools from verifier
         @param _rating array of investor ratings
         @param _country array of investor countries
-        @param _tokenCount sender accounts.count value after transfer
+        @param _shareCount sender accounts.count value after transfer
      */
     function _checkTransfer(
         bytes32 _authID,
@@ -617,16 +617,16 @@ contract OrgCode is MultiSig {
         bool[2] _permitted,
         uint8[2] _rating,
         uint16[2] _country,
-        uint32 _tokenCount
+        uint32 _shareCount
     )
         internal
         view
     {
-        require(tokens[msg.sender].set);
+        require(shares[msg.sender].set);
         /* If org is not the authority, check the sender is not restricted */
         if (_authID != ownerID) {
             require(!locked, "Transfers locked: Issuer");
-            require(!tokens[msg.sender].restricted, "Transfers locked: Token");
+            require(!shares[msg.sender].restricted, "Transfers locked: Share");
             require(!accounts[_id[SENDER]].restricted, "Sender restricted: Issuer");
             require(_permitted[SENDER], "Sender restricted: Verifier");
             require(!accounts[_authID].restricted, "Authority restricted");
@@ -649,7 +649,7 @@ contract OrgCode is MultiSig {
                 */
                 if (accounts[_id[RECEIVER]].count == 0) {
                     /* create a bool to prevent repeated comparisons */
-                    bool _check = (_rating[SENDER] == 0 || _tokenCount > 0);
+                    bool _check = (_rating[SENDER] == 0 || _shareCount > 0);
                     /*
                         If the sender is an investor and still retains a balance,
                         a new slot must be available.
@@ -705,7 +705,7 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Transfer tokens through the issuing entity level
+        @notice Transfer shares through the issuing entity level
         @dev only callable through an OrgShare contract
         @param _auth Caller address
         @param _from Sender address
@@ -717,7 +717,7 @@ contract OrgCode is MultiSig {
             Was receiver custodial balance zero?
         @return authority ID, IDs/ratings/countries for sender/receiver
      */
-    function transferTokens(
+    function transferShares(
         address _auth,
         address _from,
         address _to,
@@ -783,13 +783,13 @@ contract OrgCode is MultiSig {
 
     /**
         @notice Affect a direct balance change (burn/mint) at the issuing entity level
-        @dev This can only be called by a token
-        @param _owner Token owner
+        @dev This can only be called by a share contract
+        @param _owner Share owner
         @param _old Old balance
         @param _new New balance
         @return id, rating, and country of the affected investor
      */
-    function modifyTokenTotalSupply(
+    function modifyShareTotalSupply(
         address _owner,
         uint256 _old,
         uint256 _new
@@ -802,8 +802,8 @@ contract OrgCode is MultiSig {
         )
     {
         require(!locked); // dev: global lock
-        require(tokens[msg.sender].set);
-        require(!tokens[msg.sender].restricted); // dev: token locked
+        require(shares[msg.sender].set);
+        require(!shares[msg.sender].restricted); // dev: share locked
         if (_owner == address(this)) {
             _id = ownerID;
         } else {
@@ -875,13 +875,13 @@ contract OrgCode is MultiSig {
 
     /**
         @notice Modify authorized supply
-        @dev Called by a token, requires permission from governance module
+        @dev Called by a share contract, requires permission from governance module
         @param _value New authorized supply value
         @return bool
      */
     function modifyAuthorizedSupply(uint256 _value) external returns (bool) {
-        require(tokens[msg.sender].set);
-        require(!tokens[msg.sender].restricted);
+        require(shares[msg.sender].set);
+        require(!shares[msg.sender].restricted);
         if (address(governance) != 0x00) {
             require(
                 governance.modifyAuthorizedSupply(msg.sender, _value),
@@ -911,7 +911,7 @@ contract OrgCode is MultiSig {
     {
         if (!_checkMultiSig()) return false;
         address _owner = _module.getOwner();
-        require(tokens[_target].set); // dev: unknown target
+        require(shares[_target].set); // dev: unknown target
         require (_owner == _target || _owner == address(this)); // dev: wrong owner
         require(IOrgShareBase(_target).attachModule(_module));
         return true;
@@ -932,7 +932,7 @@ contract OrgCode is MultiSig {
         returns (bool)
     {
         if (!_checkMultiSig()) return false;
-        require(tokens[_target].set); // dev: unknown target
+        require(shares[_target].set); // dev: unknown target
         require(IOrgShareBase(_target).detachModule(_module));
         return true;
     }

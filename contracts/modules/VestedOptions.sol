@@ -8,7 +8,7 @@ import "../interfaces/IOrgShare.sol";
 
 /**
     @title BookShare Vested Options Module
-    @dev attached at token
+    @dev attached at share
  */
 contract VestedOptions is BookShareModuleBase {
 
@@ -102,7 +102,7 @@ contract VestedOptions is BookShareModuleBase {
 
     /**
         @notice constructor
-        @param _token token address
+        @param _share share address
         @param _org org address
         @param _ethPeg initial ethereum peg rate
         @param _expireMonths time for options to expire, in months
@@ -111,7 +111,7 @@ contract VestedOptions is BookShareModuleBase {
         @param _receiver address to send ETH to when options are exercised
      */
     constructor(
-        IBookShare _token,
+        IBookShare _share,
         IOrgCode _org,
         uint32 _ethPeg,
         uint32 _expireMonths,
@@ -119,7 +119,7 @@ contract VestedOptions is BookShareModuleBase {
         address _receiver
     )
         public
-        BookShareModuleBase(_token, _org)
+        BookShareModuleBase(_share, _org)
     {
         require(_expireMonths > 0);
         require(_gracePeriodMonths > 0);
@@ -368,7 +368,7 @@ contract VestedOptions is BookShareModuleBase {
         o.unvested = o.unvested.add(_total);
         t.unvested = t.unvested.add(_total);
         total += _total;
-        require(token.authorizedSupply().sub(token.totalSupply()) >= total); // dev: exceeds authorized
+        require(share.authorizedSupply().sub(share.totalSupply()) >= total); // dev: exceeds authorized
         emit NewOptions( _id, _iso, _price, o.expiryDate, _amount, _monthsToVest);
         return true;
     }
@@ -497,9 +497,9 @@ contract VestedOptions is BookShareModuleBase {
             _removeOptionTotal(_price);
             total -= _amount;
 
-            /* transfer eth, mint tokens */
+            /* transfer eth, mint shares */
             receiver.transfer(address(this).balance);
-            require(token.mint(msg.sender, _amount));
+            require(share.mint(msg.sender, _amount));
             emit ExercisedOptions(_id, _price, _amount);
             return true;
         }
@@ -645,7 +645,7 @@ contract VestedOptions is BookShareModuleBase {
         returns (bool)
     {
         if (_old > _new) {
-            require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions());
+            require(share.authorizedSupply().sub(share.totalSupply()) >= totalOptions());
         }
         return true;
     }

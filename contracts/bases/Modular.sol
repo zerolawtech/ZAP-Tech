@@ -39,7 +39,7 @@ contract Modular {
     }
 
     /**
-        @notice Attach a security token module
+        @notice Attach a module
         @dev Can only be called indirectly from OrgCode.attachModule()
         @param _module Address of the module contract
         @return bool success
@@ -105,7 +105,7 @@ contract Modular {
     /**
         @notice Internal function to iterate and call modules
         @param _sig bytes4 signature to call module with
-        @param _tag bytes2 tag of related token range
+        @param _tag bytes2 tag of related share range
         @param _data calldata to send to module
         @return bool did all called modules return true?
      */
@@ -232,7 +232,7 @@ contract Modular {
     /**
         @notice Check if a module is permitted to access a specific function
         @dev
-            This returns false instead of throwing because an org level 
+            This returns false instead of throwing because an org level
             module must be checked twice
         @param _module Module address
         @param _sig Function signature
@@ -247,7 +247,7 @@ contract Modular {
         returns (bool)
     {
         return (
-            moduleData[_module].active && 
+            moduleData[_module].active &&
             moduleData[_module].permissions[_sig]
         );
     }

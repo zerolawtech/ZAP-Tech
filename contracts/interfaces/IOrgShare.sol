@@ -6,12 +6,12 @@ pragma solidity 0.4.25;
         BookShare and CertShare contracts
  */
 contract IOrgShareBase {
-    event Approval (address indexed tokenOwner, address indexed spender, uint256 tokens);
+    event Approval (address indexed shareOwner, address indexed spender, uint256 value);
     event AuthorizedSupplyChanged (uint256 oldAuthorized, uint256 newAuthorized);
     event ModuleAttached (address module, bytes4[] hooks, bytes4[] permissions);
     event ModuleDetached (address module);
     event ModuleHookSet (address module, bytes4 hook, bool active, bool always);
-    event Transfer (address indexed from, address indexed to, uint256 tokens);
+    event Transfer (address indexed from, address indexed to, uint256 value);
 
     function approve (address _spender, uint256 _value) external returns (bool);
     function attachModule (address _module) external returns (bool);

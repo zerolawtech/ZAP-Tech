@@ -6,7 +6,7 @@ import "./bases/OrgShare.sol";
 import "./interfaces/IOrgCode.sol";
 
 /**
-    @title Security Token
+    @title Fungible "Book Entry" OrgShare Contract
     @dev
         Expands upon the ERC20 token standard
         https://theethereum.wiki/w/index.php/ERC20_Token_Standard
@@ -21,12 +21,11 @@ contract BookShare is OrgShareBase {
     mapping (address => uint256) balances;
 
     /**
-        @notice Security token constructor
-        @dev Initially the total supply is credited to the org
+        @notice BookShare constructor
         @param _org Address of the org's OrgCode contract
-        @param _name Name of the token
+        @param _name Name of the OrgShare class
         @param _symbol Unique ticker symbol
-        @param _authorizedSupply Initial authorized token supply
+        @param _authorizedSupply Initial authorized total supply
      */
     constructor(
         IOrgCode _org,
@@ -116,8 +115,8 @@ contract BookShare is OrgShareBase {
         view
         returns (address[2])
     {
-        require(_value > 0, "Cannot send 0 tokens");
-        /* Issuer tokens are held at the OrgCode contract address */
+        require(_value > 0, "Cannot send 0 shares");
+        /* Issuer shares are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
             _addr[SENDER] = address(org);
         }
@@ -138,7 +137,7 @@ contract BookShare is OrgShareBase {
             require(balances[_addr[SENDER]] >= _value, "Insufficient Balance");
         }
 
-        /* bytes4 signature for token module checkTransfer() */
+        /* bytes4 signature for share module checkTransfer() */
         require(_callModules(
             0x70aaf928,
             0x00,
@@ -162,11 +161,11 @@ contract BookShare is OrgShareBase {
     /**
         @notice ERC-20 transferFrom standard
         @dev
-            * The org may use this function to transfer tokens belonging to
+            * The org may use this function to transfer shares belonging to
               any address.
-            * Modules may call this function to transfer tokens with the same
+            * Modules may call this function to transfer shares with the same
               level of authority as the org.
-            * An investor with multiple addresses may use this to transfer tokens
+            * An investor with multiple addresses may use this to transfer shares
               from any address he controls, without giving prior approval to that
               address.
             * An unregistered address cannot initiate a transfer, even if it was
@@ -214,7 +213,7 @@ contract BookShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferTokens(
+        ) = org.transferShares(
             _auth,
             _addr[SENDER],
             _addr[RECEIVER],
@@ -275,7 +274,7 @@ contract BookShare is OrgShareBase {
             require(IBaseCustodian(_addr[RECEIVER]).receiveTransfer(_addr[SENDER], _value));
         }
 
-        /* bytes4 signature for token module transferTokens() */
+        /* bytes4 signature for share module transferShares() */
         require(_callModules(
             0x35a341da,
             0x00,
@@ -288,7 +287,7 @@ contract BookShare is OrgShareBase {
         @notice Custodian transfer function
         @dev
             called by Custodian.transferInternal to change ownership within
-            the custodian contract without moving any tokens
+            the custodian contract without moving any shares
         @param _addr Sender/Receiver addresses
         @param _value Amount to transfer
         @return bool
@@ -301,7 +300,7 @@ contract BookShare is OrgShareBase {
         returns (bool)
     {
         /*
-            transfer is presented to org.transferTokens as a normal one so
+            transfer is presented to org.transferShares as a normal one so
             zero[2:] can be set to false. set here to prevent stack depth error.
         */
         bool[4] memory _zero = [
@@ -315,7 +314,7 @@ contract BookShare is OrgShareBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = org.transferTokens(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = org.transferShares(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
 
         _addr = _checkTransfer(
             _authID,
@@ -332,7 +331,7 @@ contract BookShare is OrgShareBase {
         custBalances[_addr[RECEIVER]][msg.sender] = (
             custBalances[_addr[RECEIVER]][msg.sender].add(_value)
         );
-        /* bytes4 signature for token module transferTokensCustodian() */
+        /* bytes4 signature for share module transferSharesCustodian() */
         require(_callModules(
             0x8b5f1240,
             0x00,
@@ -342,10 +341,10 @@ contract BookShare is OrgShareBase {
     }
 
     /**
-        @notice Mint new tokens and increase total supply
+        @notice Mint new shares and increase total supply
         @dev Callable by the org or via module
-        @param _owner Owner of the tokens
-        @param _value Number of tokens to mint
+        @param _owner Owner of the shares
+        @param _value Number of shares to mint
         @return bool
      */
     function mint(address _owner, uint256 _value) external returns (bool) {
@@ -367,10 +366,10 @@ contract BookShare is OrgShareBase {
     }
 
     /**
-        @notice Burn tokens and decrease total supply
+        @notice Burn shares and decrease total supply
         @dev Callable by the org or via module
-        @param _owner Owner of the tokens
-        @param _value Number of tokens to burn
+        @param _owner Owner of the shares
+        @param _value Number of shares to burn
         @return bool
      */
     function burn(address _owner, uint256 _value) external returns (bool) {

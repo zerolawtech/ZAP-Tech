@@ -53,10 +53,10 @@ contract GovernanceModule {
         uint16 quorumPct;
         uint256 totalVotes;
         uint256[2] counts;
-        Token[] tokens;
+        Share[] shares;
     }
 
-    struct Token {
+    struct Share {
         address addr;
         uint16 multiplier;
     }
@@ -76,7 +76,7 @@ contract GovernanceModule {
         uint256 voteIndex,
         uint16 requiredPct,
         uint16 quorumPct,
-        address[] tokens,
+        address[] shares,
         uint16[] multipliers
     );
 
@@ -221,7 +221,7 @@ contract GovernanceModule {
         @param _id Proposal ID
         @param _requiredPct Required % for vote to pass, as int * 100
         @param _requiredPct Quorum % (leave as 0 for no quorum requirement)
-        @param _tokens Array of token contract addresses
+        @param _shares Array of share contract addresses
         @param _multipliers Array of vote multipliers
         @return bool success
      */
@@ -229,7 +229,7 @@ contract GovernanceModule {
         bytes32 _id,
         uint16 _requiredPct,
         uint16 _quorumPct,
-        address[] _tokens,
+        address[] _shares,
         uint16[] _multipliers
     )
         external
@@ -238,32 +238,32 @@ contract GovernanceModule {
         if (!_checkPermitted()) return false;
         Proposal storage p = proposals[_id];
         require(p.state == 1); // dev: wrong state
-        require(_tokens.length > 0); // dev: empty token array
-        require(_tokens.length == _multipliers.length); // dev: array length mismatch
+        require(_shares.length > 0); // dev: empty share array
+        require(_shares.length == _multipliers.length); // dev: array length mismatch
         require(_requiredPct <= 10000); // dev: required pct too high
         require(_quorumPct <= 10000); // dev: quorum pct too high
         p.votes.length += 1;
         Vote storage v = p.votes[p.votes.length-1];
         v.requiredPct = _requiredPct;
         v.quorumPct = _quorumPct;
-        v.tokens.length = _tokens.length;
-        for (uint256 i; i < _tokens.length; i++) {
-            for (uint256 x = i + 1; x < _tokens.length; x++) {
-                require(_tokens[x] != _tokens[i]); // dev: token repeat
+        v.shares.length = _shares.length;
+        for (uint256 i; i < _shares.length; i++) {
+            for (uint256 x = i + 1; x < _shares.length; x++) {
+                require(_shares[x] != _shares[i]); // dev: share repeat
             }
             /**
                 checkpoint must exist when the vote is declared
                 possible TODO - allow this contract to create the checkpoint
              */
-            require(checkpoint.checkpointExists(_tokens[i], p.checkpoint)); // dev: no checkpoint
-            v.tokens[i] = Token(_tokens[i], _multipliers[i]);
+            require(checkpoint.checkpointExists(_shares[i], p.checkpoint)); // dev: no checkpoint
+            v.shares[i] = Share(_shares[i], _multipliers[i]);
         }
         emit NewVote(
             _id,
             p.votes.length - 1,
             _requiredPct,
             _quorumPct,
-            _tokens,
+            _shares,
             _multipliers
         );
         return true;
@@ -286,7 +286,7 @@ contract GovernanceModule {
         p.hasVoted[msg.sender][0x00] = _vote + 1;
         for (uint256 i; i < p.votes.length; i++) {
             p.votes[i].counts[_vote] = p.votes[i].counts[_vote].add(_getVotes(
-                p.votes[i].tokens,
+                p.votes[i].shares,
                 p.checkpoint
             ));
         }
@@ -295,7 +295,7 @@ contract GovernanceModule {
     }
 
     /**
-        @notice Cast a vote on a proposal with custodied tokens
+        @notice Cast a vote on a proposal with custodied shares
         @dev voteForProposal must be called before this method, to log the vote
         @param _id Proposal ID
         @param _custodian Custodian contract address
@@ -317,7 +317,7 @@ contract GovernanceModule {
         p.hasVoted[msg.sender][_custodian] = _vote + 1;
         for (uint256 i; i < p.votes.length; i++) {
             p.votes[i].counts[_vote] += _getCustodianVotes(
-                p.votes[i].tokens,
+                p.votes[i].shares,
                 _custodian,
                 p.checkpoint
             );
@@ -364,7 +364,7 @@ contract GovernanceModule {
         p.state = 2;
         for (uint256 i; i < p.votes.length; i++) {
             p.votes[i].totalVotes = _getTotalVotes(
-                p.votes[i].tokens,
+                p.votes[i].shares,
                 p.checkpoint
             );
         }
@@ -376,12 +376,12 @@ contract GovernanceModule {
             TODO - This method and the following two can be combined to a single
             one using .call() with solidity 0.5.x - but first brownie needs to
             support multiple compiler versions on a project
-        @param t Storage marker for Token struct
+        @param t Storage marker for Share struct
         @param _time Checkpoint time
         @return uint256 total possible votes
      */
     function _getTotalVotes(
-        Token[] storage t,
+        Share[] storage t,
         uint256 _time
     )
         internal
@@ -398,12 +398,12 @@ contract GovernanceModule {
 
     /**
         @notice Internal - calculate total votes for an investor
-        @param t Storage marker for Token struct
+        @param t Storage marker for Share struct
         @param _time Checkpoint time
         @return uint256 total votes
      */
     function _getVotes(
-        Token[] storage t,
+        Share[] storage t,
         uint256 _time
     )
         internal
@@ -419,13 +419,13 @@ contract GovernanceModule {
 
     /**
         @notice Internal - calculate total votes for an investor via custodian
-        @param t Storage marker for Token struct
+        @param t Storage marker for Share struct
         @param _cust Custodian contract address
         @param _time Checkpoint time
         @return uint256 total custodied votes
      */
     function _getCustodianVotes(
-        Token[] storage t,
+        Share[] storage t,
         address _cust,
         uint256 _time
     )
@@ -483,11 +483,11 @@ contract GovernanceModule {
     }
 
     /**
-        @notice Approval to attach a new token contract
-        @dev Called by OrgCode.addToken
+        @notice Approval to attach a new share contract
+        @dev Called by OrgCode.addOrgShare
         @return permission boolean
      */
-    function addToken(address) external returns (bool) {
+    function addOrgShare(address) external returns (bool) {
         _checkApproval();
         return true;
     }

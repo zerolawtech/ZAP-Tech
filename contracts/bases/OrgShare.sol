@@ -34,25 +34,24 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
     uint256 public totalSupply;
     uint256 public authorizedSupply;
 
-    /* token holder, custodian contract */
+    /* shareholder => custodian contract */
     mapping (address => mapping (address => uint256)) custBalances;
     mapping (address => mapping (address => uint256)) allowed;
 
-    event Transfer(address indexed from, address indexed to, uint256 tokens);
+    event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
-        address indexed tokenOwner,
+        address indexed shareOwner,
         address indexed spender,
-        uint256 tokens
+        uint256 value
     );
     event AuthorizedSupplyChanged(uint256 oldAuthorized, uint256 newAuthorized);
 
     /**
-        @notice Security token constructor
-        @dev Initially the total supply is credited to the org
+        @notice OrgShare constructor
         @param _org Address of the org's OrgCode contract
-        @param _name Name of the token
+        @param _name Name of the OrgShare
         @param _symbol Unique ticker symbol
-        @param _authorizedSupply Initial authorized token supply
+        @param _authorizedSupply Initial authorized total supply
      */
     constructor(
         IOrgCode _org,
@@ -105,8 +104,8 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
 
     /**
         @notice Fetch the allowance
-        @param _owner Owner of the tokens
-        @param _spender Spender of the tokens
+        @param _owner Owner of the shares
+        @param _spender Spender of the shares
         @return integer
      */
     function allowance(
@@ -192,7 +191,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
         @dev
             Approval may be given to addresses that are not registered,
             but the address will not be able to call transferFrom()
-        @param _spender Address being approved to transfer tokens
+        @param _spender Address being approved to transfer shares
         @param _value Amount approved for transfer
         @return bool success
      */
@@ -222,7 +221,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
 
     /**
         @notice Internal shared logic for minting and burning
-        @param _owner Owner of the tokens
+        @param _owner Owner of the shares
         @param _old Previous balance
         @return bool success
      */
@@ -238,8 +237,8 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
             bytes32 _id,
             uint8 _rating,
             uint16 _country
-        ) = org.modifyTokenTotalSupply(_owner, _old, _new);
-        /* bytes4 signature for token module totalSupplyChanged() */
+        ) = org.modifyShareTotalSupply(_owner, _old, _new);
+        /* bytes4 signature for share module totalSupplyChanged() */
         require(_callModules(
             0x741b5078,
             0x00,
@@ -249,7 +248,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
     }
 
     /**
-        @notice Attach a security token module
+        @notice Attach a module
         @dev Can only be called indirectly from OrgCode.attachModule()
         @param _module Address of the module contract
         @return bool success
@@ -261,7 +260,7 @@ contract OrgShareBase is OrgShareBaseABC, Modular {
     }
 
     /**
-        @notice Detach a security token module
+        @notice Detach a module
         @dev
             Called indirectly from OrgCode.attachModule() or by the
             module that is attached.

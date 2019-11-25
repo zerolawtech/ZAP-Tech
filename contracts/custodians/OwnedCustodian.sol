@@ -8,18 +8,18 @@ import "../interfaces/IOrgShare.sol";
 /** @title Owned Custodian Contract */
 contract OwnedCustodian is Modular, MultiSig {
 
-    event ReceivedTokens(
-        address indexed token,
+    event ReceivedShares(
+        address indexed share,
         address indexed from,
         uint256 amount
     );
-    event SentTokens(
-        address indexed token,
+    event SentShares(
+        address indexed share,
         address indexed to,
         uint256 amount
     );
     event TransferOwnership(
-        address indexed token,
+        address indexed share,
         address indexed from,
         address indexed to,
         uint256 value
@@ -41,33 +41,33 @@ contract OwnedCustodian is Modular, MultiSig {
     }
 
     /**
-        @notice Fetch an investor's current token balance held by the custodian
-        @param _token address of the OrgShare contract
+        @notice Fetch an investor's current share balance held by the custodian
+        @param _share address of the OrgShare contract
         @param _owner investor address
         @return integer
      */
     function balanceOf(
-        IOrgShareBase _token,
+        IOrgShareBase _share,
         address _owner
     )
         external
         view
         returns (uint256)
     {
-        return _token.custodianBalanceOf(address(this), _owner);
+        return _share.custodianBalanceOf(address(this), _owner);
     }
 
 
     /**
         @notice View function to check if an internal transfer is possible
-        @param _token Address of the token to transfer
+        @param _share Address of the share to transfer
         @param _from Sender address
         @param _to Recipient address
-        @param _value Amount of tokens to transfer
+        @param _value Amount of shares to transfer
         @return bool success
      */
     function checkCustodianTransfer(
-        IOrgShareBase _token,
+        IOrgShareBase _share,
         address _from,
         address _to,
         uint256 _value
@@ -76,19 +76,19 @@ contract OwnedCustodian is Modular, MultiSig {
         view
         returns (bool)
     {
-        return _token.checkTransferCustodian(address(this), _from, _to, _value);
+        return _share.checkTransferCustodian(address(this), _from, _to, _value);
     }
 
     /**
-        @notice Transfers tokens out of the custodian contract
+        @notice Transfers shares out of the custodian contract
         @dev callable by custodian authorities and modules
-        @param _token Address of the token to transfer
+        @param _share Address of the share to transfer
         @param _to Address of the recipient
         @param _value Amount to transfer
         @return bool success
      */
     function transfer(
-        IOrgShareBase _token,
+        IOrgShareBase _share,
         address _to,
         uint256 _value
     )
@@ -102,20 +102,20 @@ contract OwnedCustodian is Modular, MultiSig {
         ) {
             return false;
         }
-        require(_token.transfer(_to, _value));
-        /* bytes4 signature for custodian module sentTokens() */
+        require(_share.transfer(_to, _value));
+        /* bytes4 signature for custodian module sentShares() */
         require(_callModules(
             0xb4684410,
             0x00,
-            abi.encode(_token, _to, _value)
+            abi.encode(_share, _to, _value)
         ));
-        emit SentTokens(_token, _to, _value);
+        emit SentShares(_share, _to, _value);
         return true;
     }
 
     /**
-        @notice Add a new token owner
-        @dev called by OrgCode when tokens are transferred to a custodian
+        @notice Add a new share owner
+        @dev called by OrgCode when shares are transferred to a custodian
         @param _from Investor address
         @param _value Amount transferred
         @return bool success
@@ -128,27 +128,27 @@ contract OwnedCustodian is Modular, MultiSig {
         returns (bool)
     {
 
-        /* bytes4 signature for custodian module receivedTokens() */
+        /* bytes4 signature for custodian module receivedShares() */
         require(_callModules(
             0xb15bcbc4,
             0x00,
             abi.encode(msg.sender, _from, _value)
         ));
-        emit ReceivedTokens(msg.sender, _from, _value);
+        emit ReceivedShares(msg.sender, _from, _value);
         return true;
     }
 
     /**
-        @notice Transfer token ownership within the custodian
+        @notice Transfer share ownership within the custodian
         @dev Callable by custodian authorities and modules
-        @param _token Address of the token to transfer
+        @param _share Address of the share to transfer
         @param _from Sender address
         @param _to Recipient address
-        @param _value Amount of tokens to transfer
+        @param _value Amount of shares to transfer
         @return bool success
      */
     function transferInternal(
-        IOrgShareBase _token,
+        IOrgShareBase _share,
         address _from,
         address _to,
         uint256 _value
@@ -163,14 +163,14 @@ contract OwnedCustodian is Modular, MultiSig {
         ) {
             return false;
         }
-        _token.transferCustodian([_from, _to], _value);
+        _share.transferCustodian([_from, _to], _value);
         /* bytes4 signature for custodian module internalTransfer() */
         require(_callModules(
             0x44a29e2a,
             0x00,
-            abi.encode(_token, _from, _to, _value)
+            abi.encode(_share, _from, _to, _value)
         ));
-        emit TransferOwnership(_token, _from, _to, _value);
+        emit TransferOwnership(_share, _from, _to, _value);
         return true;
     }
 

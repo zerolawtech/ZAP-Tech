@@ -26,23 +26,23 @@ interface IBaseModule {
 
 /**
     @notice BookShare module interface
-    @dev These are all the possible hook point methods for token modules
+    @dev These are all the possible hook point methods for share modules
 */
 contract IBookShareModule is IBaseModule {
 
-    function token() external returns (address);
+    function share() external returns (address);
 
     /**
         @notice Check if a transfer is possible
         @dev
-            Called before a token transfer to check if it is permitted
+            Called before a share transfer to check if it is permitted
             Hook signature: 0x70aaf928
         @param _addr sender and receiver addresses
         @param _authID id hash of caller
         @param _id sender and receiver id hashes
         @param _rating sender and receiver investor ratings
         @param _country sender and receiver country codes
-        @param _value amount of tokens to be transfered
+        @param _value amount of shares to be transfered
         @return bool success
      */
     function checkTransfer(
@@ -58,18 +58,18 @@ contract IBookShareModule is IBaseModule {
         returns (bool);
 
     /**
-        @notice Token transfer
+        @notice Share transfer
         @dev
-            Called a token transfer has completed
+            Called a share transfer has completed
             Hook signature: 0x35a341da
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
         @param _rating sender and receiver investor ratings
         @param _country sender and receiver country codes
-        @param _value amount of tokens to be transfered
+        @param _value amount of shares to be transfered
         @return bool success
      */
-    function transferTokens(
+    function transferShares(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
@@ -80,19 +80,19 @@ contract IBookShareModule is IBaseModule {
         returns (bool);
 
     /**
-        @notice Token custodial internal transfer
+        @notice Share custodial internal transfer
         @dev
-            Called a custodian internal token transfer has completed
+            Called a custodian internal share transfer has completed
             Hook signature: 0x8b5f1240
         @param _custodian custodian address
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
         @param _rating sender and receiver investor ratings
         @param _country sender and receiver country codes
-        @param _value amount of tokens to be transfered
+        @param _value amount of shares to be transfered
         @return bool success
      */
-    function transferTokensCustodian(
+    function transferSharesCustodian(
         address _custodian,
         address[2] _addr,
         bytes32[2] _id,
@@ -112,8 +112,8 @@ contract IBookShareModule is IBaseModule {
         @param _id ID that the address is associated to
         @param _rating Investor rating
         @param _country Investor country code
-        @param _old Previous token balance at the address
-        @param _new New token balance at the address
+        @param _old Previous share balance at the address
+        @param _new New share balance at the address
         @return bool success
      */
     function totalSupplyChanged(
@@ -139,7 +139,7 @@ contract ICertShareModule is IBookShareModule {
     /**
         @notice Check if a transfer is possible
         @dev
-            Called before a token transfer to check if it is permitted
+            Called before a share transfer to check if it is permitted
             Hook signature: 0x70aaf928
         @param _addr sender and receiver addresses
         @param _authID id hash of caller
@@ -162,9 +162,9 @@ contract ICertShareModule is IBookShareModule {
         returns (bool);
 
     /**
-        @notice Token range transfer
+        @notice Share range transfer
         @dev
-            Called a range of tokens has been transferred
+            Called a range of shares has been transferred
             Hook signature: 0xead529f5 (taggable)
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
@@ -173,7 +173,7 @@ contract ICertShareModule is IBookShareModule {
         @param _range start and stop index of transferred range
         @return bool success
      */
-    function transferTokenRange(
+    function transferShareRange(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
@@ -192,17 +192,17 @@ contract ICertShareModule is IBookShareModule {
 contract ICustodianModule is IBaseModule {
 
     /**
-        @notice Custodian sent tokens
+        @notice Custodian sent shares
         @dev
-            Called after a successful token transfer from the custodian.
+            Called after a successful share transfer from the custodian.
             Hook signature: 0xb4684410
-        @param _token Token address
+        @param _share Share address
         @param _to Recipient address
-        @param _value Amount of tokens transfered
+        @param _value Amount of shares transfered
         @return bool success
      */
-    function sentTokens(
-        address _token,
+    function sentShares(
+        address _share,
         address _to,
         uint256 _value
     )
@@ -210,17 +210,17 @@ contract ICustodianModule is IBaseModule {
         returns (bool);
 
     /**
-        @notice Custodian received tokens
+        @notice Custodian received shares
         @dev
-            Called after a successful token transfer to the custodian.
+            Called after a successful share transfer to the custodian.
             Hook signature: 0xb15bcbc4
-        @param _token Token address
+        @param _share Share address
         @param _from Sender address
-        @param _value Amount of tokens transfered
+        @param _value Amount of shares transfered
         @return bool success
      */
-    function receivedTokens(
-        address _token,
+    function receivedShares(
+        address _share,
         address _from,
         uint256 _value
     )
@@ -228,17 +228,17 @@ contract ICustodianModule is IBaseModule {
         returns (bool);
 
     /**
-        @notice Custodian internal token transfer
+        @notice Custodian internal share transfer
         @dev
-            Called after a successful internal token transfer by the custodian
+            Called after a successful internal share transfer by the custodian
             Hook signature: 0x44a29e2a
-        @param _token Token address
+        @param _share Share address
         @param _from Sender address
-        @param _value Amount of tokens transfered
+        @param _value Amount of shares transfered
         @return bool success
      */
     function internalTransfer(
-        address _token,
+        address _share,
         address _from,
         address _to,
         uint256 _value

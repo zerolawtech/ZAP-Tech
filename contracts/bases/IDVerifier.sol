@@ -110,7 +110,7 @@ contract IDVerifierBase is IDVerifierBaseABC {
     /**
         @notice Fetch investor information using an address
         @dev
-            This call increases gas efficiency around token transfers
+            This call increases gas efficiency around share transfers
             by minimizing the amount of calls to the verifier
         @param _addr Address to query
         @return bytes32 investor ID
@@ -139,7 +139,7 @@ contract IDVerifierBase is IDVerifierBaseABC {
     /**
         @notice Use addresses to fetch information on 2 investors
         @dev
-            This call is increases gas efficiency around token transfers
+            This call is increases gas efficiency around share transfers
             by minimizing the amount of calls to the verifier.
         @param _from first address to query
         @param _to second address to query

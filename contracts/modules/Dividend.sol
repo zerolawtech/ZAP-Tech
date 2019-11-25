@@ -8,7 +8,7 @@ import "../interfaces/IOrgShare.sol";
 
 /**
     @title Ether Dividend Payment Module
-    @dev attached at token
+    @dev attached at OrgShare
  */
 contract DividendModule is CheckpointModuleBase {
 
@@ -32,16 +32,16 @@ contract DividendModule is CheckpointModuleBase {
 
     /**
         @notice Base constructor
-        @param _token OrgShare contract address
+        @param _share OrgShare contract address
         @param _org OrgCode contract address
         @param _checkpointTime Epoch time of balance checkpoint
      */
     constructor(
-        IOrgShareBase _token,
+        IOrgShareBase _share,
         IOrgCode _org,
         uint256 _checkpointTime
     )
-        CheckpointModuleBase(_token, _org, _checkpointTime)
+        CheckpointModuleBase(_share, _org, _checkpointTime)
         public
     {
         return;
@@ -61,7 +61,7 @@ contract DividendModule is CheckpointModuleBase {
         require (address(this).balance > 0);
         claimExpiration = now.add(_claimPeriod);
         dividendAmount = address(this).balance;
-        totalSupply = totalSupply.sub(_getBalance(token.org()));
+        totalSupply = totalSupply.sub(_getBalance(share.org()));
         emit DividendIssued(now, msg.value);
         return true;
     }
@@ -176,7 +176,7 @@ contract DividendModule is CheckpointModuleBase {
         if (!_onlyAuthority()) return false;
         emit DividendExpired(address(this).balance);
         msg.sender.transfer(address(this).balance);
-        require (token.detachModule(address(this)));
+        require (share.detachModule(address(this)));
         return true;
     }
 

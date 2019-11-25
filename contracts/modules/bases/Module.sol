@@ -58,36 +58,36 @@ contract ModuleBase is ModuleBaseABC {
  */
 contract OrgShareModuleBase is ModuleBase {
 
-    IOrgShareBase token;
+    IOrgShareBase share;
     IOrgCode public org;
 
     /**
         @notice Base constructor
-        @param _token OrgShare contract address
+        @param _share OrgShare contract address
         @param _org OrgCode contract address
      */
     constructor(
-        IOrgShareBase _token,
+        IOrgShareBase _share,
         IOrgCode _org
     )
         public
         ModuleBase(_org)
     {
         org = _org;
-        token = _token;
+        share = _share;
     }
 
-    /** @dev Check that call originates from parent token contract */
-    function _onlyToken() internal view {
-        require(msg.sender == address(token));
+    /** @dev Check that call originates from parent share contract */
+    function _onlyShare() internal view {
+        require(msg.sender == address(share));
     }
 
     /**
-        @notice Fetch address of token that module is active on
-        @return Token address
+        @notice Fetch address of share that module is active on
+        @return Share address
     */
     function getOwner() public view returns (address) {
-        return address(token);
+        return address(share);
     }
 
 }
@@ -98,21 +98,21 @@ contract OrgShareModuleBase is ModuleBase {
  */
 contract BookShareModuleBase is OrgShareModuleBase {
 
-    IBookShare public token;
+    IBookShare public share;
 
     /**
         @notice Base constructor
-        @param _token BookShare contract address
+        @param _share BookShare contract address
         @param _org OrgCode contract address
      */
     constructor(
-        IBookShare _token,
+        IBookShare _share,
         IOrgCode _org
     )
         public
-        OrgShareModuleBase(_token, _org)
+        OrgShareModuleBase(_share, _org)
     {
-        token = _token;
+        share = _share;
     }
 
 }
@@ -124,21 +124,21 @@ contract BookShareModuleBase is OrgShareModuleBase {
  */
 contract CertShareModuleBase is OrgShareModuleBase {
 
-    ICertShare public token;
+    ICertShare public share;
 
     /**
         @notice Base constructor
-        @param _token CertShare contract address
+        @param _share CertShare contract address
         @param _org OrgCode contract address
      */
     constructor(
-        ICertShare _token,
+        ICertShare _share,
         IOrgCode _org
     )
         public
-        OrgShareModuleBase(_token, _org)
+        OrgShareModuleBase(_share, _org)
     {
-        token = _token;
+        share = _share;
     }
 
 }
@@ -156,10 +156,10 @@ contract IssuerModuleBase is ModuleBase {
         org = IOrgCode(_org);
     }
 
-    /** @dev Check that call originates from token contract */
-    function _onlyToken() internal {
+    /** @dev Check that call originates from share contract */
+    function _onlyShare() internal {
         if (!parents[msg.sender]) {
-            parents[msg.sender] = org.isActiveToken(msg.sender);
+            parents[msg.sender] = org.isActiveOrgShare(msg.sender);
         }
         require (parents[msg.sender]);
     }

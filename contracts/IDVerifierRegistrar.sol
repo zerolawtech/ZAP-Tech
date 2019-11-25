@@ -411,8 +411,7 @@ contract IDVerifierRegistrar is IDVerifierBase {
         @dev
             Address associations can only be restricted, never fully removed.
             If an association were removed it would then be possible to attach
-            the address to another ID which could allow for non-compliant token
-            transfers.
+            the address to another ID which could allow for non-compliant transfers.
         @param _id Entity ID
         @param _addr Array of addresses
         @return bool success

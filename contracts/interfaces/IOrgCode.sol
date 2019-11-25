@@ -17,20 +17,20 @@ interface IOrgCode {
      event RemovedAuthorityAddresses (bytes32 indexed id, address[] removed, uint32 ownerCount);
      event RemovedAuthorityPermissions (bytes32 indexed id, bytes4[] signatures);
      event ThresholdSet (bytes32 indexed id, uint32 threshold);
-     event TokenAdded (address indexed token);
-     event TokenRestriction (address indexed token, bool restricted);
+     event ShareAdded (address indexed share);
+     event ShareRestriction (address indexed share, bool restricted);
      event VerifierSet (address indexed verifier, bool restricted);
 
      function addAuthority (address[] _addr, bytes4[] _signatures, uint32 _approvedUntil, uint32 _threshold) external returns (bool);
      function addAuthorityAddresses (bytes32 _authID, address[] _addr) external returns (bool);
      function addCustodian (address _custodian) external returns (bool);
-     function addToken (address _token) external returns (bool);
+     function addOrgShare (address _share) external returns (bool);
      function attachModule (address _target, address _module) external returns (bool);
      function checkMultiSigExternal (address _caller, bytes32 _callHash, bytes4 _sig) external returns (bool);
      function checkTransfer (address _auth, address _from, address _to, bool _zero) external returns (bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country);
      function detachModule (address _target, address _module) external returns (bool);
      function modifyAuthorizedSupply (uint256 _value) external returns (bool);
-     function modifyTokenTotalSupply (address _owner, uint256 _old, uint256 _new) external returns (bytes32 _id, uint8 _rating, uint16 _country);
+     function modifyShareTotalSupply (address _owner, uint256 _old, uint256 _new) external returns (bytes32 _id, uint8 _rating, uint16 _country);
      function removeAuthorityAddresses (bytes32 _authID, address[] _addr) external returns (bool);
      function setAuthorityApprovedUntil (bytes32 _authID, uint32 _approvedUntil) external returns (bool);
      function setAuthoritySignatures (bytes32 _authID, bytes4[] _signatures, bool _permitted) external returns (bool);
@@ -42,9 +42,9 @@ interface IOrgCode {
      function setGlobalRestriction (bool _restricted) external returns (bool);
      function setGovernance (address _governance) external returns (bool);
      function setInvestorLimits (uint32[8] _limits) external returns (bool);
-     function setTokenRestriction (address _token, bool _restricted) external returns (bool);
+     function setOrgShareRestriction (address _share, bool _restricted) external returns (bool);
      function setVerifier (address _verifier, bool _restricted) external returns (bool);
-     function transferTokens (address _auth, address _from, address _to, bool[4] _zero) external returns (bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country);
+     function transferShares (address _auth, address _from, address _to, bool[4] _zero) external returns (bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country);
      function getAuthority (bytes32 _authID) external view returns (uint32 _addressCount, uint32 _threshold, uint32 _approvedUntil);
      function getCountry (uint16 _country) external view returns (uint32 _minRating, uint32[8] _count, uint32[8] _limit);
      function getDocumentHash (string _documentID) external view returns (bytes32);
@@ -52,7 +52,7 @@ interface IOrgCode {
      function getInvestorCounts () external view returns (uint32[8] _counts, uint32[8] _limits);
      function getInvestorVerifier (bytes32 _id) external view returns (address);
      function governance () external view returns (address);
-     function isActiveToken (address _token) external view returns (bool);
+     function isActiveOrgShare (address _share) external view returns (bool);
      function isApprovedAuthority (address _addr, bytes4 _sig) external view returns (bool);
      function isAuthority (address _addr) external view returns (bool);
      function isAuthorityID (bytes32 _authID) external view returns (bool);

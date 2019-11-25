@@ -13,8 +13,8 @@ All solidity contract sources are inside this folder or one of its subfolders.
 
 ## Contracts
 
-* `OrgCode.sol`: Central contract that ties together tokens, verifiers, and custodians.
-* `BookShare.sol`: Token contract derived from ERC-20 standard. Represents fungible, book-entry style shares.
-* `CertShare.sol`: Token contract derived from ERC-20 standard. Represents non-fungible certificated shares.
+* `OrgCode.sol`: Central contract that ties together shares, verifiers, and custodians.
+* `BookShare.sol`: Share contract derived from ERC-20 standard. Represents fungible, book-entry style shares.
+* `CertShare.sol`: Share contract derived from ERC-20 standard. Represents non-fungible certificated shares.
 * `IDVerifierOrg.sol`: Streamlined verifier contract for use by a single org.
 * `IDVerifierRegistrar.sol`: Verifier contract that may be shared across many orgs.

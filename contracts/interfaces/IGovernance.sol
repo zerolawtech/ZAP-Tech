@@ -10,6 +10,6 @@ interface IGovernance {
     function org() external view returns (address);
 
     function modifyAuthorizedSupply(address, uint256) external returns (bool);
-    function addToken(address _token) external returns (bool);
+    function addOrgShare(address _share) external returns (bool);
 
 }

@@ -1,7 +1,7 @@
 pragma solidity 0.4.25;
 
 import "./Modular.sol";
-import "../IssuingEntity.sol";
+import "../OrgCode.sol";
 import "../interfaces/IBaseCustodian.sol";
 
 /**
@@ -13,7 +13,7 @@ import "../interfaces/IBaseCustodian.sol";
 contract TokenBase is Modular {
 
     bytes32 public ownerID;
-    IssuingEntity public issuer;
+    OrgCode public org;
 
     /* Assets cannot be fractionalized */
     uint8 public constant decimals = 0;
@@ -36,22 +36,22 @@ contract TokenBase is Modular {
 
     /**
         @notice Security token constructor
-        @dev Initially the total supply is credited to the issuer
-        @param _issuer Address of the issuer's IssuingEntity contract
+        @dev Initially the total supply is credited to the org
+        @param _org Address of the org's OrgCode contract
         @param _name Name of the token
         @param _symbol Unique ticker symbol
         @param _authorizedSupply Initial authorized token supply
      */
     constructor(
-        IssuingEntity _issuer,
+        OrgCode _org,
         string _name,
         string _symbol,
         uint256 _authorizedSupply
     )
         public
     {
-        issuer = _issuer;
-        ownerID = _issuer.ownerID();
+        org = _org;
+        ownerID = _org.ownerID();
         name = _name;
         symbol = _symbol;
         authorizedSupply = _authorizedSupply;
@@ -59,19 +59,19 @@ contract TokenBase is Modular {
 
     /**
         @notice Fetch circulating supply
-        @dev Circulating supply = total supply - amount retained by issuer
+        @dev Circulating supply = total supply - amount retained by org
         @return integer
      */
     function circulatingSupply() external view returns (uint256) {
-        return totalSupply - balanceOf(address(issuer));
+        return totalSupply - balanceOf(address(org));
     }
 
     /**
-        @notice Fetch the amount retained by issuer
+        @notice Fetch the amount retained by org
         @return integer
      */
     function treasurySupply() external view returns (uint256) {
-        return balanceOf(address(issuer));
+        return balanceOf(address(org));
     }
 
     /**
@@ -199,7 +199,7 @@ contract TokenBase is Modular {
 
     /**
         @notice Modify authorized Supply
-        @dev Callable by issuer or via module
+        @dev Callable by org or via module
         @param _value New authorized supply value
         @return bool
      */
@@ -207,7 +207,7 @@ contract TokenBase is Modular {
         /* msg.sig = 0xc39f42ed */
         if (!_checkPermitted()) return false;
         require(_value >= totalSupply); // dev: auth below total
-        require(issuer.modifyAuthorizedSupply(_value));
+        require(org.modifyAuthorizedSupply(_value));
         emit AuthorizedSupplyChanged(authorizedSupply, _value);
         authorizedSupply = _value;
         return true;
@@ -231,7 +231,7 @@ contract TokenBase is Modular {
             bytes32 _id,
             uint8 _rating,
             uint16 _country
-        ) = issuer.modifyTokenTotalSupply(_owner, _old, _new);
+        ) = org.modifyTokenTotalSupply(_owner, _old, _new);
         /* bytes4 signature for token module totalSupplyChanged() */
         require(_callModules(
             0x741b5078,
@@ -243,12 +243,12 @@ contract TokenBase is Modular {
 
     /**
         @notice Attach a security token module
-        @dev Can only be called indirectly from IssuingEntity.attachModule()
+        @dev Can only be called indirectly from OrgCode.attachModule()
         @param _module Address of the module contract
         @return bool success
      */
     function attachModule(address _module) external returns (bool) {
-        require(msg.sender == address(issuer)); // dev: only issuer
+        require(msg.sender == address(org)); // dev: only org
         _attachModule(_module);
         return true;
     }
@@ -256,14 +256,14 @@ contract TokenBase is Modular {
     /**
         @notice Detach a security token module
         @dev
-            Called indirectly from IssuingEntity.attachModule() or by the
+            Called indirectly from OrgCode.attachModule() or by the
             module that is attached.
         @param _module Address of the module contract
         @return bool success
      */
     function detachModule(address _module) external returns (bool) {
         if (_module != msg.sender) {
-            require(msg.sender == address(issuer)); // dev: only issuer
+            require(msg.sender == address(org)); // dev: only org
         } else {
             /* msg.sig = 0xbb2a8522 */
             require(isPermittedModule(msg.sender, msg.sig));
@@ -273,13 +273,13 @@ contract TokenBase is Modular {
     }
 
     /**
-        @notice Checks that a call comes from a permitted module or the issuer
-        @dev If the caller is the issuer, requires multisig approval
+        @notice Checks that a call comes from a permitted module or the org
+        @dev If the caller is the org, requires multisig approval
         @return bool multisig approved
      */
     function _checkPermitted() internal returns (bool) {
         if (isPermittedModule(msg.sender, msg.sig)) return true;
-        return issuer.checkMultiSigExternal(
+        return org.checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig

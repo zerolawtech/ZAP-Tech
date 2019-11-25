@@ -20,21 +20,21 @@ contract SecurityToken is TokenBase {
 
     /**
         @notice Security token constructor
-        @dev Initially the total supply is credited to the issuer
-        @param _issuer Address of the issuer's IssuingEntity contract
+        @dev Initially the total supply is credited to the org
+        @param _org Address of the org's OrgCode contract
         @param _name Name of the token
         @param _symbol Unique ticker symbol
         @param _authorizedSupply Initial authorized token supply
      */
     constructor(
-        IssuingEntity _issuer,
+        OrgCode _org,
         string _name,
         string _symbol,
         uint256 _authorizedSupply
     )
         public
         TokenBase(
-            _issuer,
+            _org,
             _name,
             _symbol,
             _authorizedSupply
@@ -75,7 +75,7 @@ contract SecurityToken is TokenBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = issuer.checkTransfer(_from, _from, _to, _zero);
+        ) = org.checkTransfer(_from, _from, _to, _zero);
         _checkTransfer(
             _authID,
             _id,
@@ -91,7 +91,7 @@ contract SecurityToken is TokenBase {
         @notice internal check of transfer permission
         @dev
             seperate from _checkTransferView so it can be called by transfer
-            related functions without the call to issuer.checkTransfer
+            related functions without the call to org.checkTransfer
         @param _authID ID of caller
         @param _id ID array of investor IDs
         @param _cust Custodian address (0x00 if none)
@@ -115,12 +115,12 @@ contract SecurityToken is TokenBase {
         returns (address[2])
     {
         require(_value > 0, "Cannot send 0 tokens");
-        /* Issuer tokens are held at the IssuingEntity contract address */
+        /* Issuer tokens are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
-            _addr[SENDER] = address(issuer);
+            _addr[SENDER] = address(org);
         }
         if (_id[RECEIVER] == ownerID) {
-            _addr[RECEIVER] = address(issuer);
+            _addr[RECEIVER] = address(org);
         }
         if (_cust != 0x00) {
             /**
@@ -160,10 +160,10 @@ contract SecurityToken is TokenBase {
     /**
         @notice ERC-20 transferFrom standard
         @dev
-            * The issuer may use this function to transfer tokens belonging to
+            * The org may use this function to transfer tokens belonging to
               any address.
             * Modules may call this function to transfer tokens with the same
-              level of authority as the issuer.
+              level of authority as the org.
             * An investor with multiple addresses may use this to transfer tokens
               from any address he controls, without giving prior approval to that
               address.
@@ -185,7 +185,7 @@ contract SecurityToken is TokenBase {
         /* If called by a module, the authority becomes the issuing contract. */
         /* msg.sig = 0x23b872dd */
         if (isPermittedModule(msg.sender, msg.sig)) {
-            address _auth = address(issuer);
+            address _auth = address(org);
         } else {
             _auth = msg.sender;
         }
@@ -212,7 +212,7 @@ contract SecurityToken is TokenBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = issuer.transferTokens(
+        ) = org.transferTokens(
             _auth,
             _addr[SENDER],
             _addr[RECEIVER],
@@ -244,7 +244,7 @@ contract SecurityToken is TokenBase {
             _authID != ownerID
         ) {
             /*
-                If the call was not made by the issuer or the sender and involves
+                If the call was not made by the org or the sender and involves
                 a change in ownership, subtract from the allowed mapping.
             */
             require(allowed[_addr[SENDER]][_auth] >= _value, "Insufficient allowance");
@@ -299,7 +299,7 @@ contract SecurityToken is TokenBase {
         returns (bool)
     {
         /*
-            transfer is presented to issuer.transferTokens as a normal one so
+            transfer is presented to org.transferTokens as a normal one so
             zero[2:] can be set to false. set here to prevent stack depth error.
         */
         bool[4] memory _zero = [
@@ -313,7 +313,7 @@ contract SecurityToken is TokenBase {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = issuer.transferTokens(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = org.transferTokens(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
 
         _addr = _checkTransfer(
             _authID,
@@ -341,7 +341,7 @@ contract SecurityToken is TokenBase {
 
     /**
         @notice Mint new tokens and increase total supply
-        @dev Callable by the issuer or via module
+        @dev Callable by the org or via module
         @param _owner Owner of the tokens
         @param _value Number of tokens to mint
         @return bool
@@ -350,9 +350,9 @@ contract SecurityToken is TokenBase {
         /* msg.sig = 0x40c10f19 */
         if (!_checkPermitted()) return false;
         require(_value > 0); // dev: mint 0
-        issuer.checkTransfer(
-            address(issuer),
-            address(issuer),
+        org.checkTransfer(
+            address(org),
+            address(org),
             _owner,
             false
         );
@@ -366,7 +366,7 @@ contract SecurityToken is TokenBase {
 
     /**
         @notice Burn tokens and decrease total supply
-        @dev Callable by the issuer or via module
+        @dev Callable by the org or via module
         @param _owner Owner of the tokens
         @param _value Number of tokens to burn
         @return bool

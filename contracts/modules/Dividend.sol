@@ -30,15 +30,15 @@ contract DividendModule is CheckpointModuleBase {
     /**
         @notice Base constructor
         @param _token SecurityToken contract address
-        @param _issuer IssuingEntity contract address
+        @param _org OrgCode contract address
         @param _checkpointTime Epoch time of balance checkpoint
      */
     constructor(
         SecurityToken _token,
-        address _issuer,
+        address _org,
         uint256 _checkpointTime
     )
-        CheckpointModuleBase(_token, _issuer, _checkpointTime)
+        CheckpointModuleBase(_token, _org, _checkpointTime)
         public
     {
         return;
@@ -58,7 +58,7 @@ contract DividendModule is CheckpointModuleBase {
         require (address(this).balance > 0);
         claimExpiration = now.add(_claimPeriod);
         dividendAmount = address(this).balance;
-        totalSupply = totalSupply.sub(_getBalance(token.issuer()));
+        totalSupply = totalSupply.sub(_getBalance(token.org()));
         emit DividendIssued(now, msg.value);
         return true;
     }
@@ -93,7 +93,7 @@ contract DividendModule is CheckpointModuleBase {
         @param _beneficiary Address to send dividend to
      */
     function _claim(address _beneficiary) internal {
-        require(issuer.isRegisteredInvestor(_beneficiary));
+        require(org.isRegisteredInvestor(_beneficiary));
         require (!claimed[_beneficiary]);
         uint256 _value = _getBalance(
             _beneficiary
@@ -147,7 +147,7 @@ contract DividendModule is CheckpointModuleBase {
         @param _custodian Custodian address
      */
     function _claimCustodian(address _beneficiary, address _custodian) internal {
-        require(issuer.isRegisteredInvestor(_beneficiary));
+        require(org.isRegisteredInvestor(_beneficiary));
         require (!claimedCustodian[_beneficiary][_custodian]);
         uint256 _value = _getCustodianBalance(
             _beneficiary,

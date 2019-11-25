@@ -2,7 +2,7 @@ pragma solidity 0.4.25;
 
 
 import "../../bases/MultiSig.sol";
-import "../../IssuingEntity.sol";
+import "../../OrgCode.sol";
 import "../../SecurityToken.sol";
 
 /**
@@ -42,7 +42,7 @@ contract ModuleBase is ModuleBaseABC {
     }
 
     /**
-        @notice Fetch address of issuer contract that module is active on
+        @notice Fetch address of org contract that module is active on
         @return Owner contract address
     */
     function getOwner() public view returns (address) {
@@ -59,22 +59,22 @@ contract ModuleBase is ModuleBaseABC {
 contract STModuleBase is ModuleBase {
 
     SecurityToken public token;
-    IssuingEntity public issuer;
+    OrgCode public org;
 
     /**
         @notice Base constructor
         @param _token SecurityToken contract address
-        @param _issuer IssuingEntity contract address
+        @param _org OrgCode contract address
      */
     constructor(
         SecurityToken _token,
-        address _issuer
+        address _org
     )
         public
-        ModuleBase(_issuer)
+        ModuleBase(_org)
     {
         token = _token;
-        issuer = IssuingEntity(_issuer);
+        org = OrgCode(_org);
     }
 
     /** @dev Check that call originates from parent token contract */
@@ -95,21 +95,21 @@ contract STModuleBase is ModuleBase {
 
 contract IssuerModuleBase is ModuleBase {
 
-    IssuingEntity public issuer;
+    OrgCode public org;
     mapping (address => bool) parents;
 
     /**
         @notice Base constructor
-        @param _issuer IssuingEntity contract address
+        @param _org OrgCode contract address
      */
-    constructor(address _issuer) public ModuleBase(_issuer) {
-        issuer = IssuingEntity(_issuer);
+    constructor(address _org) public ModuleBase(_org) {
+        org = OrgCode(_org);
     }
 
     /** @dev Check that call originates from token contract */
     function _onlyToken() internal {
         if (!parents[msg.sender]) {
-            parents[msg.sender] = issuer.isActiveToken(msg.sender);
+            parents[msg.sender] = org.isActiveToken(msg.sender);
         }
         require (parents[msg.sender]);
     }

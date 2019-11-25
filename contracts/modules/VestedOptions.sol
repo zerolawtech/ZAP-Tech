@@ -100,7 +100,7 @@ contract VestedOptions is STModuleBase {
     /**
         @notice constructor
         @param _token token address
-        @param _issuer issuer address
+        @param _org org address
         @param _ethPeg initial ethereum peg rate
         @param _expireMonths time for options to expire, in months
         @param _gracePeriodMonths number of months that already vested options
@@ -109,14 +109,14 @@ contract VestedOptions is STModuleBase {
      */
     constructor(
         SecurityToken _token,
-        address _issuer,
+        address _org,
         uint32 _ethPeg,
         uint32 _expireMonths,
         uint32 _gracePeriodMonths,
         address _receiver
     )
         public
-        STModuleBase(_token, _issuer)
+        STModuleBase(_token, _org)
     {
         require(_expireMonths > 0);
         require(_gracePeriodMonths > 0);
@@ -466,7 +466,7 @@ contract VestedOptions is STModuleBase {
     {
         require (ethPeg.mul(_amount).mul(_price) == msg.value, "Incorrect payment");
 
-        bytes32 _id = issuer.getID(msg.sender);
+        bytes32 _id = org.getID(msg.sender);
         require(_updateOptionBase(_id, _price), "No options at this price");
 
         uint32 _remaining = _amount;

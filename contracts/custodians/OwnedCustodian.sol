@@ -114,7 +114,7 @@ contract OwnedCustodian is Modular, MultiSig {
 
     /**
         @notice Add a new token owner
-        @dev called by IssuingEntity when tokens are transferred to a custodian
+        @dev called by OrgCode when tokens are transferred to a custodian
         @param _from Investor address
         @param _value Amount transferred
         @return bool success

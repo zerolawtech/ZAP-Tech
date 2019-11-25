@@ -13,8 +13,8 @@ All solidity contract sources are inside this folder or one of it's subfolders.
 
 ## Contracts
 
-* `IssuingEntity.sol`: Central contract that ties together tokens, investor registries, and custodians.
-* `KYCRegistrar.sol`: KYC whitelisting contract that may be shared across many issuers.
-* `KYCIssuer.sol`: Streamlined KYC whitelisting contract for use by a single issuer.
+* `OrgCode.sol`: Central contract that ties together tokens, investor registries, and custodians.
+* `KYCRegistrar.sol`: KYC whitelisting contract that may be shared across many orgs.
+* `KYCIssuer.sol`: Streamlined KYC whitelisting contract for use by a single org.
 * `SecurityToken.sol`: Token contract derived from ERC-20 standard. Represents fungible, book-entry style securities.
 * `NFToken.sol`: Token contract derived from ERC-20 standard. Represents non-fungible certificated securities.

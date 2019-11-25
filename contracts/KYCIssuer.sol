@@ -6,14 +6,14 @@ import "./bases/MultiSig.sol";
 /** @title Simplified KYC Contract for Single Issuer */
 contract KYCIssuer is KYCBase {
 
-    MultiSig public issuer;
+    MultiSig public org;
 
     /**
         @notice KYC registrar constructor
-        @param _issuer IssuingEntity contract address
+        @param _org OrgCode contract address
      */
-    constructor (MultiSig _issuer) public {
-        issuer = _issuer;
+    constructor (MultiSig _org) public {
+        org = _org;
     }
 
     /**
@@ -21,7 +21,7 @@ contract KYCIssuer is KYCBase {
         @return bool success
      */
     function _onlyAuthority() internal returns (bool) {
-        return issuer.checkMultiSigExternal(
+        return org.checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig
@@ -42,14 +42,14 @@ contract KYCIssuer is KYCBase {
                 _inv.restricted = false;
             /* If address has not had an investor ID associated - set the ID */
             } else if (_inv.id == 0) {
-                require(!issuer.isAuthority(_addr[i])); // dev: auth address
+                require(!org.isAuthority(_addr[i])); // dev: auth address
                 _inv.id = _id;
             /* In all other cases, revert */
             } else {
                 revert(); // dev: known address
             }
         }
-        emit RegisteredAddresses(_id, _addr, issuer.getID(msg.sender));
+        emit RegisteredAddresses(_id, _addr, org.getID(msg.sender));
     }
 
     /**
@@ -78,7 +78,7 @@ contract KYCIssuer is KYCBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(!issuer.isAuthorityID(_id)); // dev: authority ID
+        require(!org.isAuthorityID(_id)); // dev: authority ID
         require(investorData[_id].country == 0); // dev: investor ID
         require(_country > 0); // dev: country 0
         _setInvestor(0x00, _id, _country, _region, _rating, _expires);
@@ -88,7 +88,7 @@ contract KYCIssuer is KYCBase {
             _region,
             _rating,
             _expires,
-            issuer.getID(msg.sender)
+            org.getID(msg.sender)
         );
         _addAddresses(_id, _addr);
         return true;
@@ -120,7 +120,7 @@ contract KYCIssuer is KYCBase {
             _region,
             _rating,
             _expires,
-            issuer.getID(msg.sender)
+            org.getID(msg.sender)
         );
         return true;
     }
@@ -142,7 +142,7 @@ contract KYCIssuer is KYCBase {
         if (!_onlyAuthority()) return false;
         require(investorData[_id].country != 0);
         investorData[_id].restricted = _restricted;
-        emit InvestorRestriction(_id, _restricted, issuer.getID(msg.sender));
+        emit InvestorRestriction(_id, _restricted, org.getID(msg.sender));
         return true;
     }
 
@@ -191,7 +191,7 @@ contract KYCIssuer is KYCBase {
             require(!idMap[_addr[i]].restricted); // dev: already restricted
             idMap[_addr[i]].restricted = true;
         }
-        emit RestrictedAddresses(_id, _addr, issuer.getID(msg.sender));
+        emit RestrictedAddresses(_id, _addr, org.getID(msg.sender));
         return true;
     }
 

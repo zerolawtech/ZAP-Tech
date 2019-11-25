@@ -24,15 +24,15 @@ contract CheckpointModuleBase is STModuleBase {
     /**
         @notice Base constructor
         @param _token SecurityToken contract address
-        @param _issuer IssuingEntity contract address
+        @param _org OrgCode contract address
         @param _checkpointTime Epoch time of balance checkpoint
      */
     constructor(
         SecurityToken _token,
-        address _issuer,
+        address _org,
         uint256 _checkpointTime
     )
-        STModuleBase(_token, _issuer)
+        STModuleBase(_token, _org)
         public
     {
         require (_checkpointTime >= now);

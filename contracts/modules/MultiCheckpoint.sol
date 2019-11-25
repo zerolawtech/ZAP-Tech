@@ -35,7 +35,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
 
     /**
         @notice Base constructor
-        @param _owner IssuingEntity contract address
+        @param _owner OrgCode contract address
      */
     constructor(address _owner) IssuerModuleBase(_owner) public {
         return;
@@ -353,7 +353,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         returns (bool)
     {
         require(_time > now); // dev: time
-        require(issuer.isActiveToken(_token)); // dev: token
+        require(org.isActiveToken(_token)); // dev: token
         if (!_token.isPermittedModule(msg.sender, 0x17020cc7)) {
             if (!_onlyAuthority()) return false;
         }

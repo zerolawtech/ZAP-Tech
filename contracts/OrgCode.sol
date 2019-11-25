@@ -1,14 +1,16 @@
 pragma solidity 0.4.25;
 
 import "./open-zeppelin/SafeMath.sol";
-import "./KYCRegistrar.sol";
-import "./SecurityToken.sol";
-import "./interfaces/IBaseCustodian.sol";
-import "./interfaces/IGovernance.sol";
 import "./bases/MultiSig.sol";
 
+import "./interfaces/IBaseCustodian.sol";
+import "./interfaces/IGovernance.sol";
+import "./interfaces/IIDVerifierBase.sol";
+import "./interfaces/IModules.sol";
+import "./interfaces/ITokenBase.sol";
+
 /** @title Issuing Entity */
-contract IssuingEntity is MultiSig {
+contract OrgCode is MultiSig {
 
     using SafeMath32 for uint32;
     using SafeMath for uint256;
@@ -42,14 +44,14 @@ contract IssuingEntity is MultiSig {
         bool restricted;
     }
 
-    struct RegistrarContract {
-        KYCRegistrar addr;
+    struct VerifierContract {
+        IIDVerifierBase addr;
         bool restricted;
     }
 
     IGovernance public governance;
     bool locked;
-    RegistrarContract[] registrars;
+    VerifierContract[] verifiers;
     uint32[8] counts;
     uint32[8] limits;
     mapping (uint16 => Country) countries;
@@ -66,7 +68,7 @@ contract IssuingEntity is MultiSig {
     event InvestorLimitsSet(uint32[8] limits);
     event NewDocumentHash(string indexed document, bytes32 documentHash);
     event GovernanceSet(address indexed governance);
-    event RegistrarSet(address indexed registrar, bool restricted);
+    event VerifierSet(address indexed verifier, bool restricted);
     event CustodianAdded(address indexed custodian);
     event TokenAdded(address indexed token);
     event EntityRestriction(bytes32 indexed id, bool restricted);
@@ -83,16 +85,16 @@ contract IssuingEntity is MultiSig {
         uint32 _threshold
     )
         MultiSig(_owners, _threshold)
-        public 
+        public
     {
-        /* First registrar is empty so Account.regKey == 0 means it is unset. */
-        registrars.push(RegistrarContract(KYCRegistrar(0), false));
+        /* First verifier is empty so Account.regKey == 0 means it is unset. */
+        verifiers.push(VerifierContract(IIDVerifierBase(0), false));
         idMap[address(this)].id = ownerID;
     }
 
     /**
         @notice Check if an address belongs to a registered investor
-        @dev Retrurns false for custodian or issuer addresses
+        @dev Retrurns false for custodian or org addresses
         @param _addr address to check
         @return bytes32 investor ID
      */
@@ -124,12 +126,12 @@ contract IssuingEntity is MultiSig {
     }
 
     /**
-        @notice Get address of the registrar an investor is associated with
+        @notice Get address of the verifier an investor is associated with
         @param _id Investor ID
-        @return registrar address
+        @return verifier address
      */
-    function getInvestorRegistrar(bytes32 _id) external view returns (address) {
-        return registrars[accounts[_id].regKey].addr;
+    function getInvestorVerifier(bytes32 _id) external view returns (address) {
+        return verifiers[accounts[_id].regKey].addr;
     }
 
     /**
@@ -204,7 +206,7 @@ contract IssuingEntity is MultiSig {
      */
     function addToken(address _token) external returns (bool) {
         if (!_checkMultiSig()) return false;
-        SecurityToken token = SecurityToken(_token);
+        ITokenBase token = ITokenBase(_token);
         require(!tokens[_token].set); // dev: already set
         require(token.ownerID() == ownerID); // dev: wrong owner
         require(token.circulatingSupply() == 0);
@@ -270,7 +272,7 @@ contract IssuingEntity is MultiSig {
     function setGovernance(IGovernance _governance) external returns (bool) {
         if (!_checkMultiSig()) return false;
         if (address(_governance) != 0x00) {
-            require (_governance.issuer() == address(this)); // dev: wrong issuer
+            require (_governance.org() == address(this)); // dev: wrong org
         }
         governance = _governance;
         emit GovernanceSet(_governance);
@@ -278,31 +280,31 @@ contract IssuingEntity is MultiSig {
     }
 
     /**
-        @notice Attach or restrict a KYCRegistrar contract
-        @param _registrar address of registrar
-        @param _restricted registrar permission
+        @notice Attach or restrict a IIDVerifierBase contract
+        @param _verifier address of verifier
+        @param _restricted verifier permission
         @return bool success
      */
-    function setRegistrar(
-        KYCRegistrar _registrar,
+    function setVerifier(
+        IIDVerifierBase _verifier,
         bool _restricted
     )
         external
         returns (bool)
     {
         if (!_checkMultiSig()) return false;
-        emit RegistrarSet(_registrar, _restricted);
-        for (uint256 i = 1; i < registrars.length; i++) {
-            if (registrars[i].addr == _registrar) {
-                registrars[i].restricted = _restricted;
+        emit VerifierSet(_verifier, _restricted);
+        for (uint256 i = 1; i < verifiers.length; i++) {
+            if (verifiers[i].addr == _verifier) {
+                verifiers[i].restricted = _restricted;
                 return true;
             }
         }
         if (!_restricted) {
-            registrars.push(RegistrarContract(_registrar, _restricted));
+            verifiers.push(VerifierContract(_verifier, _restricted));
             return true;
         }
-        revert(); // dev: unknown registrar
+        revert(); // dev: unknown verifier
     }
 
     /**
@@ -403,7 +405,7 @@ contract IssuingEntity is MultiSig {
     /**
         @notice Set restriction on a token
         @dev
-            Only the issuer can transfer restricted tokens. Useful in dealing
+            Only the org can transfer restricted tokens. Useful in dealing
             with a security breach or a token migration.
         @param _token Address of the token
         @param _restricted permission bool
@@ -424,8 +426,8 @@ contract IssuingEntity is MultiSig {
     }
 
     /**
-        @notice Set restriction on all tokens for this issuer
-        @dev Only the issuer can transfer restricted tokens.
+        @notice Set restriction on all tokens for this org
+        @dev Only the org can transfer restricted tokens.
         @param _restricted permission bool
         @return bool success
      */
@@ -437,7 +439,7 @@ contract IssuingEntity is MultiSig {
     }
 
     /**
-        @notice Check if transfer is possible based on issuer level restrictions
+        @notice Check if transfer is possible based on org level restrictions
         @dev function is not called directly - see SecurityToken.checkTransfer
         @param _auth address of the caller attempting the transfer
         @param _from address of the sender
@@ -465,7 +467,7 @@ contract IssuingEntity is MultiSig {
         _authID = _getID(_auth);
         _id[SENDER] = _getID(_from);
         _id[RECEIVER] = _getID(_to);
-        
+
         if (_authID == ownerID && idMap[_auth].id != ownerID) {
             /* This enforces sub-authority permissioning around transfers */
             Authority storage a = authorityData[idMap[_auth].id];
@@ -487,7 +489,7 @@ contract IssuingEntity is MultiSig {
             require(accounts[_id[RECEIVER]].custodian == 0, "Custodian to Custodian");
         }
 
-        /* must be allowed to underflow in case of issuer zero balance */
+        /* must be allowed to underflow in case of org zero balance */
         uint32 _count = accounts[_id[SENDER]].count;
         if (_zero) _count -= 1;
 
@@ -509,15 +511,15 @@ contract IssuingEntity is MultiSig {
         if (
             (
                 accounts[_id].regKey > 0 &&
-                !registrars[accounts[_id].regKey].restricted
+                !verifiers[accounts[_id].regKey].restricted
             ) || accounts[_id].custodian != 0
         ) {
             return _id;
         }
         if (_id == 0) {
-            for (uint256 i = 1; i < registrars.length; i++) {
-                if (!registrars[i].restricted) {
-                    _id = registrars[i].addr.getID(_addr);
+            for (uint256 i = 1; i < verifiers.length; i++) {
+                if (!verifiers[i].restricted) {
+                    _id = verifiers[i].addr.getID(_addr);
                     /* prevent investor / authority ID collisions */
                     if (_id != 0 && authorityData[_id].addressCount == 0) {
                         idMap[_addr].id = _id;
@@ -533,22 +535,22 @@ contract IssuingEntity is MultiSig {
                 }
             }
         } else {
-            for (i = 1; i < registrars.length; i++) {
-                if (registrars[i].restricted) continue;
-                if (_id != registrars[i].addr.getID(_addr)) continue;
+            for (i = 1; i < verifiers.length; i++) {
+                if (verifiers[i].restricted) continue;
+                if (_id != verifiers[i].addr.getID(_addr)) continue;
                 accounts[_id].regKey = uint8(i);
                 return _id;
             }
-            revert("Registrar restricted");
+            revert("Verifier restricted");
         }
         revert("Address not registered");
     }
 
     /**
-        @notice Internal function for fetching investor data from registrars
+        @notice Internal function for fetching investor data from verifiers
         @dev Either _addr or _id may be given as an empty array
         @param _addr array of investor addresses
-        @param _key array of registrar indexes
+        @param _key array of verifier indexes
         @return permissions, ratings, and countries of investors
      */
     function _getInvestors(
@@ -564,7 +566,7 @@ contract IssuingEntity is MultiSig {
         )
     {
         /* If both investors are in the same registry, call getInvestors */
-        KYCRegistrar r = registrars[_key[SENDER]].addr;
+        IIDVerifierBase r = verifiers[_key[SENDER]].addr;
         if (_key[SENDER] > 0 && _key[SENDER] == _key[RECEIVER]) {
             (
                 ,
@@ -583,11 +585,11 @@ contract IssuingEntity is MultiSig {
                 _country[SENDER]
             ) = r.getInvestor(_addr[SENDER]);
         } else {
-            /* If key == 0 the address belongs to the issuer or a custodian. */
+            /* If key == 0 the address belongs to the org or a custodian. */
             _permitted[SENDER] = true;
         }
         if (_key[RECEIVER] != 0) {
-            r = registrars[_key[RECEIVER]].addr;
+            r = verifiers[_key[RECEIVER]].addr;
             (
                 ,
                 _permitted[RECEIVER],
@@ -604,7 +606,7 @@ contract IssuingEntity is MultiSig {
         @notice internal check if transfer is permitted
         @param _authID id hash of caller
         @param _id addresses of sender and receiver
-        @param _permitted array of permission bools from registrar
+        @param _permitted array of permission bools from verifier
         @param _rating array of investor ratings
         @param _country array of investor countries
         @param _tokenCount sender accounts.count value after transfer
@@ -619,32 +621,32 @@ contract IssuingEntity is MultiSig {
     )
         internal
         view
-    {    
+    {
         require(tokens[msg.sender].set);
-        /* If issuer is not the authority, check the sender is not restricted */
+        /* If org is not the authority, check the sender is not restricted */
         if (_authID != ownerID) {
             require(!locked, "Transfers locked: Issuer");
             require(!tokens[msg.sender].restricted, "Transfers locked: Token");
             require(!accounts[_id[SENDER]].restricted, "Sender restricted: Issuer");
-            require(_permitted[SENDER], "Sender restricted: Registrar");
+            require(_permitted[SENDER], "Sender restricted: Verifier");
             require(!accounts[_authID].restricted, "Authority restricted");
         }
         /* Always check the receiver is not restricted. */
         require(!accounts[_id[RECEIVER]].restricted, "Receiver restricted: Issuer");
-        require(_permitted[RECEIVER], "Receiver restricted: Registrar");
+        require(_permitted[RECEIVER], "Receiver restricted: Verifier");
         if (_id[SENDER] != _id[RECEIVER]) {
             /*
-                A rating of 0 implies the receiver is the issuer or a
+                A rating of 0 implies the receiver is the org or a
                 custodian, no further checks are needed.
             */
             if (_rating[RECEIVER] != 0) {
                 Country storage c = countries[_country[RECEIVER]];
                 require(c.permitted, "Receiver blocked: Country");
                 require(_rating[RECEIVER] >= c.minRating, "Receiver blocked: Rating");
-                /*  
+                /*
                     If the receiving investor currently has 0 balance and no
                     custodians, make sure a slot is available for allocation.
-                */ 
+                */
                 if (accounts[_id[RECEIVER]].count == 0) {
                     /* create a bool to prevent repeated comparisons */
                     bool _check = (_rating[SENDER] == 0 || _tokenCount > 0);
@@ -745,7 +747,7 @@ contract IssuingEntity is MultiSig {
                     _decrementCount(_rating[SENDER], _country[SENDER]);
                 }
             }
-        /* if receiver is not the issuer, and sender is a custodian */
+        /* if receiver is not the org, and sender is a custodian */
         } else if (_id[SENDER] != ownerID && _id[RECEIVER] != ownerID) {
             if (_zero[2]) {
                 a = accounts[_id[RECEIVER]];
@@ -766,7 +768,7 @@ contract IssuingEntity is MultiSig {
                     _incrementCount(_rating[RECEIVER], _country[RECEIVER]);
                 }
             }
-        /* if sender is not the issuer, and receiver is a custodian */
+        /* if sender is not the org, and receiver is a custodian */
         } else if (_id[SENDER] != ownerID && _id[RECEIVER] != ownerID) {
             if (_zero[3]) {
                 a = accounts[_id[SENDER]];
@@ -807,7 +809,7 @@ contract IssuingEntity is MultiSig {
         } else {
             require(accounts[idMap[_owner].id].custodian == 0); // dev: custodian
             uint8 _key = accounts[idMap[_owner].id].regKey;
-            (_id, , _rating, _country) = registrars[_key].addr.getInvestor(_owner);
+            (_id, , _rating, _country) = verifiers[_key].addr.getInvestor(_owner);
         }
         Account storage a = accounts[_id];
         if (_id != ownerID) {
@@ -890,7 +892,7 @@ contract IssuingEntity is MultiSig {
     }
 
     /**
-        @notice Attach a module to IssuingEntity or SecurityToken
+        @notice Attach a module to OrgCode or SecurityToken
         @dev
             Modules have a lot of permission and flexibility in what they
             can do. Only attach a module that has been properly auditted and
@@ -911,12 +913,12 @@ contract IssuingEntity is MultiSig {
         address _owner = _module.getOwner();
         require(tokens[_target].set); // dev: unknown target
         require (_owner == _target || _owner == address(this)); // dev: wrong owner
-        require(SecurityToken(_target).attachModule(_module));
+        require(ITokenBase(_target).attachModule(_module));
         return true;
     }
 
     /**
-        @notice Detach a module from IssuingEntity or SecurityToken
+        @notice Detach a module from OrgCode or SecurityToken
         @dev This function may also be called by the module itself.
         @param _target Address of the contract where the module is attached
         @param _module Address of the module contract
@@ -931,7 +933,7 @@ contract IssuingEntity is MultiSig {
     {
         if (!_checkMultiSig()) return false;
         require(tokens[_target].set); // dev: unknown target
-        require(SecurityToken(_target).detachModule(_module));
+        require(ITokenBase(_target).detachModule(_module));
         return true;
     }
 

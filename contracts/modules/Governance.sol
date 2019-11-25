@@ -1,6 +1,6 @@
 pragma solidity 0.4.25;
 
-import "../IssuingEntity.sol";
+import "../OrgCode.sol";
 import "../open-zeppelin/SafeMath.sol";
 
 
@@ -14,13 +14,13 @@ interface IMultiCheckpointModule {
 
 /**
     @title Governance Module
-    @dev Attaches to IssuingEntity and MultiCheckpointModule
+    @dev Attaches to OrgCode and MultiCheckpointModule
 */
 contract GovernanceModule {
 
     using SafeMath for uint256;
 
-    IssuingEntity public issuer;
+    OrgCode public org;
     IMultiCheckpointModule public checkpoint;
 
     mapping (address => mapping (bytes => bool)) approval;
@@ -88,20 +88,20 @@ contract GovernanceModule {
 
     /**
         @notice Base constructor
-        @param _issuer IssuingEntity contract address
+        @param _org OrgCode contract address
      */
-    constructor(IssuingEntity _issuer, IMultiCheckpointModule _checkpoint) public {
-        issuer = _issuer;
+    constructor(OrgCode _org, IMultiCheckpointModule _checkpoint) public {
+        org = _org;
         checkpoint = _checkpoint;
     }
 
     /**
-        @notice Checks that a call comes from a permitted module or the issuer
-        @dev If the caller is the issuer, requires multisig approval
+        @notice Checks that a call comes from a permitted module or the org
+        @dev If the caller is the org, requires multisig approval
         @return bool multisig approved
      */
     function _checkPermitted() internal returns (bool) {
-        return issuer.checkMultiSigExternal(
+        return org.checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig
@@ -474,7 +474,7 @@ contract GovernanceModule {
 
     /**
         @notice Approval to modify authorized supply
-        @dev Called by IssuingEntity.modifyAuthorizedSupply
+        @dev Called by OrgCode.modifyAuthorizedSupply
         @return permission boolean
      */
     function modifyAuthorizedSupply(address, uint256) external returns (bool) {
@@ -484,7 +484,7 @@ contract GovernanceModule {
 
     /**
         @notice Approval to attach a new token contract
-        @dev Called by IssuingEntity.addToken
+        @dev Called by OrgCode.addToken
         @return permission boolean
      */
     function addToken(address) external returns (bool) {

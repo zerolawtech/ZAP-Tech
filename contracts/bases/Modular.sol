@@ -40,7 +40,7 @@ contract Modular {
 
     /**
         @notice Attach a security token module
-        @dev Can only be called indirectly from IssuingEntity.attachModule()
+        @dev Can only be called indirectly from OrgCode.attachModule()
         @param _module Address of the module contract
         @return bool success
      */
@@ -232,7 +232,7 @@ contract Modular {
     /**
         @notice Check if a module is permitted to access a specific function
         @dev
-            This returns false instead of throwing because an issuer level 
+            This returns false instead of throwing because an org level 
             module must be checked twice
         @param _module Module address
         @param _sig Function signature

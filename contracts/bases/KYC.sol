@@ -1,7 +1,7 @@
 pragma solidity 0.4.25;
 
 /**
-    @title KYC Abstract Base Contract 
+    @title KYC Abstract Base Contract
     @dev Methods in this ABC are defined in contracts that inherit KYCBase
 */
 contract KYCBaseABC {
@@ -16,7 +16,7 @@ contract KYCBaseABC {
 }
 
 /**
-    @title KYC Base 
+    @title KYC Base
     @dev Shared methods for KYCIssuer and KYCRegistrar
 */
 contract KYCBase is KYCBaseABC {
@@ -185,7 +185,7 @@ contract KYCBase is KYCBaseABC {
     /**
         @notice Fetch investor ID from an address
         @dev
-            This cannot revert on fail because IssuingEntity may call multiple
+            This cannot revert on fail because OrgCode may call multiple
             registrar contracts. A response of 0x00 is means the address is
             not registered.
         @param _addr Address to query

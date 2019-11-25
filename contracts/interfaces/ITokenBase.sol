@@ -5,10 +5,10 @@ pragma solidity 0.4.25;
         this is a minimal interface that can be used to interact with both
         SecurityToken and NFToken contracts
  */
-interface IToken {
+interface ITokenBase {
 
     function ownerID() external view returns (bytes32);
-    function issuer() external view returns (address);
+    function org() external view returns (address);
 
     function decimals() external view returns (uint8);
     function name() external view returns (string);
@@ -25,7 +25,7 @@ interface IToken {
 
     function checkTransfer(address _from, address _to, uint256 _value) external view returns (bool);
     function checkTransferCustodian(address _cust, address _from, address _to, uint256 _value) external view returns (bool);
-    
+
     function approve(address _spender, uint256 _value) external returns (bool);
     function transfer(address _to, uint256 _value) external returns (bool);
     function transferFrom(address _from, address _to, uint256 _value) external returns (bool);

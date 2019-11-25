@@ -51,21 +51,21 @@ contract NFToken is TokenBase  {
 
     /**
         @notice Security token constructor
-        @dev Initially the total supply is credited to the issuer
-        @param _issuer Address of the issuer's IssuingEntity contract
+        @dev Initially the total supply is credited to the org
+        @param _org Address of the org's OrgCode contract
         @param _name Name of the token
         @param _symbol Unique ticker symbol
         @param _authorizedSupply Initial authorized token supply
      */
     constructor(
-        IssuingEntity _issuer,
+        OrgCode _org,
         string _name,
         string _symbol,
         uint256 _authorizedSupply
     )
         public
         TokenBase(
-            _issuer,
+            _org,
             _name,
             _symbol,
             _authorizedSupply
@@ -194,7 +194,7 @@ contract NFToken is TokenBase  {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = issuer.checkTransfer(_from, _from, _to, _zero);
+        ) = org.checkTransfer(_from, _from, _to, _zero);
         _checkTransfer(
             _authID,
             _id,
@@ -237,12 +237,12 @@ contract NFToken is TokenBase  {
         require(_value > 0, "Cannot send 0 tokens");
         require(uint48(_value) == _value, "Value too large");
 
-        /* Issuer tokens are held at the IssuingEntity contract address */
+        /* Issuer tokens are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
-            _addr[SENDER] = address(issuer);
+            _addr[SENDER] = address(org);
         }
         if (_id[RECEIVER] == ownerID) {
-            _addr[RECEIVER] = address(issuer);
+            _addr[RECEIVER] = address(org);
         }
         require(_addr[SENDER] != _addr[RECEIVER], "Cannot send to self");
 
@@ -358,7 +358,7 @@ contract NFToken is TokenBase  {
         require(upperBound + _value > upperBound); // dev: overflow
         require(upperBound + _value <= 2**48 - 2); // dev: upper bound
         require(_time == 0 || _time > now); // dev: time
-        issuer.checkTransfer(address(issuer), address(issuer), _owner, false);
+        org.checkTransfer(address(org), address(org), _owner, false);
         uint48 _start = uint48(upperBound + 1);
         uint48 _stop = _start + _value;
         if (_compareRanges(tokens[upperBound], _owner, _time, _tag, 0x00)) {
@@ -570,7 +570,7 @@ contract NFToken is TokenBase  {
         /* If called by a module, the authority becomes the issuing contract. */
         /* msg.sig = 0x23b872dd */
         if (isPermittedModule(msg.sender, msg.sig)) {
-            address _auth = address(issuer);
+            address _auth = address(org);
         } else {
             _auth = msg.sender;
         }
@@ -603,7 +603,7 @@ contract NFToken is TokenBase  {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = issuer.transferTokens(
+        ) = org.transferTokens(
             _auth,
             _addr[SENDER],
             _addr[RECEIVER],
@@ -628,7 +628,7 @@ contract NFToken is TokenBase  {
             _authID != ownerID
         ) {
             /**
-                If the call was not made by the issuer or the sender and involves
+                If the call was not made by the org or the sender and involves
                 a change in ownership, subtract from the allowed mapping.
             */
             require(
@@ -717,7 +717,7 @@ contract NFToken is TokenBase  {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = issuer.transferTokens(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = org.transferTokens(msg.sender, _addr[SENDER], _addr[RECEIVER], _zero);
 
         uint48[] memory _range;
         (_addr, _range) = _checkTransfer(
@@ -845,17 +845,17 @@ contract NFToken is TokenBase  {
             bytes32[2] memory _id,
             uint8[2] memory _rating,
             uint16[2] memory _country
-        ) = issuer.transferTokens(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
+        ) = org.transferTokens(_addr[SENDER], _addr[SENDER], _addr[RECEIVER], _zero);
 
-        /* Issuer tokens are held at the IssuingEntity contract address */
+        /* Issuer tokens are held at the OrgCode contract address */
         if (_id[SENDER] == ownerID) {
-            _addr[SENDER] = address(issuer);
+            _addr[SENDER] = address(org);
         } else {
             /* prevent send from custodian */
             require(_rating[SENDER] > 0);
         }
         if (_id[RECEIVER] == ownerID) {
-            _addr[RECEIVER] = address(issuer);
+            _addr[RECEIVER] = address(org);
         }
 
         require(

@@ -50,7 +50,8 @@ def check_permission(cust):
 def test_is_permitted(cust):
     '''check permitted'''
     source = module_source.format('0xbb2a8522')
-    module = compile_source(source)[0].deploy(cust, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(cust, {'from': accounts[0]})
     assert not cust.isPermittedModule(module, "0xbb2a8522")
     assert not cust.isPermittedModule(module, "0xbeabacc8")
     cust.attachModule(module, {'from': accounts[0]})
@@ -64,20 +65,21 @@ def test_is_permitted(cust):
 def test_token_detachModule(cust):
     '''detach module'''
     source = module_source.format('0xbb2a8522')
-    module = compile_source(source)[0].deploy(cust, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(cust, {'from': accounts[0]})
     with pytest.reverts():
-        module.test(cust.detachModule.encode_abi(module), {'from': accounts[0]})
+        module.test(cust.detachModule.encode_input(module), {'from': accounts[0]})
     cust.attachModule(module, {'from': accounts[0]})
-    module.test(cust.detachModule.encode_abi(module), {'from': accounts[0]})
+    module.test(cust.detachModule.encode_input(module), {'from': accounts[0]})
     with pytest.reverts():
-        module.test(cust.detachModule.encode_abi(module), {'from': accounts[0]})
+        module.test(cust.detachModule.encode_input(module), {'from': accounts[0]})
 
 
 def test_custodian_transfer(check_permission, token, cust):
     '''custodian transfer'''
     check_permission(
         "0xbeabacc8",
-        cust.transfer.encode_abi(token, accounts[2], 4000)
+        cust.transfer.encode_input(token, accounts[2], 4000)
     )
     assert token.balanceOf(accounts[2]) == 4000
     assert token.custodianBalanceOf(accounts[2], cust) == 6000
@@ -86,7 +88,7 @@ def test_custodian_transfer(check_permission, token, cust):
 def test_custodian_transferInternal(check_permission, token, cust):
     check_permission(
         "0x2f98a4c3",
-        cust.transferInternal.encode_abi(token, accounts[2], accounts[3], 4000)
+        cust.transferInternal.encode_input(token, accounts[2], accounts[3], 4000)
     )
     assert token.custodianBalanceOf(accounts[2], cust) == 6000
     assert token.custodianBalanceOf(accounts[3], cust) == 4000
@@ -95,7 +97,9 @@ def test_custodian_transferInternal(check_permission, token, cust):
 def _check_permission(cust, sig, calldata):
 
     # deploy the module
-    module = compile_source(module_source.format(sig))[0].deploy(cust, {'from': accounts[0]})
+    source = module_source.format(sig)
+    project = compile_source(source)
+    module = project.TestModule.deploy(cust, {'from': accounts[0]})
 
     # check that call fails prior to attaching module
     with pytest.reverts():

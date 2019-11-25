@@ -131,10 +131,12 @@ def _check(options, id1, sorted_totals, at_price, get_options):
     for i in range(len(sorted_totals) - 1):
         now = int(rpc.time() // 2592000 + 1) * 2592000
         rpc.sleep(now - rpc.time() - 5)
+        rpc.mine()
         assert options.getSortedTotals() == sorted_totals[i]
         assert options.getTotalOptionsAtPrice(10) == at_price[i]
         assert options.getOptions(id1) == get_options[i]
         rpc.sleep(10)
+        rpc.mine()
         assert options.getSortedTotals() == sorted_totals[i + 1]
         assert options.getTotalOptionsAtPrice(10) == at_price[i + 1]
         assert options.getOptions(id1) == get_options[i + 1]

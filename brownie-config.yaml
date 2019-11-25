@@ -5,17 +5,19 @@ network:
     settings:
         gas_limit: false
         gas_price: false
+        persist: true
         reverting_tx_gas_limit: false  # if false, reverting tx's will raise without broadcasting
     networks:
         # any settings given here will replace the defaults
         development:
             host: http://127.0.0.1
             reverting_tx_gas_limit: 6721975
+            persist: false
             test_rpc:
                 cmd: ganache-cli
                 port: 8545
                 gas_limit: 6721975
-                accounts: 10
+                accounts: 20
                 evm_version: petersburg
                 mnemonic: brownie
         # set your Infura API token to the environment variable WEB3_INFURA_PROJECT_ID

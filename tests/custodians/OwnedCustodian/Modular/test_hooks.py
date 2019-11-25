@@ -80,7 +80,8 @@ def test_custodian_internalTransfer(check_hooks, token, cust):
 def _hook(cust, fn, args, source, sig):
     args = list(args) + [{'from': accounts[0]}]
     source = module_source.format(sig, source)
-    module = compile_source(source)[0].deploy(cust, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(cust, {'from': accounts[0]})
     fn(*args)
     cust.attachModule(module, {'from': accounts[0]})
     fn(*args)

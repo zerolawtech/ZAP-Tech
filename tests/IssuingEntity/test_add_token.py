@@ -16,7 +16,8 @@ contract TestGovernance {
 
 @pytest.fixture(scope="module")
 def gov(issuer):
-    gov = compile_source(module_source)[0].deploy(issuer, {'from': accounts[0]})
+    project = compile_source(module_source)
+    gov = project.TestGovernance.deploy(issuer, {'from': accounts[0]})
     issuer.setGovernance(gov, {'from': accounts[0]})
     yield gov
 

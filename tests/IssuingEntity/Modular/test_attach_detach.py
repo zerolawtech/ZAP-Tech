@@ -32,7 +32,7 @@ contract TestModule {
 
 @pytest.fixture(scope="module")
 def TestModule():
-    yield compile_source(module_source)[0]
+    yield compile_source(module_source).TestModule
 
 
 @pytest.fixture(scope="module")

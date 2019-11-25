@@ -69,7 +69,8 @@ def test_checkTransferRange(issuer, nft):
         uint16[2] _country,
         uint48[2] _range'''
     source = module_source.format("0x2d79c6d7", source)
-    module = compile_source(source)[0].deploy(nft, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(nft, {'from': accounts[0]})
     nft.transferRange(accounts[1], 100, 200, {'from': accounts[0]})
     issuer.attachModule(nft, module, {'from': accounts[0]})
     nft.transferRange(accounts[1], 300, 400, {'from': accounts[0]})
@@ -125,7 +126,8 @@ def test_totalSupplyChanged(issuer, nft):
 def _hook(issuer, contract, fn, args, source, sig):
     args = list(args) + [{'from': accounts[0]}]
     source = module_source.format(sig, source)
-    module = compile_source(source)[0].deploy(contract, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(contract, {'from': accounts[0]})
     fn(*args)
     issuer.attachModule(contract, module, {'from': accounts[0]})
     fn(*args)
@@ -137,7 +139,8 @@ def _hook(issuer, contract, fn, args, source, sig):
 
 
 def _burn(issuer, nft, source, sig):
-    module = compile_source(module_source.format(sig, source))[0].deploy(nft, {'from': accounts[0]})
+    project = compile_source(module_source.format(sig, source))
+    module = project.TestModule.deploy(nft, {'from': accounts[0]})
     nft.burn(100, 200, {'from': accounts[0]})
     issuer.attachModule(nft, module, {'from': accounts[0]})
     nft.burn(300, 400, {'from': accounts[0]})

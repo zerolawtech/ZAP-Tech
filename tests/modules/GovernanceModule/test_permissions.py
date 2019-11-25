@@ -40,7 +40,7 @@ def test_modify_authorized_supply_not_approved(token):
 
 
 def test_modify_authorized_supply_approved(vote, token, token2, gov):
-    vote(gov.modifyAuthorizedSupply.encode_abi(token, 200000000))
+    vote(gov.modifyAuthorizedSupply.encode_input(token, 200000000))
     # wrong token
     with pytest.reverts():
         token2.modifyAuthorizedSupply(200000000, {'from': accounts[0]})
@@ -61,7 +61,7 @@ def test_add_token_not_approved(SecurityToken, issuer):
 
 def test_add_token_approved(SecurityToken, vote, issuer, gov):
     token3 = accounts[0].deploy(SecurityToken, issuer, "", "", 1000000)
-    vote(gov.addToken.encode_abi(token3))
+    vote(gov.addToken.encode_input(token3))
     token4 = accounts[0].deploy(SecurityToken, issuer, "", "", 1000000)
     # wrong token
     with pytest.reverts():

@@ -17,7 +17,7 @@ contract TestCustodian {
 
 @pytest.fixture(scope="module")
 def TestCustodian():
-    yield compile_source(source)[0]
+    yield compile_source(source).TestCustodian
 
 
 @pytest.fixture(scope="module")

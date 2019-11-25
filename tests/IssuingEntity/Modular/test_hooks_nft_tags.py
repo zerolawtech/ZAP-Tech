@@ -76,7 +76,8 @@ def setup(id1, id2, issuer, nft):
 
 @pytest.fixture(scope="module")
 def module(nft, issuer):
-    m = compile_source(module_source)[0].deploy(nft, {'from': accounts[0]})
+    project = compile_source(module_source)
+    m = project.TestModule.deploy(nft, {'from': accounts[0]})
     issuer.attachModule(nft, m, {'from': accounts[0]})
     yield m
 

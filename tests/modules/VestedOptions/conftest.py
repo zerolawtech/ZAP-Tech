@@ -37,3 +37,4 @@ def _issue(options, id_, price):
 def _sleep(months):
     now = int(rpc.time() // 2592000 + 1) * 2592000
     rpc.sleep(now - rpc.time() + 1 + 2592000 * (months - 1))
+    rpc.mine()

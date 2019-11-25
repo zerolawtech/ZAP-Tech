@@ -45,7 +45,8 @@ def setup(approve_many, issuer, nft, token):
 def test_is_permitted(issuer, token):
     '''check permitted'''
     source = module_source.format('0xbb2a8522')
-    module = compile_source(source)[0].deploy(token, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(token, {'from': accounts[0]})
     assert not token.isPermittedModule(module, "0xbb2a8522")
     issuer.attachModule(token, module, {'from': accounts[0]})
     assert token.isPermittedModule(module, "0xbb2a8522")
@@ -56,13 +57,14 @@ def test_is_permitted(issuer, token):
 def test_token_detachModule(issuer, token):
     '''detach module'''
     source = module_source.format('0xbb2a8522')
-    module = compile_source(source)[0].deploy(token, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(token, {'from': accounts[0]})
     with pytest.reverts():
-        module.test(token.detachModule.encode_abi(module), {'from': accounts[0]})
+        module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
     issuer.attachModule(token, module, {'from': accounts[0]})
-    module.test(token.detachModule.encode_abi(module), {'from': accounts[0]})
+    module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
     with pytest.reverts():
-        module.test(token.detachModule.encode_abi(module), {'from': accounts[0]})
+        module.test(token.detachModule.encode_input(module), {'from': accounts[0]})
 
 
 def test_token_transferFrom(issuer, token):
@@ -72,7 +74,7 @@ def test_token_transferFrom(issuer, token):
         issuer,
         token,
         '0x23b872dd',
-        token.transferFrom.encode_abi(accounts[2], accounts[3], 3000)
+        token.transferFrom.encode_input(accounts[2], accounts[3], 3000)
     )
     assert token.balanceOf(accounts[2]) == 2000
     assert token.balanceOf(accounts[3]) == 3000
@@ -84,7 +86,7 @@ def test_token_modifyAuthorizedSupply(issuer, token):
         issuer,
         token,
         '0xc39f42ed',
-        token.modifyAuthorizedSupply.encode_abi("10 ether")
+        token.modifyAuthorizedSupply.encode_input("10 ether")
     )
     assert token.authorizedSupply() == "10 ether"
 
@@ -95,7 +97,7 @@ def test_token_mint(issuer, token):
         issuer,
         token,
         '0x40c10f19',
-        token.mint.encode_abi(accounts[3], 10000)
+        token.mint.encode_input(accounts[3], 10000)
     )
     assert token.balanceOf(accounts[3]) == 10000
 
@@ -107,7 +109,7 @@ def test_token_burn(issuer, token):
         issuer,
         token,
         '0x9dc29fac',
-        token.burn.encode_abi(accounts[2], 3000)
+        token.burn.encode_input(accounts[2], 3000)
     )
     assert token.balanceOf(accounts[2]) == 2000
 
@@ -118,7 +120,7 @@ def test_nft_mint(issuer, nft):
         issuer,
         nft,
         "0x15077ec8",
-        nft.mint.encode_abi(accounts[2], 10000, 0, "0xff11")
+        nft.mint.encode_input(accounts[2], 10000, 0, "0xff11")
     )
     assert nft.balanceOf(accounts[2]) == 10000
 
@@ -129,7 +131,7 @@ def test_nft_burn(issuer, nft):
         issuer,
         nft,
         "0x9a0d378b",
-        nft.burn.encode_abi(1337, 31337)
+        nft.burn.encode_input(1337, 31337)
     )
     assert nft.balanceOf(issuer) == 70000
 
@@ -140,7 +142,7 @@ def test_nft_modifyRange(issuer, nft):
         issuer,
         nft,
         "0x712a516a",
-        nft.modifyRange.encode_abi(1, 0, "0xabcd")
+        nft.modifyRange.encode_input(1, 0, "0xabcd")
     )
     assert nft.getRange(1)[1:5] == (1, 100001, 0, "0xabcd")
 
@@ -151,7 +153,7 @@ def test_nft_modifyRanges(issuer, nft):
         issuer,
         nft,
         "0x786500aa",
-        nft.modifyRanges.encode_abi(100, 200, 0, "0x1111")
+        nft.modifyRanges.encode_input(100, 200, 0, "0x1111")
     )
     assert nft.getRange(1)[1:5] == (1, 100, 0, "0x0000")
     assert nft.getRange(100)[1:5] == (100, 200, 0, "0x1111")
@@ -161,7 +163,9 @@ def test_nft_modifyRanges(issuer, nft):
 def _check_permission(issuer, contract, sig, calldata):
 
     # deploy the module
-    module = compile_source(module_source.format(sig))[0].deploy(contract, {'from': accounts[0]})
+    source = module_source.format(sig)
+    project = compile_source(source)
+    module = project.TestModule.deploy(contract, {'from': accounts[0]})
 
     # check that call fails prior to attaching module
     with pytest.reverts():

@@ -101,7 +101,8 @@ def test_totalSupplyChanged(testhook, issuer, token, cust):
 def _hook(issuer, token, fn, args, source, sig):
     args = list(args) + [{'from': accounts[0]}]
     source = module_source.format(sig, source)
-    module = compile_source(source)[0].deploy(token, {'from': accounts[0]})
+    project = compile_source(source)
+    module = project.TestModule.deploy(token, {'from': accounts[0]})
     fn(*args)
     issuer.attachModule(token, module, {'from': accounts[0]})
     fn(*args)

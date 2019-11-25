@@ -1,8 +1,8 @@
 pragma solidity 0.4.25;
 
-import "../OrgCode.sol";
 import "../open-zeppelin/SafeMath.sol";
 
+import "../interfaces/IOrgCode.sol";
 
 interface IMultiCheckpointModule {
     function checkpointExists(address, uint256) external view returns (bool);
@@ -20,7 +20,7 @@ contract GovernanceModule {
 
     using SafeMath for uint256;
 
-    OrgCode public org;
+    IOrgCode public org;
     IMultiCheckpointModule public checkpoint;
 
     mapping (address => mapping (bytes => bool)) approval;
@@ -90,7 +90,7 @@ contract GovernanceModule {
         @notice Base constructor
         @param _org OrgCode contract address
      */
-    constructor(OrgCode _org, IMultiCheckpointModule _checkpoint) public {
+    constructor(IOrgCode _org, IMultiCheckpointModule _checkpoint) public {
         org = _org;
         checkpoint = _checkpoint;
     }
@@ -337,7 +337,7 @@ contract GovernanceModule {
         require(p.end < now); // dev: voting has not finished
         if (p.state == 1) _openVote(p);
         require(p.state == 2); // dev: proposal not active
-        
+
         uint256 _state = 5;
         uint256[] memory _results = new uint256[](p.votes.length);
         for (uint256 i; i < p.votes.length; i++) {

@@ -1,8 +1,9 @@
 pragma solidity 0.4.25;
 
 import "../../open-zeppelin/SafeMath.sol";
-import "./Module.sol";
+import {OrgShareModuleBase} from "./Module.sol";
 
+import "../../interfaces/IOrgCode.sol";
 import "../../interfaces/IOrgShare.sol";
 
 /**

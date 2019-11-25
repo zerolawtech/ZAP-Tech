@@ -1,7 +1,5 @@
 pragma solidity 0.4.25;
 
-import "../../bases/MultiSig.sol";
-
 import "../../interfaces/IOrgCode.sol";
 import "../../interfaces/IOrgShare.sol";
 
@@ -29,12 +27,12 @@ contract ModuleBase is ModuleBaseABC {
      */
     constructor(address _owner) public {
         owner = _owner;
-        ownerID = MultiSig(_owner).ownerID();
+        ownerID = IOrgCode(_owner).ownerID();
     }
 
     /** @dev Check that call originates from approved authority, allows multisig */
     function _onlyAuthority() internal returns (bool) {
-        return MultiSig(owner).checkMultiSigExternal(
+        return IOrgCode(owner).checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig

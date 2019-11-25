@@ -1,7 +1,7 @@
 pragma solidity 0.4.25;
 
 import "../open-zeppelin/SafeMath.sol";
-import "./bases/Module.sol";
+import {IssuerModuleBase} from "./bases/Module.sol";
 
 import "../interfaces/IOrgShare.sol";
 

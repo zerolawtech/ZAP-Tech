@@ -1,7 +1,7 @@
 pragma solidity 0.4.25;
 
-import "./open-zeppelin/SafeMath.sol";
 import "./bases/MultiSig.sol";
+import "./open-zeppelin/SafeMath.sol";
 
 import "./interfaces/IBaseCustodian.sol";
 import "./interfaces/IGovernance.sol";

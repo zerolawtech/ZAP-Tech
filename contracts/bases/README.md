@@ -1,4 +1,4 @@
-# SFT-Protocol/contracts/bases
+# ZAP-Tech/contracts/bases
 
 These are inherited base contracts used by the core contracts.
 

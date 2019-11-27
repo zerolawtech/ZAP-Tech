@@ -19,8 +19,8 @@ contract OrgCode is MultiSig {
     uint256 constant RECEIVER = 1;
 
     /*
-        Each country can have specific limits for each investor class.
-        minRating corresponds to the minimum investor level for this country.
+        Each country can have specific limits for each member class.
+        minRating corresponds to the minimum member level for this country.
         counts[0] and levels[0] == the sum total of counts[1:] and limits[1:]
     */
     struct Country {
@@ -65,7 +65,7 @@ contract OrgCode is MultiSig {
         uint8 minrating,
         uint32[8] limits
     );
-    event InvestorLimitsSet(uint32[8] limits);
+    event MemberLimitsSet(uint32[8] limits);
     event NewDocumentHash(string indexed document, bytes32 documentHash);
     event GovernanceSet(address indexed governance);
     event VerifierSet(address indexed verifier, bool restricted);
@@ -93,12 +93,12 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Check if an address belongs to a registered investor
+        @notice Check if an address belongs to a registered member
         @dev Retrurns false for custodian or org addresses
         @param _addr address to check
-        @return bytes32 investor ID
+        @return bytes32 member ID
      */
-    function isRegisteredInvestor(address _addr) external view returns (bool) {
+    function isRegisteredMember(address _addr) external view returns (bool) {
         bytes32 _id = _getID(_addr);
         return accounts[_id].rating > 0;
     }
@@ -113,9 +113,9 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice External view to fetch an investor ID from an address
+        @notice External view to fetch an member ID from an address
         @param _addr address to check
-        @return bytes32 investor ID
+        @return bytes32 member ID
      */
     function getID(address _addr) external view returns (bytes32 _id) {
         _id = _getID(_addr);
@@ -126,19 +126,19 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Get address of the verifier an investor is associated with
-        @param _id Investor ID
+        @notice Get address of the verifier an member is associated with
+        @param _id Member ID
         @return verifier address
      */
-    function getInvestorVerifier(bytes32 _id) external view returns (address) {
+    function getMemberVerifier(bytes32 _id) external view returns (address) {
         return verifiers[accounts[_id].regKey].addr;
     }
 
     /**
-        @notice Fetch total investor counts and limits
+        @notice Fetch total member counts and limits
         @return counts, limits
      */
-    function getInvestorCounts()
+    function getMemberCounts()
     external
     view
     returns (
@@ -150,7 +150,7 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Fetch minrating, investor counts and limits of a country
+        @notice Fetch minrating, member counts and limits of a country
         @dev counts[0] and levels[0] == the sum of counts[1:] and limits[1:]
         @param _country Country to query
         @return uint32 minRating, uint32 arrays of counts, limits
@@ -311,8 +311,8 @@ contract OrgCode is MultiSig {
         @notice Set all information about a country
         @param _country Country to modify
         @param _permitted Is country approved
-        @param _minRating minimum investor rating
-        @param _limits array of investor limits
+        @param _minRating minimum member rating
+        @param _limits array of member limits
         @return bool success
      */
     function setCountry(
@@ -337,10 +337,10 @@ contract OrgCode is MultiSig {
         @notice Initialize many countries in a single call
         @dev
             This call is useful if you have a lot of countries to approve
-            where there is no investor limit specific to the investor ratings
+            where there is no member limit specific to the member ratings
         @param _country Array of counties to add
-        @param _minRating Array of minimum investor ratings necessary for each country
-        @param _limit Array of maximum mumber of investors allowed from this country
+        @param _minRating Array of minimum member ratings necessary for each country
+        @param _limit Array of maximum mumber of members allowed from this country
         @return bool success
      */
     function setCountries(
@@ -366,25 +366,25 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Set investor limits
+        @notice Set member limits
         @dev
-            _limits[0] is the total investor limit, [1:] correspond to limits
-            at each specific investor rating. Setting a value of 0 means there
+            _limits[0] is the total member limit, [1:] correspond to limits
+            at each specific member rating. Setting a value of 0 means there
             is no limit.
         @param _limits Array of limits
         @return bool success
      */
-    function setInvestorLimits(uint32[8] _limits) external returns (bool) {
+    function setMemberLimits(uint32[8] _limits) external returns (bool) {
         if (!_checkMultiSig()) return false;
         limits = _limits;
-        emit InvestorLimitsSet(_limits);
+        emit MemberLimitsSet(_limits);
         return true;
     }
 
     /**
-        @notice Set restriction on an investor or custodian ID
+        @notice Set restriction on an member or custodian ID
         @dev restrictions on sub-authorities are handled via MultiSig methods
-        @param _id investor ID
+        @param _id member ID
         @param _restricted permission bool
         @return bool success
      */
@@ -481,7 +481,7 @@ contract OrgCode is MultiSig {
         address _addr = (_authID == _id[SENDER] ? _auth : _from);
         bool[2] memory _permitted;
 
-        (_permitted, _rating, _country) = _getInvestors(
+        (_permitted, _rating, _country) = _getMembers(
             [_addr, _to],
             [accounts[idMap[_addr].id].regKey, accounts[_id[RECEIVER]].regKey]
         );
@@ -498,9 +498,9 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice internal investor ID fetch
-        @param _addr Investor address
-        @return bytes32 investor ID
+        @notice internal member ID fetch
+        @param _addr Member address
+        @return bytes32 member ID
      */
     function _getID(address _addr) internal returns (bytes32 _id) {
         _id = idMap[_addr].id;
@@ -520,7 +520,7 @@ contract OrgCode is MultiSig {
             for (uint256 i = 1; i < verifiers.length; i++) {
                 if (!verifiers[i].restricted) {
                     _id = verifiers[i].addr.getID(_addr);
-                    /* prevent investor / authority ID collisions */
+                    /* prevent member / authority ID collisions */
                     if (_id != 0 && authorityData[_id].addressCount == 0) {
                         idMap[_addr].id = _id;
                         if (!accounts[_id].set) {
@@ -547,13 +547,13 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Internal function for fetching investor data from verifiers
+        @notice Internal function for fetching member data from verifiers
         @dev Either _addr or _id may be given as an empty array
-        @param _addr array of investor addresses
+        @param _addr array of member addresses
         @param _key array of verifier indexes
-        @return permissions, ratings, and countries of investors
+        @return permissions, ratings, and countries of members
      */
-    function _getInvestors(
+    function _getMembers(
         address[2] _addr,
         uint8[2] _key
     )
@@ -565,7 +565,7 @@ contract OrgCode is MultiSig {
             uint16[2] _country
         )
     {
-        /* If both investors are in the same verifier, call getInvestors */
+        /* If both members are in the same verifier, call getMembers */
         IIDVerifier r = verifiers[_key[SENDER]].addr;
         if (_key[SENDER] > 0 && _key[SENDER] == _key[RECEIVER]) {
             (
@@ -573,17 +573,17 @@ contract OrgCode is MultiSig {
                 _permitted,
                 _rating,
                 _country
-            ) = r.getInvestors(_addr[SENDER], _addr[RECEIVER]);
+            ) = r.getMembers(_addr[SENDER], _addr[RECEIVER]);
             return (_permitted, _rating, _country);
         }
-        /* Otherwise, call getInvestor at each verifier */
+        /* Otherwise, call getMember at each verifier */
         if (_key[SENDER] != 0) {
             (
                 ,
                 _permitted[SENDER],
                 _rating[SENDER],
                 _country[SENDER]
-            ) = r.getInvestor(_addr[SENDER]);
+            ) = r.getMember(_addr[SENDER]);
         } else {
             /* If key == 0 the address belongs to the org or a custodian. */
             _permitted[SENDER] = true;
@@ -595,7 +595,7 @@ contract OrgCode is MultiSig {
                 _permitted[RECEIVER],
                 _rating[RECEIVER],
                 _country[RECEIVER]
-            ) = r.getInvestor(_addr[RECEIVER]);
+            ) = r.getMember(_addr[RECEIVER]);
         } else {
             _permitted[RECEIVER] = true;
         }
@@ -607,8 +607,8 @@ contract OrgCode is MultiSig {
         @param _authID id hash of caller
         @param _id addresses of sender and receiver
         @param _permitted array of permission bools from verifier
-        @param _rating array of investor ratings
-        @param _country array of investor countries
+        @param _rating array of member ratings
+        @param _country array of member countries
         @param _shareCount sender accounts.count value after transfer
      */
     function _checkTransfer(
@@ -644,39 +644,39 @@ contract OrgCode is MultiSig {
                 require(c.permitted, "Receiver blocked: Country");
                 require(_rating[RECEIVER] >= c.minRating, "Receiver blocked: Rating");
                 /*
-                    If the receiving investor currently has 0 balance and no
+                    If the receiving member currently has 0 balance and no
                     custodians, make sure a slot is available for allocation.
                 */
                 if (accounts[_id[RECEIVER]].count == 0) {
                     /* create a bool to prevent repeated comparisons */
                     bool _check = (_rating[SENDER] == 0 || _shareCount > 0);
                     /*
-                        If the sender is an investor and still retains a balance,
+                        If the sender is an member and still retains a balance,
                         a new slot must be available.
                     */
                     if (_check) {
                         require(
                             limits[0] == 0 ||
                             counts[0] < limits[0],
-                            "Total Investor Limit"
+                            "Total Member Limit"
                         );
                     }
                     /*
-                        If the investors are from different countries, make sure
+                        If the members are from different countries, make sure
                         a slot is available in the overall country limit.
                     */
                     if (_check || _country[SENDER] != _country[RECEIVER]) {
                         require(
                             c.limits[0] == 0 ||
                             c.counts[0] < c.limits[0],
-                            "Country Investor Limit"
+                            "Country Member Limit"
                         );
                     }
                     if (!_check) {
                         _check = _rating[SENDER] != _rating[RECEIVER];
                     }
                     /*
-                        If the investors are of different ratings, make sure a
+                        If the members are of different ratings, make sure a
                         slot is available in the receiver's rating in the overall
                         count.
                     */
@@ -684,11 +684,11 @@ contract OrgCode is MultiSig {
                         require(
                             limits[_rating[RECEIVER]] == 0 ||
                             counts[_rating[RECEIVER]] < limits[_rating[RECEIVER]],
-                            "Total Investor Limit: Rating"
+                            "Total Member Limit: Rating"
                         );
                     }
                     /*
-                        If the investors don't match in country or rating, make
+                        If the members don't match in country or rating, make
                         sure a slot is available in both the specific country
                         and rating for the receiver.
                     */
@@ -696,7 +696,7 @@ contract OrgCode is MultiSig {
                         require(
                             c.limits[_rating[RECEIVER]] == 0 ||
                             c.counts[_rating[RECEIVER]] < c.limits[_rating[RECEIVER]],
-                            "Country Investor Limit: Rating"
+                            "Country Member Limit: Rating"
                         );
                     }
                 }
@@ -736,13 +736,13 @@ contract OrgCode is MultiSig {
         /* If no transfer of ownership, return true immediately */
         if (_id[SENDER] == _id[RECEIVER]) return;
 
-        /* if sender is a normal investor */
+        /* if sender is a normal member */
         if (_rating[SENDER] != 0) {
             _setRating(_id[SENDER], _rating[SENDER], _country[SENDER]);
             if (_zero[0]) {
                 Account storage a = accounts[_id[SENDER]];
                 a.count = a.count.sub(1);
-                /* If investor account balance is now 0, lower investor counts */
+                /* If member account balance is now 0, lower member counts */
                 if (a.count == 0) {
                     _decrementCount(_rating[SENDER], _country[SENDER]);
                 }
@@ -757,13 +757,13 @@ contract OrgCode is MultiSig {
                 }
             }
         }
-        /* if receiver is a normal investor */
+        /* if receiver is a normal member */
         if (_rating[RECEIVER] != 0) {
             _setRating(_id[RECEIVER], _rating[RECEIVER], _country[RECEIVER]);
             if (_zero[1]) {
                 a = accounts[_id[RECEIVER]];
                 a.count = a.count.add(1);
-                /* If investor account balance was 0, increase investor counts */
+                /* If member account balance was 0, increase member counts */
                 if (a.count == 1) {
                     _incrementCount(_rating[RECEIVER], _country[RECEIVER]);
                 }
@@ -787,7 +787,7 @@ contract OrgCode is MultiSig {
         @param _owner Share owner
         @param _old Old balance
         @param _new New balance
-        @return id, rating, and country of the affected investor
+        @return id, rating, and country of the affected member
      */
     function modifyShareTotalSupply(
         address _owner,
@@ -809,7 +809,7 @@ contract OrgCode is MultiSig {
         } else {
             require(accounts[idMap[_owner].id].custodian == 0); // dev: custodian
             uint8 _key = accounts[idMap[_owner].id].regKey;
-            (_id, , _rating, _country) = verifiers[_key].addr.getInvestor(_owner);
+            (_id, , _rating, _country) = verifiers[_key].addr.getMember(_owner);
         }
         Account storage a = accounts[_id];
         if (_id != ownerID) {
@@ -830,10 +830,10 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Check and modify an investor's rating in contract storage
-        @param _id Investor ID
-        @param _rating Investor rating
-        @param _country Investor country
+        @notice Check and modify an member's rating in contract storage
+        @param _id Member ID
+        @param _rating Member rating
+        @param _country Member country
      */
     function _setRating(bytes32 _id, uint8 _rating, uint16 _country) internal {
         Account storage a = accounts[_id];
@@ -848,9 +848,9 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Increment investor count
-        @param _r Investor rating
-        @param _c Investor country
+        @notice Increment member count
+        @param _r Member rating
+        @param _c Member country
         @return bool success
      */
     function _incrementCount(uint8 _r, uint16 _c) internal {
@@ -861,9 +861,9 @@ contract OrgCode is MultiSig {
     }
 
     /**
-        @notice Decrement investor count
-        @param _r Investor rating
-        @param _c Investor country
+        @notice Decrement member count
+        @param _r Member rating
+        @param _c Member country
         @return bool success
      */
     function _decrementCount(uint8 _r, uint16 _c) internal {

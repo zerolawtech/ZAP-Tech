@@ -41,9 +41,9 @@ contract OwnedCustodian is Modular, MultiSig {
     }
 
     /**
-        @notice Fetch an investor's current share balance held by the custodian
+        @notice Fetch an member's current share balance held by the custodian
         @param _share address of the OrgShare contract
-        @param _owner investor address
+        @param _owner member address
         @return integer
      */
     function balanceOf(
@@ -116,7 +116,7 @@ contract OwnedCustodian is Modular, MultiSig {
     /**
         @notice Add a new share owner
         @dev called by OrgCode when shares are transferred to a custodian
-        @param _from Investor address
+        @param _from Member address
         @param _value Amount transferred
         @return bool success
      */

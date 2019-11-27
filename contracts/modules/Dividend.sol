@@ -96,7 +96,7 @@ contract DividendModule is CheckpointModuleBase {
         @param _beneficiary Address to send dividend to
      */
     function _claim(address _beneficiary) internal {
-        require(orgCode.isRegisteredInvestor(_beneficiary));
+        require(orgCode.isRegisteredMember(_beneficiary));
         require (!claimed[_beneficiary]);
         uint256 _value = _getBalance(
             _beneficiary
@@ -150,7 +150,7 @@ contract DividendModule is CheckpointModuleBase {
         @param _custodian Custodian address
      */
     function _claimCustodian(address _beneficiary, address _custodian) internal {
-        require(orgCode.isRegisteredInvestor(_beneficiary));
+        require(orgCode.isRegisteredMember(_beneficiary));
         require (!claimedCustodian[_beneficiary][_custodian]);
         uint256 _value = _getCustodianBalance(
             _beneficiary,

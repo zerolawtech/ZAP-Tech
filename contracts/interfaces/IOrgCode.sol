@@ -7,7 +7,7 @@ interface IOrgCode {
      event EntityRestriction (bytes32 indexed id, bool restricted);
      event GlobalRestriction (bool restricted);
      event GovernanceSet (address indexed governance);
-     event InvestorLimitsSet (uint32[8] limits);
+     event MemberLimitsSet (uint32[8] limits);
      event MultiSigCall (bytes32 indexed id, bytes4 indexed callSignature, bytes32 indexed callHash, address caller, uint256 callCount, uint256 threshold);
      event MultiSigCallApproved (bytes32 indexed id, bytes4 indexed callSignature, bytes32 indexed callHash, address caller);
      event NewAuthority (bytes32 indexed id, uint32 approvedUntil, uint32 threshold);
@@ -41,7 +41,7 @@ interface IOrgCode {
      function setEntityRestriction (bytes32 _id, bool _restricted) external returns (bool);
      function setGlobalRestriction (bool _restricted) external returns (bool);
      function setGovernance (address _governance) external returns (bool);
-     function setInvestorLimits (uint32[8] _limits) external returns (bool);
+     function setMemberLimits (uint32[8] _limits) external returns (bool);
      function setOrgShareRestriction (address _share, bool _restricted) external returns (bool);
      function setVerifier (address _verifier, bool _restricted) external returns (bool);
      function transferShares (address _auth, address _from, address _to, bool[4] _zero) external returns (bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country);
@@ -49,13 +49,13 @@ interface IOrgCode {
      function getCountry (uint16 _country) external view returns (uint32 _minRating, uint32[8] _count, uint32[8] _limit);
      function getDocumentHash (string _documentID) external view returns (bytes32);
      function getID (address _addr) external view returns (bytes32 _id);
-     function getInvestorCounts () external view returns (uint32[8] _counts, uint32[8] _limits);
-     function getInvestorVerifier (bytes32 _id) external view returns (address);
+     function getMemberCounts () external view returns (uint32[8] _counts, uint32[8] _limits);
+     function getMemberVerifier (bytes32 _id) external view returns (address);
      function governance () external view returns (address);
      function isActiveOrgShare (address _share) external view returns (bool);
      function isApprovedAuthority (address _addr, bytes4 _sig) external view returns (bool);
      function isAuthority (address _addr) external view returns (bool);
      function isAuthorityID (bytes32 _authID) external view returns (bool);
-     function isRegisteredInvestor (address _addr) external view returns (bool);
+     function isRegisteredMember (address _addr) external view returns (bool);
      function ownerID () external view returns (bytes32);
 }

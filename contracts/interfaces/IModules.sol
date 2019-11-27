@@ -40,7 +40,7 @@ contract IBookShareModule is IBaseModule {
         @param _addr sender and receiver addresses
         @param _authID id hash of caller
         @param _id sender and receiver id hashes
-        @param _rating sender and receiver investor ratings
+        @param _rating sender and receiver member ratings
         @param _country sender and receiver country codes
         @param _value amount of shares to be transfered
         @return bool success
@@ -64,7 +64,7 @@ contract IBookShareModule is IBaseModule {
             Hook signature: 0x0675a5e0
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
-        @param _rating sender and receiver investor ratings
+        @param _rating sender and receiver member ratings
         @param _country sender and receiver country codes
         @param _value amount of shares to be transfered
         @return bool success
@@ -87,7 +87,7 @@ contract IBookShareModule is IBaseModule {
         @param _custodian custodian address
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
-        @param _rating sender and receiver investor ratings
+        @param _rating sender and receiver member ratings
         @param _country sender and receiver country codes
         @param _value amount of shares to be transfered
         @return bool success
@@ -110,8 +110,8 @@ contract IBookShareModule is IBaseModule {
             Hook signature: 0x741b5078
         @param _addr Address where balance has changed
         @param _id ID that the address is associated to
-        @param _rating Investor rating
-        @param _country Investor country code
+        @param _rating Member rating
+        @param _country Member country code
         @param _old Previous share balance at the address
         @param _new New share balance at the address
         @return bool success
@@ -144,7 +144,7 @@ contract ICertShareModule is IBookShareModule {
         @param _addr sender and receiver addresses
         @param _authID id hash of caller
         @param _id sender and receiver id hashes
-        @param _rating sender and receiver investor ratings
+        @param _rating sender and receiver member ratings
         @param _country sender and receiver country codes
         @param _range start and stop index of transferred range
         @return bool success
@@ -168,7 +168,7 @@ contract ICertShareModule is IBookShareModule {
             Hook signature: 0x244d5002 (taggable)
         @param _addr sender and receiver addresses
         @param _id sender and receiver id hashes
-        @param _rating sender and receiver investor ratings
+        @param _rating sender and receiver member ratings
         @param _country sender and receiver country codes
         @param _range start and stop index of transferred range
         @return bool success

@@ -218,7 +218,7 @@ contract MultiCheckpointModule is OrgModuleBase {
     /**
         @notice Hook method, record checkpoint value after a transfer
         @param _addr Sender/receiver address
-        @param _id Sender/receiver investor ID
+        @param _id Sender/receiver member ID
         @param _rating Sender/receiver rating
         @param _value Amount transferred
         @return bool
@@ -290,7 +290,7 @@ contract MultiCheckpointModule is OrgModuleBase {
 
     /**
         @notice Hook method, record checkpoint value after mint/burn
-        @param _addr Investor address
+        @param _addr Member address
         @param _old Old balance
         @param _new New balance
         @return bool

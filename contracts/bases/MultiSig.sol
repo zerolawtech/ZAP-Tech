@@ -94,7 +94,7 @@ contract MultiSig {
 
     /**
         @notice Internal function to add new addresses
-        @param _id investor or authority ID
+        @param _id member or authority ID
         @param _addr array of addresses
         @return number of new addresses (not previous restricted)
      */

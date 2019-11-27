@@ -185,8 +185,8 @@ contract VestedOptions is BookShareModuleBase {
     }
 
     /**
-        @notice get information about an investor's options
-        @param _id investor ID
+        @notice get information about an member's options
+        @param _id member ID
         @return total vested, total unvested, array of (exercise price, array length)
      */
     function getOptions(
@@ -231,8 +231,8 @@ contract VestedOptions is BookShareModuleBase {
     }
 
     /**
-        @notice get detailed information about specific options for an investor
-        @param _id investor ID
+        @notice get detailed information about specific options for an member
+        @param _id member ID
         @param _price exercise price
         @param _index option array index (use getOptions for possible values)
         @return vested total, unvested total, iso bool, expiry date, vestMap (ascending)
@@ -267,8 +267,8 @@ contract VestedOptions is BookShareModuleBase {
     }
 
     /**
-        @notice Get information about in-money options for a given investor
-        @param _id investor ID
+        @notice Get information about in-money options for a given member
+        @param _id member ID
         @param _perShareConsideration per-share consideration to be paid
         @return number of options that are in the money
         @return aggregate exercise price for in-money options
@@ -323,7 +323,7 @@ contract VestedOptions is BookShareModuleBase {
 
     /**
         @notice issue new options
-        @param _id investor ID
+        @param _id member ID
         @param _price exercise price for options being issued
         @param _amount array, quantities of options to issue
         @param _monthsToVest array, relative time for options to vest (months from now)
@@ -420,7 +420,7 @@ contract VestedOptions is BookShareModuleBase {
 
     /**
         @notice Extends an OptionData array if needed, and returns an Option struct
-        @param _id investor ID
+        @param _id member ID
         @param _price exercise price to add
         @return Option struct
      */
@@ -507,8 +507,8 @@ contract VestedOptions is BookShareModuleBase {
     }
 
     /**
-        @notice Immediately vest all options for a given investor ID
-        @param _id investor ID
+        @notice Immediately vest all options for a given member ID
+        @param _id member ID
         @return bool success
      */
     function accellerateVesting(bytes32 _id) external returns (bool) {
@@ -540,10 +540,10 @@ contract VestedOptions is BookShareModuleBase {
     /**
         @notice Terminate options
         @dev
-            Terminates all unvested options associated with an investor ID.
+            Terminates all unvested options associated with an member ID.
             Options that have already vested will have their expiration date
             decreased to gracePeriodMonths * 2592000
-        @param _id Investor ID
+        @param _id Member ID
         @return bool success
      */
     function terminateOptions(bytes32 _id) external returns (bool) {
@@ -687,7 +687,7 @@ contract VestedOptions is BookShareModuleBase {
     /**
         @notice update start and length values for OptionBase struct
         @dev _updateOption must still be called on remaining Options
-        @param _id investor ID
+        @param _id member ID
         @param _price exercise price to update
         @return boolean - true if OptionBase is not empty after the update
      */

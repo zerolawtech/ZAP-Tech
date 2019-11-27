@@ -31,17 +31,17 @@ contract IDVerifierOrg is IDVerifierBase {
 
     /**
         @notice Internal function to add new addresses
-        @param _id investor or authority ID
+        @param _id member or authority ID
         @param _addr array of addresses
      */
     function _addAddresses(bytes32 _id, address[] _addr) internal {
         for (uint256 i; i < _addr.length; i++) {
             Address storage _inv = idMap[_addr[i]];
-            /** If address was previous assigned to this investor ID
+            /** If address was previous assigned to this member ID
                 and is currently restricted - remove the restriction */
             if (_inv.id == _id && _inv.restricted) {
                 _inv.restricted = false;
-            /* If address has not had an investor ID associated - set the ID */
+            /* If address has not had an member ID associated - set the ID */
             } else if (_inv.id == 0) {
                 require(!org.isAuthority(_addr[i])); // dev: auth address
                 _inv.id = _id;
@@ -54,20 +54,20 @@ contract IDVerifierOrg is IDVerifierBase {
     }
 
     /**
-        @notice Add investor to this verifier
+        @notice Add member to this verifier
         @dev
-            Investor ID is a hash formed via a concatenation of PII
+            Member ID is a hash formed via a concatenation of PII
             Country and region codes are based on the ISO 3166 standard
             https://sft-protocol.readthedocs.io/en/latest/data-standards.html
-        @param _id Investor ID
-        @param _country Investor country code
-        @param _region Investor region code
-        @param _rating Investor rating (accreditted, qualified, etc)
+        @param _id Member ID
+        @param _country Member country code
+        @param _region Member region code
+        @param _rating Member rating (accreditted, qualified, etc)
         @param _expires Record expiration in epoch time
-        @param _addr Array of addresses to register to investor
+        @param _addr Array of addresses to register to member
         @return bool success
     */
-    function addInvestor(
+    function addMember(
         bytes32 _id,
         uint16 _country,
         bytes3 _region,
@@ -80,10 +80,10 @@ contract IDVerifierOrg is IDVerifierBase {
     {
         if (!_onlyAuthority()) return false;
         require(!org.isAuthorityID(_id)); // dev: authority ID
-        require(investorData[_id].country == 0); // dev: investor ID
+        require(memberData[_id].country == 0); // dev: member ID
         require(_country > 0); // dev: country 0
-        _setInvestor(0x00, _id, _country, _region, _rating, _expires);
-        emit NewInvestor(
+        _setMember(0x00, _id, _country, _region, _rating, _expires);
+        emit NewMember(
             _id,
             _country,
             _region,
@@ -96,15 +96,15 @@ contract IDVerifierOrg is IDVerifierBase {
     }
 
     /**
-        @notice Update an investor
-        @dev Investor country may not be changed as this will alter their ID
-        @param _id Investor ID
-        @param _region Investor region
-        @param _rating Investor rating
+        @notice Update an member
+        @dev Member country may not be changed as this will alter their ID
+        @param _id Member ID
+        @param _region Member region
+        @param _rating Member rating
         @param _expires Record expiration in epoch time
         @return bool success
      */
-    function updateInvestor(
+    function updateMember(
         bytes32 _id,
         bytes3 _region,
         uint8 _rating,
@@ -114,9 +114,9 @@ contract IDVerifierOrg is IDVerifierBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(investorData[_id].country != 0); // dev: unknown ID
-        _setInvestor(0x00, _id, 0, _region, _rating, _expires);
-        emit UpdatedInvestor(
+        require(memberData[_id].country != 0); // dev: unknown ID
+        _setMember(0x00, _id, 0, _region, _rating, _expires);
+        emit UpdatedMember(
             _id,
             _region,
             _rating,
@@ -127,13 +127,13 @@ contract IDVerifierOrg is IDVerifierBase {
     }
 
     /**
-        @notice Set or remove an investor's restricted status
+        @notice Set or remove an member's restricted status
         @dev This modifies restriciton on all addresses attached to the ID
-        @param _id Investor ID
+        @param _id Member ID
         @param _restricted Permission bool
         @return bool success
      */
-    function setInvestorRestriction(
+    function setMemberRestriction(
         bytes32 _id,
         bool _restricted
     )
@@ -141,9 +141,9 @@ contract IDVerifierOrg is IDVerifierBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(investorData[_id].country != 0);
-        investorData[_id].restricted = _restricted;
-        emit InvestorRestriction(_id, _restricted, org.getID(msg.sender));
+        require(memberData[_id].country != 0);
+        memberData[_id].restricted = _restricted;
+        emit MemberRestriction(_id, _restricted, org.getID(msg.sender));
         return true;
     }
 
@@ -196,12 +196,12 @@ contract IDVerifierOrg is IDVerifierBase {
     }
 
     /**
-        @notice Check if an an investor is permitted based on ID
-        @param _id Investor ID to query
+        @notice Check if an an member is permitted based on ID
+        @param _id Member ID to query
         @return bool permission
      */
     function isPermittedID(bytes32 _id) public view returns (bool) {
-        Investor storage i = investorData[_id];
+        Member storage i = memberData[_id];
         if (i.restricted) return false;
         if (i.expires < now) return false;
         return true;

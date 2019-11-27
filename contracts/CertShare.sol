@@ -211,13 +211,13 @@ contract CertShare is OrgShareBase {
     /**
         @notice internal check of transfer permission before performing it
         @param _authID ID of calling authority
-        @param _id Array of investor IDs
+        @param _id Array of member IDs
         @param _cust Custodian address
-        @param _addr Investor address array
-        @param _rating Investor rating array
-        @param _country Investor country array
+        @param _addr Member address array
+        @param _rating Member rating array
+        @param _country Member country array
         @param _value Value of transfer
-        @return address array of investors
+        @return address array of members
         @return dynamic array of range pointers that to transfer
      */
     function _checkTransfer(
@@ -235,7 +235,7 @@ contract CertShare is OrgShareBase {
             uint48[] _range
         )
     {
-        /* Sending 0 balance is blocked to reduce logic around investor limits */
+        /* Sending 0 balance is blocked to reduce logic around member limits */
         require(_value > 0, "Cannot send 0 shares");
         require(uint48(_value) == _value, "Value too large");
 
@@ -289,11 +289,11 @@ contract CertShare is OrgShareBase {
     /**
         @notice Find ranges that are permitted to transfer
         @param _authID ID of calling authority
-        @param _id Array of investor IDs
+        @param _id Array of member IDs
         @param _cust Custodian address
-        @param _addr Investor address array
-        @param _rating Investor rating array
-        @param _country Investor country array
+        @param _addr Member address array
+        @param _rating Member rating array
+        @param _country Member country array
         @param _value Value of transfer
         @param _startRange Initial range to search
         @return dynamic array of range pointers that to transfer
@@ -650,7 +650,7 @@ contract CertShare is OrgShareBase {
         @dev common logic for transfer(), transferFrom() and transferRange()
         @param _id Array of sender/receiver ID
         @param _addr Array of sender/receiver addresses
-        @param _rating Array of sender/receiver investor rating
+        @param _rating Array of sender/receiver member rating
         @param _country Array of sender/receiver countries
         @param _value Amount to transfer
         @return Custodian address, sender/receiver addresses
@@ -758,7 +758,7 @@ contract CertShare is OrgShareBase {
         @param _id Array of sender/receiver ID
         @param _addr Array of sender/receiver addresses
         @param _custodian Custodian of new ranges
-        @param _rating Array of sender/receiver investor rating
+        @param _rating Array of sender/receiver member rating
         @param _country Array of sender/receiver countries
         @param _value Amount to transfer
         @param _range Array of range pointers to transfer

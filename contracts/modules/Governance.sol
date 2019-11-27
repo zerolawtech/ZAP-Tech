@@ -397,7 +397,7 @@ contract GovernanceModule {
     }
 
     /**
-        @notice Internal - calculate total votes for an investor
+        @notice Internal - calculate total votes for an member
         @param t Storage marker for Share struct
         @param _time Checkpoint time
         @return uint256 total votes
@@ -418,7 +418,7 @@ contract GovernanceModule {
     }
 
     /**
-        @notice Internal - calculate total votes for an investor via custodian
+        @notice Internal - calculate total votes for an member via custodian
         @param t Storage marker for Share struct
         @param _cust Custodian contract address
         @param _time Checkpoint time

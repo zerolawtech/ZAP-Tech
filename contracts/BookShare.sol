@@ -95,13 +95,13 @@ contract BookShare is OrgShareBase {
             seperate from _checkTransferView so it can be called by transfer
             related functions without the call to orgCode.checkTransfer
         @param _authID ID of caller
-        @param _id ID array of investor IDs
+        @param _id ID array of member IDs
         @param _cust Custodian address (0x00 if none)
-        @param _addr address array of investors
-        @param _rating array of investor ratings
-        @param _country array of investor countries
+        @param _addr address array of members
+        @param _rating array of member ratings
+        @param _country array of member countries
         @param _value Amount being transferred
-        @return array of investor addresses
+        @return array of member addresses
      */
     function _checkTransfer(
         bytes32 _authID,
@@ -166,7 +166,7 @@ contract BookShare is OrgShareBase {
               any address.
             * Modules may call this function to transfer shares with the same
               level of authority as orgCode.
-            * An investor with multiple addresses may use this to transfer shares
+            * An member with multiple addresses may use this to transfer shares
               from any address he controls, without giving prior approval to that
               address.
             * An unregistered address cannot initiate a transfer, even if it was

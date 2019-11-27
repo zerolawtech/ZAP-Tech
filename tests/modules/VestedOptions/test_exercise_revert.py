@@ -27,7 +27,7 @@ def test_wrong_price(options, id1, issueoptions, sleep):
 
 
 def test_unknown_id(options):
-    '''unknown investor ID'''
+    '''unknown member ID'''
     with pytest.reverts("Address not registered"):
         options.exerciseOptions(10, 100, {'from': accounts[9], 'amount': 1000})
 

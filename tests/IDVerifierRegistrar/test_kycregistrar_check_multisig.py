@@ -11,7 +11,7 @@ def local_setup(kyc, owner_id, auth_id):
     kyc.setAuthorityCountries(auth_id, (1,), False, {'from': accounts[0]})
     kyc.registerAddresses(owner_id, accounts[1:5], {'from': accounts[0]})
     kyc.registerAddresses(auth_id, accounts[-5:-2], {'from': accounts[0]})
-    kyc.addInvestor("0x1111", 1, 1, 1, 9999999999, (accounts[5],), {'from': accounts[0]})
+    kyc.addMember("0x1111", 1, 1, 1, 9999999999, (accounts[5],), {'from': accounts[0]})
 
 
 @pytest.fixture(scope="module")
@@ -40,20 +40,20 @@ def test_setAuthorityRestriction(msowner, kyc, auth_id):
     msowner(kyc.setAuthorityRestriction, auth_id, True)
 
 
-def test_setInvestorAuthority(msowner, kyc, auth_id):
-    msowner(kyc.setInvestorAuthority, auth_id, ("0x1111",))
+def test_setMemberAuthority(msowner, kyc, auth_id):
+    msowner(kyc.setMemberAuthority, auth_id, ("0x1111",))
 
 
-def test_addInvestor(msauth, kyc):
-    msauth(kyc.addInvestor, "0x1234", 1, 1, 1, 9999999999, (accounts[6],))
+def test_addMember(msauth, kyc):
+    msauth(kyc.addMember, "0x1234", 1, 1, 1, 9999999999, (accounts[6],))
 
 
-def test_updateInvestor(msauth, kyc):
-    msauth(kyc.updateInvestor, "0x1111", 2, 4, 1234567890)
+def test_updateMember(msauth, kyc):
+    msauth(kyc.updateMember, "0x1111", 2, 4, 1234567890)
 
 
-def test_setInvestorRestriction(msauth, kyc):
-    msauth(kyc.setInvestorRestriction, "0x1111", True)
+def test_setMemberRestriction(msauth, kyc):
+    msauth(kyc.setMemberRestriction, "0x1111", True)
 
 
 def test_registerAddresses(msauth, kyc):

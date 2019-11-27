@@ -31,8 +31,8 @@ def test_setCountries(multisig, org):
     multisig(org.setCountries, [1, 2], [1, 1], [0, 0])
 
 
-def test_setInvestorLimits(multisig, org):
-    multisig(org.setInvestorLimits, [0] * 8)
+def test_setMemberLimits(multisig, org):
+    multisig(org.setMemberLimits, [0] * 8)
 
 
 def test_setDocumentHash(multisig, org):

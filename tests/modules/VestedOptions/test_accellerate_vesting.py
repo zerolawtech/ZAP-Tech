@@ -3,20 +3,8 @@
 from brownie import accounts
 
 
-# def test_setup():
-#     global org, share, options, id1, id2, id3
-#     share, org, _ = main(BookShare, (1, 2, 3), (1,))
-#     options = accounts[0].deploy(VestedOptions, share, org, 1, 10, 6, accounts[8])
-#     org.attachModule(share, options, {'from': accounts[0]})
-#     id1 = org.getID(accounts[1])
-#     id2 = org.getID(accounts[2])
-
-
 def test_accellerate_fully_unvested(options, id1, issueoptions, sleep, share):
     '''fully unvested'''
-    print(share.authorizedSupply())
-    print(share)
-    print(options.share())
     issueoptions(id1, 10)
     issueoptions(id1, 20)
     options.accellerateVesting(id1, {'from': accounts[0]})

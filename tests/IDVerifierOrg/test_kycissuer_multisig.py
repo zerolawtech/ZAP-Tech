@@ -5,7 +5,7 @@ import pytest
 
 from brownie import accounts, rpc
 
-id_ = "investor1".encode()
+id_ = "member1".encode()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -19,16 +19,16 @@ def multisig(org):
     yield functools.partial(_multisig, org)
 
 
-def test_addInvestor(multisig, ikyc):
-    multisig(ikyc.addInvestor, "0x1234", 1, 1, 1, 9999999999, (accounts[7],))
+def test_addMember(multisig, ikyc):
+    multisig(ikyc.addMember, "0x1234", 1, 1, 1, 9999999999, (accounts[7],))
 
 
-def test_updateInvestor(multisig, ikyc):
-    multisig(ikyc.updateInvestor, id_, 2, 4, 1234567890)
+def test_updateMember(multisig, ikyc):
+    multisig(ikyc.updateMember, id_, 2, 4, 1234567890)
 
 
-def test_setInvestorRestriction(multisig, ikyc):
-    multisig(ikyc.setInvestorRestriction, id_, False)
+def test_setMemberRestriction(multisig, ikyc):
+    multisig(ikyc.setMemberRestriction, id_, False)
 
 
 def test_registerAddresses(multisig, ikyc):

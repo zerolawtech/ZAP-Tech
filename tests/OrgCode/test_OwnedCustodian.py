@@ -49,8 +49,8 @@ def test_add_zero_id(org, testcust):
         org.addCustodian(testcust, {'from': accounts[0]})
 
 
-def test_add_investor_id(share, org, testcust):
-    '''custodian / investor collision - investor seen first'''
+def test_add_member_id(share, org, testcust):
+    '''custodian / member collision - member seen first'''
     share.mint(accounts[2], 100, {'from': accounts[0]})
     id_ = org.getID.call(accounts[2])
     testcust.setID(id_, {'from': accounts[0]})
@@ -58,8 +58,8 @@ def test_add_investor_id(share, org, testcust):
         org.addCustodian(testcust, {'from': accounts[0]})
 
 
-def test_add_investor_id2(share, org, testcust):
-    '''custodian / investor collision - custodian seen first'''
+def test_add_member_id2(share, org, testcust):
+    '''custodian / member collision - custodian seen first'''
     share.mint(org, 100, {'from': accounts[0]})
     id_ = org.getID.call(accounts[2])
     testcust.setID(id_, {'from': accounts[0]})

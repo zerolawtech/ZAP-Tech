@@ -44,7 +44,7 @@ def test_add_addresses_known_address(kyc, owner_id, auth_id):
     '''cannot add known addresses'''
     kyc.registerAddresses(owner_id, (accounts[1], accounts[2]), {'from': accounts[0]})
     kyc.registerAddresses(auth_id, (accounts[3], accounts[4]), {'from': accounts[0]})
-    kyc.addInvestor("0x123456", 1, 1, 1, 9999999999, (accounts[6],), {'from': accounts[0]})
+    kyc.addMember("0x123456", 1, 1, 1, 9999999999, (accounts[6],), {'from': accounts[0]})
     with pytest.reverts("dev: known address"):
         kyc.registerAddresses(owner_id, (accounts[1], accounts[5]), {'from': accounts[0]})
     with pytest.reverts("dev: known address"):
@@ -72,7 +72,7 @@ def test_restrict_already_restricted(kyc, owner_id, auth_id):
     '''cannot restrict - already restricted'''
     kyc.registerAddresses(owner_id, (accounts[1], accounts[2]), {'from': accounts[0]})
     kyc.registerAddresses(auth_id, (accounts[3], accounts[4]), {'from': accounts[0]})
-    kyc.addInvestor("0x123456", 1, 1, 1, 9999999999, (accounts[6],), {'from': accounts[0]})
+    kyc.addMember("0x123456", 1, 1, 1, 9999999999, (accounts[6],), {'from': accounts[0]})
     kyc.restrictAddresses(owner_id, (accounts[1],), {'from': accounts[0]})
     with pytest.reverts("dev: already restricted"):
         kyc.restrictAddresses(owner_id, (accounts[1],), {'from': accounts[0]})
@@ -88,7 +88,7 @@ def test_restrict_wrong_ID(kyc, owner_id, auth_id):
     '''cannot restrict - wrong ID'''
     kyc.registerAddresses(owner_id, (accounts[1], accounts[2]), {'from': accounts[0]})
     kyc.registerAddresses(auth_id, (accounts[3], accounts[4]), {'from': accounts[0]})
-    kyc.addInvestor("0x123456", 1, 1, 1, 9999999999, (accounts[6],), {'from': accounts[0]})
+    kyc.addMember("0x123456", 1, 1, 1, 9999999999, (accounts[6],), {'from': accounts[0]})
     with pytest.reverts("dev: wrong ID"):
         kyc.restrictAddresses(owner_id, (accounts[3],), {'from': accounts[0]})
     with pytest.reverts("dev: wrong ID"):
@@ -122,25 +122,25 @@ def test_authority_restrict_authority_addresses(kyc, owner_id, auth_id):
         kyc.restrictAddresses(auth_id, (accounts[3], accounts[4]), {'from': accounts[-1]})
 
 
-def test_owner_add_investor_addresses(kyc):
-    '''owner - add investor addresses'''
-    kyc.addInvestor("0x123456", 1, 1, 1, 9999999999, (accounts[1],), {'from': accounts[0]})
+def test_owner_add_member_addresses(kyc):
+    '''owner - add member addresses'''
+    kyc.addMember("0x123456", 1, 1, 1, 9999999999, (accounts[1],), {'from': accounts[0]})
     kyc.registerAddresses("0x123456", (accounts[2], accounts[3]), {'from': accounts[0]})
     assert kyc.getID(accounts[2]) == "0x123456"
     assert kyc.getID(accounts[3]) == "0x123456"
 
 
-def test_authority_add_investor_addresses(kyc):
-    '''authority - add investor addresses'''
-    kyc.addInvestor("0x123456", 1, 1, 1, 9999999999, (accounts[1],), {'from': accounts[-1]})
+def test_authority_add_member_addresses(kyc):
+    '''authority - add member addresses'''
+    kyc.addMember("0x123456", 1, 1, 1, 9999999999, (accounts[1],), {'from': accounts[-1]})
     kyc.registerAddresses("0x123456", (accounts[2], accounts[3]), {'from': accounts[-1]})
     assert kyc.getID(accounts[2]) == "0x123456"
     assert kyc.getID(accounts[3]) == "0x123456"
 
 
 def test_authority_add_addresses_not_permitted_country(kyc, auth_id):
-    '''authority - add investor addresses - not permitted country'''
-    kyc.addInvestor("0x123456", 2, 1, 1, 9999999999, (accounts[1],), {'from': accounts[0]})
+    '''authority - add member addresses - not permitted country'''
+    kyc.addMember("0x123456", 2, 1, 1, 9999999999, (accounts[1],), {'from': accounts[0]})
     with pytest.reverts("dev: country"):
         kyc.registerAddresses("0x123456", (accounts[2],), {'from': accounts[-1]})
     kyc.setAuthorityCountries(auth_id, (2,), True, {'from': accounts[0]})
@@ -148,8 +148,8 @@ def test_authority_add_addresses_not_permitted_country(kyc, auth_id):
 
 
 def test_authority_restrict_addresses_not_permitted_country(kyc, auth_id):
-    '''authority - restrict investor addresses - not permitted country'''
-    kyc.addInvestor(
+    '''authority - restrict member addresses - not permitted country'''
+    kyc.addMember(
         "0x123456",
         2,
         1,

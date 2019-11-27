@@ -112,8 +112,8 @@ def test_add_known(org, id1):
 
 def test_add_other(set_countries, org, kyc, share, id1):
     '''add already associated address'''
-    kyc.addInvestor(
-        b'investor1',
+    kyc.addMember(
+        b'member1',
         1,
         '0x000001',
         1,

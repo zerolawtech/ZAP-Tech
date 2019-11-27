@@ -63,14 +63,14 @@ def test_detach_share(org, share, module_share):
 
 def test_attach_via_share(share, module_share):
     '''cannot attach directly via share'''
-    with pytest.reverts("dev: only org"):
+    with pytest.reverts("dev: only orgCode"):
         share.attachModule(module_share, {'from': accounts[0]})
 
 
 def test_detach_via_share(org, share, module_share):
     '''cannot detach directly via share'''
     org.attachModule(share, module_share, {'from': accounts[0]})
-    with pytest.reverts("dev: only org"):
+    with pytest.reverts("dev: only orgCode"):
         share.detachModule(module_share, {'from': accounts[0]})
 
 

@@ -7,8 +7,8 @@ import pytest
 def ikyc(IDVerifierOrg, org, accounts):
     kyc = accounts[0].deploy(IDVerifierOrg, org)
     org.setVerifier(kyc, False, {'from': accounts[0]})
-    kyc.addInvestor(
-        "investor1".encode(),
+    kyc.addMember(
+        "member1".encode(),
         1,
         '0x000001',
         1,

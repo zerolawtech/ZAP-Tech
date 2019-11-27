@@ -27,7 +27,7 @@ def test_unknown_address(org):
 
 def test_registrar_restricted(org, kyc):
     '''registrar restricted'''
-    kyc.addInvestor("0x1234", 1, 1, 1, 9999999999, (accounts[1],), {'from': accounts[0]})
+    kyc.addMember("0x1234", 1, 1, 1, 9999999999, (accounts[1],), {'from': accounts[0]})
     org.getID.transact(accounts[1])
     org.setVerifier(kyc, True, {'from': accounts[0]})
     with pytest.reverts("Verifier restricted"):
@@ -36,8 +36,8 @@ def test_registrar_restricted(org, kyc):
 
 def test_different_registrar(org, kyc, kyc2):
     '''multiple registrars, different addresses'''
-    kyc.addInvestor("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
-    kyc2.addInvestor("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[2]), {'from': accounts[0]})
+    kyc.addMember("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
+    kyc2.addMember("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[2]), {'from': accounts[0]})
     org.setVerifier(kyc2, True, {'from': accounts[0]})
     org.getID.transact(accounts[1])
     org.setVerifier(kyc2, False, {'from': accounts[0]})
@@ -48,8 +48,8 @@ def test_different_registrar(org, kyc, kyc2):
 
 def test_restrict_registrar(org, kyc, kyc2):
     '''change registrar'''
-    kyc.addInvestor("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
-    kyc2.addInvestor("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[2]), {'from': accounts[0]})
+    kyc.addMember("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
+    kyc2.addMember("0x1234", 1, 1, 1, 9999999999, (accounts[1], accounts[2]), {'from': accounts[0]})
     org.getID(accounts[1])
     org.setVerifier(kyc, True, {'from': accounts[0]})
     org.getID(accounts[1])
@@ -59,14 +59,14 @@ def test_restrict_registrar(org, kyc, kyc2):
 
 
 def test_cust_auth_id(org, kyc, rpc):
-    '''investor / authority collisions'''
+    '''member / authority collisions'''
     org.addAuthority([accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})
     id_ = org.getID(accounts[-1])
-    kyc.addInvestor(id_, 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
+    kyc.addMember(id_, 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
     with pytest.reverts("Address not registered"):
         org.getID(accounts[1])
     rpc.revert()
-    kyc.addInvestor(id_, 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
+    kyc.addMember(id_, 1, 1, 1, 9999999999, (accounts[1], accounts[3]), {'from': accounts[0]})
     org.getID.transact(accounts[1])
     with pytest.reverts("dev: known ID"):
         org.addAuthority([accounts[-1]], [], 2000000000, 1, {'from': accounts[0]})

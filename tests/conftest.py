@@ -58,7 +58,7 @@ def cust(OwnedCustodian, accounts, org):
     yield OwnedCustodian[0]
 
 
-# investor approval
+# member approval
 
 
 @pytest.fixture(scope="module")
@@ -73,24 +73,24 @@ def set_countries(org):
 
 @pytest.fixture(scope="module")
 def id1(set_countries, kyc):
-    yield _add_investor(kyc, 1, 1, 1)
+    yield _add_member(kyc, 1, 1, 1)
 
 
 @pytest.fixture(scope="module")
 def id2(set_countries, kyc):
-    yield _add_investor(kyc, 2, 1, 2)
+    yield _add_member(kyc, 2, 1, 2)
 
 
 @pytest.fixture(scope="module")
 def approve_many(id1, id2, kyc):
     product = list(itertools.product((2, 3), (1, 2)))
     for count, country, rating in [(c, i[0], i[1]) for c, i in enumerate(product, start=3)]:
-        _add_investor(kyc, count, country, rating)
+        _add_member(kyc, count, country, rating)
 
 
-def _add_investor(kyc, i, country, rating):
-    id_ = to_bytes(f"investor{i}".encode()).hex()
-    kyc.addInvestor(
+def _add_member(kyc, i, country, rating):
+    id_ = to_bytes(f"member{i}".encode()).hex()
+    kyc.addMember(
         id_,
         country,
         '0x000001',
@@ -108,7 +108,7 @@ def check_counts(org, approve_many, no_call_coverage):
 
 
 def _check_countries(org, one=(0, 0, 0), two=(0, 0, 0), three=(0, 0, 0)):
-    assert org.getInvestorCounts()[0][:3] == (
+    assert org.getMemberCounts()[0][:3] == (
         one[0] + two[0] + three[0],
         one[1] + two[1] + three[1],
         one[2] + two[2] + three[2]

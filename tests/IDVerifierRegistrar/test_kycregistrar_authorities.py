@@ -11,13 +11,13 @@ def test_add_threshold_zero(kyc):
         kyc.addAuthority((accounts[1],), (1, 2, 3), 0, {'from': accounts[0]})
 
 
-def test_add_exists_as_investor(kyc, rpc):
-    '''add - ID already assigned to investor'''
+def test_add_exists_as_member(kyc, rpc):
+    '''add - ID already assigned to member'''
     kyc.addAuthority((accounts[1],), (1, 2, 3), 1, {'from': accounts[0]})
     id_ = kyc.getAuthorityID(accounts[1])
     rpc.revert()
-    kyc.addInvestor(id_, 1, 1, 1, 9999999999, (accounts[1], accounts[2]), {'from': accounts[0]})
-    with pytest.reverts("dev: investor ID"):
+    kyc.addMember(id_, 1, 1, 1, 9999999999, (accounts[1], accounts[2]), {'from': accounts[0]})
+    with pytest.reverts("dev: member ID"):
         kyc.addAuthority((accounts[1],), (1, 2, 3), 1, {'from': accounts[0]})
 
 

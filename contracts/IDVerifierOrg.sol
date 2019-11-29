@@ -7,14 +7,14 @@ import "./interfaces/IOrgCode.sol";
 /** @title Simplified IDVerifier Contract for Single Org */
 contract IDVerifierOrg is IDVerifierBase {
 
-    IOrgCode public org;
+    IOrgCode public orgCode;
 
     /**
         @notice IDVerifier constructor
-        @param _org OrgCode contract address
+        @param _orgCode OrgCode contract address
      */
-    constructor (IOrgCode _org) public {
-        org = _org;
+    constructor (IOrgCode _orgCode) public {
+        orgCode = _orgCode;
     }
 
     /**
@@ -22,7 +22,7 @@ contract IDVerifierOrg is IDVerifierBase {
         @return bool success
      */
     function _onlyAuthority() internal returns (bool) {
-        return org.checkMultiSigExternal(
+        return orgCode.checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig
@@ -43,14 +43,14 @@ contract IDVerifierOrg is IDVerifierBase {
                 _inv.restricted = false;
             /* If address has not had an member ID associated - set the ID */
             } else if (_inv.id == 0) {
-                require(!org.isAuthority(_addr[i])); // dev: auth address
+                require(!orgCode.isAuthority(_addr[i])); // dev: auth address
                 _inv.id = _id;
             /* In all other cases, revert */
             } else {
                 revert(); // dev: known address
             }
         }
-        emit RegisteredAddresses(_id, _addr, org.getID(msg.sender));
+        emit RegisteredAddresses(_id, _addr, orgCode.getID(msg.sender));
     }
 
     /**
@@ -79,7 +79,7 @@ contract IDVerifierOrg is IDVerifierBase {
         returns (bool)
     {
         if (!_onlyAuthority()) return false;
-        require(!org.isAuthorityID(_id)); // dev: authority ID
+        require(!orgCode.isAuthorityID(_id)); // dev: authority ID
         require(memberData[_id].country == 0); // dev: member ID
         require(_country > 0); // dev: country 0
         _setMember(0x00, _id, _country, _region, _rating, _expires);
@@ -89,7 +89,7 @@ contract IDVerifierOrg is IDVerifierBase {
             _region,
             _rating,
             _expires,
-            org.getID(msg.sender)
+            orgCode.getID(msg.sender)
         );
         _addAddresses(_id, _addr);
         return true;
@@ -121,7 +121,7 @@ contract IDVerifierOrg is IDVerifierBase {
             _region,
             _rating,
             _expires,
-            org.getID(msg.sender)
+            orgCode.getID(msg.sender)
         );
         return true;
     }
@@ -143,7 +143,7 @@ contract IDVerifierOrg is IDVerifierBase {
         if (!_onlyAuthority()) return false;
         require(memberData[_id].country != 0);
         memberData[_id].restricted = _restricted;
-        emit MemberRestriction(_id, _restricted, org.getID(msg.sender));
+        emit MemberRestriction(_id, _restricted, orgCode.getID(msg.sender));
         return true;
     }
 
@@ -191,7 +191,7 @@ contract IDVerifierOrg is IDVerifierBase {
             require(!idMap[_addr[i]].restricted); // dev: already restricted
             idMap[_addr[i]].restricted = true;
         }
-        emit RestrictedAddresses(_id, _addr, org.getID(msg.sender));
+        emit RestrictedAddresses(_id, _addr, orgCode.getID(msg.sender));
         return true;
     }
 

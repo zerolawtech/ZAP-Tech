@@ -4,12 +4,12 @@
 MultiSig Implementation
 #######################
 
-:ref:`issuing-entity` and :ref:`custodian` contracts both implement a common multisig functionality that allows the contract owner to designate other authorities the ability to call specific admin-level contract methods.
+:ref:`org-code` and :ref:`custodian` contracts both implement a common multisig functionality that allows the contract owner to designate other authorities the ability to call specific admin-level contract methods.
 
-``KYCRegistrar`` contracts use a slightly modified implementation. See the :ref:`kyc-registrar` documentation for more information.
+``IDVerifierRegistrar`` contracts use a slightly modified implementation. See the :ref:`kyc-verifier` documentation for more information.
 
 It may be useful to also view the
-`MultiSig.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/bases/MultiSig.sol>`__ source code
+`MultiSig.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/bases/MultiSig.sol>`__ source code
 while reading this document.
 
 .. note::
@@ -43,7 +43,7 @@ The following public variables cannot be changed after contract deployment.
 
 .. method:: MultiSig.ownerID()
 
-    The bytes32 ID hash of the issuer.
+    The bytes32 ID hash of the org.
 
     .. code-block:: python
 
@@ -158,7 +158,7 @@ Setters
 
     Restricts addresses that are associated with an authority. Can be called by any authority to restrict to their own addresses, or by the owner to restrict addresses for any authority.
 
-    Once an address has been assigned to an authority, this association may never be removed. If an association were removed it would then be possible to assign that same address to a different investor. This could be used to circumvent various contract restricions.
+    Once an address has been assigned to an authority, this association may never be removed. If an association were removed it would then be possible to assign that same address to a different member. This could be used to circumvent various contract restricions.
 
     Emits the ``RemovedAuthorityAddresses`` event.
 

@@ -6,11 +6,11 @@ from brownie import accounts
 
 
 # def test_setup():
-#     global issuer, token, options, id1
-#     token, issuer, _ = main(SecurityToken, (1,), (1,))
-#     options = accounts[0].deploy(VestedOptions, token, issuer, 1, 10, 6, accounts[0])
-#     issuer.attachModule(token, options, {'from': accounts[0]})
-#     id1 = issuer.getID(accounts[1])
+#     global org, share, options, id1
+#     share, org, _ = main(BookShare, (1,), (1,))
+#     options = accounts[0].deploy(VestedOptions, share, org, 1, 10, 6, accounts[0])
+#     org.attachModule(share, options, {'from': accounts[0]})
+#     id1 = org.getID(accounts[1])
 
 
 def test_wrong_price(options, id1, issueoptions, sleep):
@@ -27,7 +27,7 @@ def test_wrong_price(options, id1, issueoptions, sleep):
 
 
 def test_unknown_id(options):
-    '''unknown investor ID'''
+    '''unknown member ID'''
     with pytest.reverts("Address not registered"):
         options.exerciseOptions(10, 100, {'from': accounts[9], 'amount': 1000})
 

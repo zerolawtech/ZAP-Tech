@@ -1,17 +1,17 @@
 .. _data-standards:
 
 #######################
-Investor Data Standards
+Member Data Standards
 #######################
 
 The following generation and format standards should be followed across
-the SFT protocol to ensure interoperability between network
+ZAP to ensure interoperability between network
 participants.
 
-Investor IDs
+Member IDs
 ------------
 
-Investor IDs are stored as a bytes32 keccak256 hash of the investor's
+Member IDs are stored as a bytes32 keccak256 hash of the member's
 personally identifiable information.
 
 For legal entities, the hash is generated from their `Global Legal
@@ -26,21 +26,21 @@ following:
 * Date of Birth as ``DDMMYYYY``
 * Unique tax ID from current jurisdiction of residence
 
-If any of the malleable fields are changed (via a legal name change or a change of home jurisdictions), the investor will be required to pass KYC/AML again and a new investor ID will be generated. Once KYC is passed, the tokens held in previous addresses must be transferred to addresses associated to the new investor ID. It is impossible to remove or change the ID association of an address.
+If any of the malleable fields are changed (via a legal name change or a change of home jurisdictions), the member will be required to pass identity checks again and a new member ID will be generated. Once identification is verified, the shares held in previous addresses must be transferred to addresses associated to the new member ID. It is impossible to remove or change the ID association of an address.
 
 Country Codes
 -------------
 
 Based on the `ISO-3166-1 numeric <https://en.wikipedia.org/wiki/ISO_3166-1_numeric>`__ standard. Country codes are stored as a uint16 and follow the standard exactly.
 
-A CSV of country and region codes is available `here <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/docs/country-and-region-codes.csv>`__.
+A CSV of country and region codes is available `here <https://github.com/zerolawtech/ZAP-Tech/blob/master/docs/country-and-region-codes.csv>`__.
 
 Region Codes
 ------------
 
 Based on the `ISO 3166-2 <https://en.wikipedia.org/wiki/ISO_3166-2>`__ standard. Region codes are stored as a bytes3 and are generated in the following way:
 
-1. Convert each character of the ISO 3166-2 code to it's hexadecimal ASCII code point
+1. Convert each character of the ISO 3166-2 code to a hexadecimal ASCII code point
 2. Concatenate the hex values
 3. Pad right where necessary
 
@@ -55,4 +55,4 @@ A quick example to generate region codes using python:
 * Original code: ``US-AL``
 * Resulting bytes3: ``0x414c00``
 
-A CSV of country and region codes is available `here <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/docs/country-and-region-codes.csv>`__.
+A CSV of country and region codes is available `here <https://github.com/zerolawtech/ZAP-Tech/blob/master/docs/country-and-region-codes.csv>`__.

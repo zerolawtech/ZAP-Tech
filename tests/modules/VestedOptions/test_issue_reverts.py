@@ -24,10 +24,10 @@ def test_vest_exceeds_expiration(options, id1):
     options.issueOptions(id1, 10, False, [1, 2], [1, 99], {'from': accounts[0]})
 
 
-def test_exceeds_authorized_supply(token, options, id1):
-    '''options + tokens cannot exceed authorized supply'''
+def test_exceeds_authorized_supply(share, options, id1):
+    '''options + shares cannot exceed authorized supply'''
     options.issueOptions(id1, 10, False, [250000, 250000], [1, 2], {'from': accounts[0]})
-    token.mint(accounts[1], 250000, {'from': accounts[0]})
+    share.mint(accounts[1], 250000, {'from': accounts[0]})
     with pytest.reverts("dev: exceeds authorized"):
         options.issueOptions(id1, 20, False, [250000, 250000], [1, 2], {'from': accounts[0]})
     options.issueOptions(id1, 20, False, [250000], [4], {'from': accounts[0]})

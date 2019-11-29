@@ -1,15 +1,15 @@
 pragma solidity 0.4.25;
 
 import "../open-zeppelin/SafeMath.sol";
-import "../bases/Token.sol";
-import "./bases/Module.sol";
+import {OrgModuleBase} from "./bases/Module.sol";
 
+import "../interfaces/IOrgShare.sol";
 
 /**
     @title MultiCheckpoint Module
-    @dev Issuer level module used to record and access checkpoints for many tokens
+    @dev Org level module used to record and access checkpoints across many OrgShares
 */
-contract MultiCheckpointModule is IssuerModuleBase {
+contract MultiCheckpointModule is OrgModuleBase {
 
     using SafeMath for uint256;
 
@@ -31,21 +31,21 @@ contract MultiCheckpointModule is IssuerModuleBase {
     mapping (address => EpochPointers) pointers;
     mapping (address => mapping(uint256 => Checkpoint)) checkpointData;
 
-    event CheckpointSet(address indexed token, uint64 time);
+    event CheckpointSet(address indexed share, uint64 time);
 
     /**
         @notice Base constructor
-        @param _owner IssuingEntity contract address
+        @param _owner OrgCode contract address
      */
-    constructor(address _owner) IssuerModuleBase(_owner) public {
+    constructor(address _owner) OrgModuleBase(_owner) public {
         return;
     }
 
     /**
         @notice supply permissions and hook points when attaching module
         @dev
-            hooks: 0x35a341da - transferTokens
-                   0x8b5f1240 - transferTokensCustodian
+            hooks: 0x0675a5e0 - transferShares
+                   0xdc9d1da1 - transferSharesCustodian
                    0x741b5078 - totalSupplyChanged
             hookBools - all true
      */
@@ -60,59 +60,59 @@ contract MultiCheckpointModule is IssuerModuleBase {
     )
     {
         hooks = new bytes4[](3);
-        hooks[0] = 0x35a341da;
-        hooks[1] = 0x8b5f1240;
+        hooks[0] = 0x0675a5e0;
+        hooks[1] = 0xdc9d1da1;
         hooks[2] = 0x741b5078;
-        
+
         return (permissions, hooks, ~uint256(0));
     }
 
     /**
-        @notice Check if a checkpoint exists for a given token and time
-        @param _token Token contract address
+        @notice Check if a checkpoint exists for a given share and time
+        @param _share OrgShare contract address
         @param _time Epoch time of checkpoint
         @return boolean
      */
     function checkpointExists(
-        address _token,
+        address _share,
         uint256 _time
     )
         external
         view
         returns (bool)
     {
-        return checkpointData[_token][_time].set;
+        return checkpointData[_share][_time].set;
     }
 
 
     /**
-        @notice Query token checkpoint totalSupply
-        @param _token Token contract address
+        @notice Query share checkpoint totalSupply
+        @param _share OrgShare contract address
         @param _time Checkpoint time
         @return uint256 totalSupply at checkpoint
      */
     function totalSupplyAt(
-        address _token,
+        address _share,
         uint256 _time
     )
         external
         view
         returns (uint256)
     {
-        _advanceCheckpoints(_token);
-        require(checkpointData[_token][_time].set);
-        return checkpointData[_token][_time].totalSupply;
+        _advanceCheckpoints(_share);
+        require(checkpointData[_share][_time].set);
+        return checkpointData[_share][_time].totalSupply;
     }
 
     /**
-        @notice Query token checkpoint balance
-        @param _token Token contract address
+        @notice Query share checkpoint balance
+        @param _share OrgShare contract address
         @param _owner Address of balance to query
         @param _time Checkpoint time
         @return uint256 balance at checkpoint
      */
     function balanceAt(
-        TokenBase _token,
+        IOrgShareBase _share,
         address _owner,
         uint256 _time
     )
@@ -120,26 +120,26 @@ contract MultiCheckpointModule is IssuerModuleBase {
         view
         returns (uint256)
     {
-        _advanceCheckpoints(_token);
-        Checkpoint storage c = checkpointData[_token][_time];
+        _advanceCheckpoints(_share);
+        Checkpoint storage c = checkpointData[_share][_time];
         require(c.set);
         if (c.balances[_owner] > 0) return c.balances[_owner];
         if (c.zeroBalances[_owner]) return 0;
-        uint256 _value = _token.balanceOf(_owner);
+        uint256 _value = _share.balanceOf(_owner);
         _setBalance(c, _owner, _value);
         return _value;
     }
 
     /**
-        @notice Query token checkpoint balance
-        @param _token Token contract address
+        @notice Query share checkpoint balance
+        @param _share OrgShare contract address
         @param _owner Address of balance to query
         @param _cust Custodian address
         @param _time Checkpoint time
         @return uint256 balance at checkpoint
      */
     function custodianBalanceAt(
-        TokenBase _token,
+        IOrgShareBase _share,
         address _owner,
         address _cust,
         uint256 _time
@@ -148,14 +148,14 @@ contract MultiCheckpointModule is IssuerModuleBase {
         view
         returns (uint256)
     {
-        _advanceCheckpoints(_token);
-        Checkpoint storage c = checkpointData[_token][_time];
+        _advanceCheckpoints(_share);
+        Checkpoint storage c = checkpointData[_share][_time];
         require(c.set);
         if (c.custBalances[_owner][_cust] > 0) {
             return c.custBalances[_owner][_cust];
         }
         if (c.custZeroBalances[_owner][_cust]) return 0;
-        uint256 _value = _token.custodianBalanceOf(_owner, _cust);
+        uint256 _value = _share.custodianBalanceOf(_owner, _cust);
         _setCustodianBalance(c, _owner, _cust, _value);
         return _value;
     }
@@ -186,7 +186,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
     }
 
     /**
-        @notice Store custodian checkpoint balance after tokens are received
+        @notice Store custodian checkpoint balance after shares are received
         @param c Checkpoint storage pointer
         @param _owner Address of owner
         @param _cust Address of custodian
@@ -218,12 +218,12 @@ contract MultiCheckpointModule is IssuerModuleBase {
     /**
         @notice Hook method, record checkpoint value after a transfer
         @param _addr Sender/receiver address
-        @param _id Sender/receiver investor ID
+        @param _id Sender/receiver member ID
         @param _rating Sender/receiver rating
         @param _value Amount transferred
         @return bool
      */
-    function transferTokens(
+    function transferShares(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
@@ -233,25 +233,25 @@ contract MultiCheckpointModule is IssuerModuleBase {
         external
         returns (bool)
     {
-        _onlyToken();
+        _onlyShare();
         uint256 _previous = _advanceCheckpoints(msg.sender);
         if (_previous == 0) return true;
         Checkpoint storage c = checkpointData[msg.sender][_previous];
-        TokenBase _token = TokenBase(msg.sender);
+        IOrgShareBase _share = IOrgShareBase(msg.sender);
         uint256 _bal;
 
         if (_rating[0] == 0 && _id[0] != ownerID) {
-            _bal = _token.custodianBalanceOf(_addr[1], _addr[0]).add(_value);
+            _bal = _share.custodianBalanceOf(_addr[1], _addr[0]).add(_value);
             _setCustodianBalance(c, _addr[1], _addr[0], _bal);
         } else {
-            _bal = _token.balanceOf(_addr[0]).add(_value);
+            _bal = _share.balanceOf(_addr[0]).add(_value);
             _setBalance(c, _addr[0], _bal);
         }
         if (_rating[1] == 0 && _id[1] != ownerID) {
-            _bal = _token.custodianBalanceOf(_addr[0], _addr[1]).sub(_value);
+            _bal = _share.custodianBalanceOf(_addr[0], _addr[1]).sub(_value);
             _setCustodianBalance(c, _addr[0], _addr[1], _bal);
         } else {
-            _bal = _token.balanceOf(_addr[1]).sub(_value);
+            _bal = _share.balanceOf(_addr[1]).sub(_value);
             _setBalance(c, _addr[1], _bal);
         }
         return true;
@@ -264,7 +264,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         @param _value Amount transferred
         @return bool
      */
-    function transferTokensCustodian(
+    function transferSharesCustodian(
         address _cust,
         address[2] _addr,
         bytes32[2],
@@ -275,22 +275,22 @@ contract MultiCheckpointModule is IssuerModuleBase {
         external
         returns (bool)
     {
-        _onlyToken();
+        _onlyShare();
         uint256 _previous = _advanceCheckpoints(msg.sender);
         if (_previous == 0) return true;
         Checkpoint storage c = checkpointData[msg.sender][_previous];
 
-        TokenBase _token = TokenBase(msg.sender);
-        uint256 _bal = _token.custodianBalanceOf(_addr[0], _cust).add(_value);
+        IOrgShareBase _share = IOrgShareBase(msg.sender);
+        uint256 _bal = _share.custodianBalanceOf(_addr[0], _cust).add(_value);
         _setCustodianBalance(c, _addr[0], _cust, _bal);
-        _bal = _token.custodianBalanceOf(_addr[1], _cust).sub(_value);
+        _bal = _share.custodianBalanceOf(_addr[1], _cust).sub(_value);
         _setCustodianBalance(c, _addr[1], _cust, _bal);
         return true;
     }
 
     /**
         @notice Hook method, record checkpoint value after mint/burn
-        @param _addr Investor address
+        @param _addr Member address
         @param _old Old balance
         @param _new New balance
         @return bool
@@ -306,7 +306,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         external
         returns (bool)
     {
-        _onlyToken();
+        _onlyShare();
         _advanceCheckpoints(msg.sender);
         uint64 _next = pointers[msg.sender].next;
         if (_next == 0) return true;
@@ -317,54 +317,54 @@ contract MultiCheckpointModule is IssuerModuleBase {
     }
 
     /**
-        @notice Advance token checkpoint and modify total supply
-        @param _token Token address of checkpoint to advance
+        @notice Advance share checkpoint and modify total supply
+        @param _share Share address of checkpoint to advance
         @return epoch time of most recently passed checkpoint
      */
-    function _advanceCheckpoints(address _token) private returns (uint256) {
-        EpochPointers storage p = pointers[_token];
+    function _advanceCheckpoints(address _share) private returns (uint256) {
+        EpochPointers storage p = pointers[_share];
         if (p.next > now || p.next == 0) {
             return p.previous;
         }
-        Checkpoint storage c = checkpointData[_token][p.next];
+        Checkpoint storage c = checkpointData[_share][p.next];
         uint64 _prev = p.next;
         while (c.next != 0) {
-            checkpointData[_token][c.next].totalSupply = c.totalSupply;
+            checkpointData[_share][c.next].totalSupply = c.totalSupply;
             if (c.next > now) break;
             _prev = c.next;
-            c = checkpointData[_token][c.next];
+            c = checkpointData[_share][c.next];
         }
-        pointers[_token] = EpochPointers(_prev, c.next);
+        pointers[_share] = EpochPointers(_prev, c.next);
         return _prev;
     }
 
     /**
         @notice Set a new checkpoint
-        @dev callable by a permitted authority or token module
-        @param _token Token contract address to set checkpoint for
+        @dev callable by a permitted authority or share module
+        @param _share OrgShare contract address to set checkpoint for
         @param _time Epoch time to set checkpoint at
         @return bool success
      */
     function newCheckpoint(
-        TokenBase _token,
+        IOrgShareBase _share,
         uint64 _time
     )
         external
         returns (bool)
     {
         require(_time > now); // dev: time
-        require(issuer.isActiveToken(_token)); // dev: token
-        if (!_token.isPermittedModule(msg.sender, 0x17020cc7)) {
+        require(orgCode.isActiveOrgShare(_share)); // dev: share
+        if (!_share.isPermittedModule(msg.sender, 0x17020cc7)) {
             if (!_onlyAuthority()) return false;
         }
-        require(!checkpointData[_token][_time].set); // dev: already set
-        mapping(uint256 => Checkpoint) c = checkpointData[_token];
-        if (pointers[_token].next == 0 || _time < pointers[_token].next) {
-            EpochPointers memory p = pointers[_token];
-            pointers[_token].next = _time;
-            c[_time].totalSupply = _token.totalSupply();
+        require(!checkpointData[_share][_time].set); // dev: already set
+        mapping(uint256 => Checkpoint) c = checkpointData[_share];
+        if (pointers[_share].next == 0 || _time < pointers[_share].next) {
+            EpochPointers memory p = pointers[_share];
+            pointers[_share].next = _time;
+            c[_time].totalSupply = _share.totalSupply();
         } else {
-            uint64 _previous = pointers[_token].next;
+            uint64 _previous = pointers[_share].next;
             while (c[_previous].next != 0 && c[_previous].next < _time) {
                 _previous = c[_previous].next;
             }
@@ -375,7 +375,7 @@ contract MultiCheckpointModule is IssuerModuleBase {
         c[_time].previous = p.previous;
         c[_time].next = p.next;
         c[_time].set = true;
-        emit CheckpointSet(_token, _time);
+        emit CheckpointSet(_share, _time);
         return true;
     }
 

@@ -4,34 +4,34 @@
 Modules
 #######
 
-Modules are contracts that hook into various methods in :ref:`token` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
+Modules are contracts that hook into various methods in :ref:`share` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
 
 Modules introduce functionality in two ways:
 
-* **Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting investor limits, transferring tokens, or changing the total supply.
+* **Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting member limits, transferring shares, or changing the total supply.
 * **Hooks** are points within the parent contract's methods where the module will be called. They can be used to introduce extra permissioning requirements or record additional data.
 
 In short: hooks involve calls from a parent contract into a module, permissions involve calls from a module into the parent contract.
 
 It may be useful to view source code for the following contracts while reading this document:
 
-* `Modular.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/bases/Modular.sol>`__: Inherited by modular contracts. Provides functionality around attaching, detaching, and calling modules.
-* `Module.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/modules/bases/Module.sol>`__: Inherited by modules. Provide required functionality for modules to be able to attach or detach.
-* `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/interfaces/IModules.sol>`__: Interfaces outlining standard module functionality. Includes inputs for all possible hook methods.
+* `Modular.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/bases/Modular.sol>`__: Inherited by modular contracts. Provides functionality around attaching, detaching, and calling modules.
+* `Module.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/modules/bases/Module.sol>`__: Inherited by modules. Provide required functionality for modules to be able to attach or detach.
+* `IModules.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/interfaces/IModules.sol>`__: Interfaces outlining standard module functionality. Includes inputs for all possible hook methods.
 
 .. note:: In order to minimize gas costs, modules should be attached only when their functionality is required and detached as soon as they are no longer needed.
 
-.. warning:: Depending on the hook and permission settings, modules may be capable of actions such as blocking transfers, moving investor tokens and altering the total supply. Only attach a module that has been properly auditted, ensure you understand exactly what it does, and be **very** wary of any module that requires permissions outside of it's documented behaviour.
+.. warning:: Depending on the hook and permission settings, modules may be capable of actions such as blocking transfers, moving member shares and altering the total supply. Only attach a module that has been properly auditted, ensure you understand exactly what it does, and be **very** wary of any module that requires permissions outside of it's documented behaviour.
 
 Attaching and Detaching
 =======================
 
-Modules are attached or detached via the ``attachModule`` and ``detachModule`` methods. For :ref:`custodian` modules this method is available within ``OwnedCustodian``, for token modules it is called via the associated ``IssuingEntity`` contract.
+Modules are attached or detached via the ``attachModule`` and ``detachModule`` methods. For :ref:`custodian` modules this method is available within ``OwnedCustodian``, for share modules it is called via the associated ``OrgCode`` contract.
 
 Ownership
 ---------
 
-Each module has an owner which is typically set during deployment.  If the owner is set as an ``IssuingEntity`` contract, it may be attached to every token associated with that issuer. In this way a single module can add functionality or permissioning to many tokens.
+Each module has an owner which is typically set during deployment.  If the owner is set as an ``OrgCode`` contract, it may be attached to every share associated with that org. In this way a single module can add functionality or permissioning to many tokens.
 
 .. method:: ModuleBase.getOwner()
 
@@ -50,7 +50,7 @@ Hooks and permissions are set the first time a module is attached by calling the
     * ``hooks``: ``bytes4`` array of method signatures within the module that the parent contract may call into.
     * ``hookBools``: A ``uint256`` bit field. The first 128 bits set if each hook is active initially, the second half sets if each hook should be always called. See :ref:`modules_bitfields`.
 
-Before attaching a module, be sure to check the return value of this function and compare the requested hook points and permissions to those that would be required for the documented functionality of the module. For example, a module intended to block token transfers should not require permission to mint new tokens.
+Before attaching a module, be sure to check the return value of this function and compare the requested hook points and permissions to those that would be required for the documented functionality of the module. For example, a module intended to block share transfers should not require permission to mint new tokens.
 
 .. _modules_bitfields:
 
@@ -117,7 +117,7 @@ The following getter is available in the parent contract, to check if a module i
 Permissioning
 =============
 
-**Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting investor limits, transferring tokens, or changing the total supply.
+**Permissions** are methods within the parent contract that the module is able to call into. This can allow actions such as adjusting member limits, transferring shares, or changing the total supply.
 
 Once attached, modules may call into methods in the parent contract where they have been given permission.
 
@@ -137,114 +137,114 @@ Modules may be permitted to call the following parent methods:
 
 .. note:: When a module calls into the parent contract, it will still trigger any of it's own hooked in methods. With poor contract design you can create infinite loops and effectively break the parent contract functionality as long as the module remains attached.
 
-SecurityToken
+BookShare
 *************
 
-.. method:: SecurityToken.transferFrom(address _from, address _to, uint256 _value)
+.. method:: BookShare.transferFrom(address _from, address _to, uint256 _value)
 
     * Permission signature: ``0x23b872dd``
 
-    Transfers tokens between two addresses. A module calling ``SecurityToken.transferFrom`` has the same level of authority as if the call was from the issuer.
+    Transfers shares between two addresses. A module calling ``BookShare.transferFrom`` has the same level of authority as if the call was from the org.
 
-    Calling this method will also call any hooked in ``STModule.checkTransfer``, ``IssuerModule.checkTransfer``, and ``STModule.transferTokens`` methods.
+    Calling this method will also call any hooked in ``STModule.checkTransfer``, ``IssuerModule.checkTransfer``, and ``STModule.transferShares`` methods.
 
-.. method:: TokenBase.modifyAuthorizedSupply(uint256 _value)
+.. method:: OrgShare.modifyAuthorizedSupply(uint256 _value)
 
     * Permission signature: ``0xc39f42ed``
 
     Modifies the authorized supply.
 
-.. method:: SecurityToken.mint(address _owner, uint256 _value)
+.. method:: BookShare.mint(address _owner, uint256 _value)
 
     * Permission signature: ``0x40c10f19``
 
-    Mints new tokens to the given address.
+    Mints new shares to the given address.
 
-    Calling this method will also call any hooked in ``STModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+    Calling this method will also call any hooked in ``STModule.totalSupplyChanged`` and ``IssuerModule.shareTotalSupplyChanged`` methods.
 
-.. method:: SecurityToken.burn(address _owner, uint256 _value)
+.. method:: BookShare.burn(address _owner, uint256 _value)
 
     * Permission signature: ``0x9dc29fac``
 
-    Burns tokens at the given address.
+    Burns shares at the given address.
 
-    Calling this method will also call any hooked in ``STModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+    Calling this method will also call any hooked in ``STModule.totalSupplyChanged`` and ``IssuerModule.shareTotalSupplyChanged`` methods.
 
-.. method:: TokenBase.detachModule(address _module)
+.. method:: OrgShare.detachModule(address _module)
 
     * Permission signature: ``0xbb2a8522``
 
-    Detaches a module. This method can only be called directly by a permitted module. For the issuer to detach a SecurityToken level module the call must be made via the ``IssuingEntity`` contract.
+    Detaches a module. This method can only be called directly by a permitted module. For the org to detach a BookShare level module the call must be made via the ``OrgCode`` contract.
 
-NFToken
-*******
+CertShare
+*********
 
-.. method:: NFToken.transferFrom(address _from, address _to, uint256 _value)
+.. method:: CertShare.transferFrom(address _from, address _to, uint256 _value)
 
     * Permission signature: ``0x23b872dd``
 
-    Transfers tokens between two addresses. A module calling ``NFToken.transferFrom`` has the same level of authority as if the call was from the issuer.
+    Transfers shares between two addresses. A module calling ``CertShare.transferFrom`` has the same level of authority as if the call was from the org.
 
-    Calling this method will also call any hooked in ``NFTModule.checkTransfer``, ``IssuerModule.checkTransfer``, and ``NFTModule.transferTokens`` methods.
+    Calling this method will also call any hooked in ``NFTModule.checkTransfer``, ``IssuerModule.checkTransfer``, and ``NFTModule.transferShares`` methods.
 
-.. method:: TokenBase.modifyAuthorizedSupply(uint256 _value)
+.. method:: OrgShare.modifyAuthorizedSupply(uint256 _value)
 
     * Permission signature: ``0xc39f42ed``
 
     Modifies the authorized supply.
 
-.. method:: NFToken.mint(address _owner, uint48 _value, uint32 _time, bytes2 _tag)
+.. method:: CertShare.mint(address _owner, uint48 _value, uint32 _time, bytes2 _tag)
 
     * Permission signature: ``0x15077ec8``
 
-    Mints new tokens to the given address.
+    Mints new shares to the given address.
 
-    Calling this method will also call any hooked in ``NFTModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+    Calling this method will also call any hooked in ``NFTModule.totalSupplyChanged`` and ``IssuerModule.shareTotalSupplyChanged`` methods.
 
-.. method:: NFToken.burn(uint48 _start, uint48 _stop)
+.. method:: CertShare.burn(uint48 _start, uint48 _stop)
 
     * Permission signature: ``0x9a0d378b``
 
-    Burns tokens at the given address.
+    Burns shares at the given address.
 
-    Calling this method will also call any hooked in ``NFTModule.totalSupplyChanged`` and ``IssuerModule.tokenTotalSupplyChanged`` methods.
+    Calling this method will also call any hooked in ``NFTModule.totalSupplyChanged`` and ``IssuerModule.shareTotalSupplyChanged`` methods.
 
-.. method:: NFToken.modifyRange(uint48 _pointer, uint32 _time, bytes2 _tag)
+.. method:: CertShare.modifyRange(uint48 _pointer, uint32 _time, bytes2 _tag)
 
     * Permission signature: ``0x712a516a``
 
     Modifies the time restriction and tag for a single range.
 
-.. method:: NFToken.modifyRanges(uint48 _start, uint48 _stop, uint32 _time, bytes2 _tag)
+.. method:: CertShare.modifyRanges(uint48 _start, uint48 _stop, uint32 _time, bytes2 _tag)
 
     * Permission signature: ``0x786500aa``
 
-    Modifies the time restriction and tag for all tokens within a given range.
+    Modifies the time restriction and tag for all shares within a given range.
 
-.. method:: TokenBase.detachModule(address _module)
+.. method:: OrgShare.detachModule(address _module)
 
     * Permission signature: ``0xbb2a8522``
 
-    Detaches a module. This method can only be called directly by a permitted module, for the issuer to detach a SecurityToken level module the call must be made via the ``IssuingEntity`` contract.
+    Detaches a module. This method can only be called directly by a permitted module, for the org to detach a BookShare level module the call must be made via the ``OrgCode`` contract.
 
 Custodian
 *********
 
 See :ref:`custodian` for more detailed information on these methods.
 
-.. method:: OwnedCustodian.transfer(address _token, address _to, uint256 _value)
+.. method:: OwnedCustodian.transfer(address _share, address _to, uint256 _value)
 
     * Permission signature: ``0xbeabacc8``
 
-    Transfers tokens from the custodian to an investor.
+    Transfers shares from the custodian to a member.
 
-    Calling this method will also call any hooked in ``CustodianModule.sentTokens`` methods.
+    Calling this method will also call any hooked in ``CustodianModule.sentShares`` methods.
 
-.. method:: OwnedCustodian.transferInternal(address _token, address _from, address _to, uint256 _value)
+.. method:: OwnedCustodian.transferInternal(address _share, address _from, address _to, uint256 _value)
 
     * Permission signature: ``0x2f98a4c3``
 
-    Transfers the ownership of tokens between investors within the Custodian contract.
+    Transfers the ownership of shares between members within the Custodian contract.
 
     Calling this method will also call any hooked in ``CustodianModule.internalTransfer`` methods.
 
@@ -260,7 +260,7 @@ Hooks and Tags
 ==============
 
 * **Hooks** are points within the parent contract's methods where the module will be called. They can be used to introduce extra permissioning requirements or record additional data.
-* **Tags** are ``bytes2`` values attached to token ranges in ``NFToken``, that allow for more granular hook attachments.
+* **Tags** are ``bytes2`` values attached to share ranges in ``CertShare``, that allow for more granular hook attachments.
 
 Hooks and tags are defined in the following struct:
 
@@ -278,7 +278,7 @@ Hooks and tags are defined in the following struct:
 * ``active``: Set during attachment, can be modified by the module. If ``true``, this hook is currently active and will be called during the execution of the parent module.
 * ``always``: Set during attachment, can be modified by the module. If ``true``, this hook is always called regardless of the tag value.
 
-Hooks involving tokens from an ``NFToken`` contract rely upon tags to determine if the hook point should be called.  A tag is a ``bytes2`` that is assigned to a specific range of tokens.  When a hook point involves a tagged token range, the following three conditions are evaluated to see if the hook method should be called:
+Hooks involving shares from an ``CertShare`` contract rely upon tags to determine if the hook point should be called.  A tag is a ``bytes2`` that is assigned to a specific range of tokens.  When a hook point involves a tagged token range, the following three conditions are evaluated to see if the hook method should be called:
 
 * Is ``Hook.always`` set to ``true``?
 * Is the first byte of the tag, followed by '00', set to true within ``Hook.tagBools``?
@@ -328,45 +328,45 @@ Hookable Module Methods
 
 The following methods may be included in modules and given as hook points via ``getPermissions``.
 
-Inputs and outputs of all hook points are also defined in `IModules.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/interfaces/IModules.sol>`__. This can be a useful starting point when writing your own modules.
+Inputs and outputs of all hook points are also defined in `IModules.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/interfaces/IModules.sol>`__. This can be a useful starting point when writing your own modules.
 
-SecurityToken
+BookShare
 *************
 
 .. method:: STModule.checkTransfer(address[2] _addr, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
 
     * Hook signature: ``0x70aaf928``
 
-    Called by ``SecurityToken.checkTransfer`` to verify if a transfer is permitted.
+    Called by ``BookShare.checkTransfer`` to verify if a transfer is permitted.
 
     * ``_addr``: Sender and receiver addresses.
     * ``_authID``: ID of the authority who wishes to perform the transfer. It may differ from the sender ID if the check is being performed prior to a ``transferFrom`` call.
     * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
+    * ``_rating``: Sender and receiver member ratings.
     * ``_country``: Sender and receiver countriy codes.
     * ``_value``: Amount to be transferred.
 
-.. method:: STModule.transferTokens(address[2] _addr, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
+.. method:: STModule.transferShares(address[2] _addr, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
 
-    * Hook signature: ``0x35a341da``
+    * Hook signature: ``0x0675a5e0``
 
-    Called after a token transfer has completed successfully with ``SecurityToken.transfer`` or ``SecurityToken.transferFrom``.
+    Called after a share transfer has completed successfully with ``BookShare.transfer`` or ``BookShare.transferFrom``.
 
     * ``_addr``: Sender and receiver addresses.
     * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
+    * ``_rating``: Sender and receiver member ratings.
     * ``_country``: Sender and receiver country codes.
     * ``_value``: Amount that was transferred.
 
-.. method:: STModule.transferTokensCustodian(address _custodian, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
+.. method:: STModule.transferSharesCustodian(address _custodian, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint256 _value)
 
-    * Hook signature: ``0x8b5f1240``
+    * Hook signature: ``0xdc9d1da1``
 
-    Called after an internal custodian token transfer has completed with ``Custodian.transferInternal``.
+    Called after an internal custodian share transfer has completed with ``Custodian.transferInternal``.
 
     * ``_custodian``: Address of the custodian contract.
     * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
+    * ``_rating``: Sender and receiver member ratings.
     * ``_country``: Sender and receiver country codes.
     * ``_value``: Amount that was transferred.
 
@@ -374,80 +374,80 @@ SecurityToken
 
     * Hook signature: ``0x741b5078``
 
-    Called after the total supply has been modified by ``SecurityToken.mint`` or ``SecurityToken.burn``.
+    Called after the total supply has been modified by ``BookShare.mint`` or ``BookShare.burn``.
 
     * ``_addr``: Address where balance has changed.
     * ``_id``: ID that the address is associated to.
-    * ``_rating``: Investor rating.
-    * ``_country``: Investor country code.
-    * ``_old``: Previous token balance at the address.
-    * ``_new``: New token balance at the address.
+    * ``_rating``: Member rating.
+    * ``_country``: Member country code.
+    * ``_old``: Previous share balance at the address.
+    * ``_new``: New share balance at the address.
 
-NFToken
-*******
+CertShare
+*********
 
-``NFToken`` contracts also include all the hook points for ``SecurityToken``.
+``CertShare`` contracts also include all the hook points for ``BookShare``.
 
-Hook points that are unique to ``NFToken`` also perform a check against the tag of the related range before calling to a module.
+Hook points that are unique to ``CertShare`` also perform a check against the tag of the related range before calling to a module.
 
 .. method:: NFTModule.checkTransferRange(address[2] _addr, bytes32 _authID, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint48[2] _range)
 
     * Hook signature: ``0x2d79c6d7``
 
-    Called by ``NFToken.checkTransfer`` and ``NFToken.transferRange`` to verify if the transfer of a specific range is permitted.
+    Called by ``CertShare.checkTransfer`` and ``CertShare.transferRange`` to verify if the transfer of a specific range is permitted.
 
     * ``_addr``: Sender and receiver addresses.
     * ``_authID``: ID of the authority who wishes to perform the transfer. It may differ from the sender ID if the check is being performed prior to a ``transferFrom`` call.
     * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
+    * ``_rating``: Sender and receiver member ratings.
     * ``_country``: Sender and receiver countriy codes.
-    * ``_range``: Start and stop index of token range.
+    * ``_range``: Start and stop index of share range.
 
-.. method:: NFTModule.transferTokenRange(address[2] _addr, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint48[2] _range)
+.. method:: NFTModule.transferShareRange(address[2] _addr, bytes32[2] _id, uint8[2] _rating, uint16[2] _country, uint48[2] _range)
 
-    * Hook signature: ``0xead529f5``
+    * Hook signature: ``0x244d5002``
 
-    Called after a token range has been transferred successfully with ``NFToken.transfer`, ``NFToken.transferFrom`` or ``NFToken.transferRange``.
+    Called after a share range has been transferred successfully with ``CertShare.transfer`, ``CertShare.transferFrom`` or ``CertShare.transferRange``.
 
     * ``_addr``: Sender and receiver addresses.
     * ``_id``: Sender and receiver IDs.
-    * ``_rating``: Sender and receiver investor ratings.
+    * ``_rating``: Sender and receiver member ratings.
     * ``_country``: Sender and receiver countriy codes.
-    * ``_range``: Start and stop index of token range.
+    * ``_range``: Start and stop index of share range.
 
 Custodian
 *********
 
-.. method:: CustodianModule.sentTokens(address _token, address _to, uint256 _value)
+.. method:: CustodianModule.sentShares(address _share, address _to, uint256 _value)
 
-    * Hook signature: ``0xb4684410``
+    * Hook signature: ``0xa110724f``
 
-    Called after tokens have been transferred out of a Custodian via ``Custodian.transfer``.
+    Called after shares have been transferred out of a Custodian via ``Custodian.transfer``.
 
-    * ``_token``: Address of token that was sent.
+    * ``_share``: Address of token that was sent.
     * ``_to``: Address of the recipient.
-    * ``_value``: Number of tokens that were sent.
+    * ``_value``: Number of shares that were sent.
 
-.. method:: CustodianModule.receivedTokens(address _token, address _from, uint256 _value)
+.. method:: CustodianModule.receivedShares(address _share, address _from, uint256 _value)
 
-    * Hook signature: ``0xb15bcbc4``
+    * Hook signature: ``0xa000ff88``
 
-    Called after a tokens have been transferred into a Custodian.
+    Called after a shares have been transferred into a Custodian.
 
-    * ``_token``: Address of token that was received.
+    * ``_share``: Address of token that was received.
     * ``_from``: Address of the sender.
-    * ``_value``: Number of tokens that were received.
+    * ``_value``: Number of shares that were received.
 
-.. method:: CustodianModule.internalTransfer(address _token, address _from, address _to, uint256 _value)
+.. method:: CustodianModule.internalTransfer(address _share, address _from, address _to, uint256 _value)
 
     * Hook signature: ``0x44a29e2a``
 
     Called after an internal transfer of ownership within the Custodian contract via ``Custodian.transferInternal``.
 
-    * ``_token``: Address of token that was received.
+    * ``_share``: Address of token that was received.
     * ``_from``: Address of the sender.
     * ``_to``: Address of the recipient.
-    * ``_value``: Number of tokens that were received.
+    * ``_value``: Number of shares that were received.
 
 Module Execution Flows
 ======================
@@ -456,17 +456,17 @@ The following diagrams show the sequence in which modules are called during some
 
 .. figure:: flow1.png
     :align: center
-    :alt: SecurityToken
+    :alt: BookShare
     :figclass: align-center
 
-    SecurityToken
+    BookShare
 
 .. figure:: flow2.png
     :align: center
-    :alt: NFToken
+    :alt: CertShare
     :figclass: align-center
 
-    NFToken
+    CertShare
 
 Events
 ======
@@ -488,6 +488,6 @@ Contracts that include modular functionality have the following events:
 Use Cases
 =========
 
-The wide range of functionality that modules can hook into and access allows for many different applications. Some examples include: crowdsales, country/time based token locks, right of first refusal enforcement, voting rights, dividend payments, tender offers, and bond redemption.
+The wide range of functionality that modules can hook into and access allows for many different applications. Some examples include: crowdsales, country/time based share locks, right of first refusal enforcement, voting rights, dividend payments, tender offers, and bond redemption.
 
-We have included some sample modules on `GitHub <https://github.com/HyperLink-Technology/SFT-Protocol/tree/master/contracts/modules>`__ as examples to help understand module development and demonstrate the range of available functionality.
+We have included some sample modules on `GitHub <https://github.com/zerolawtech/ZAP-Tech/tree/master/contracts/modules>`__ as examples to help understand module development and demonstrate the range of available functionality.

@@ -11,222 +11,222 @@ def _sleep(seconds):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(id1, token):
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+def setup(id1, share):
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
 
 
-def test_check_balances(cp, token, cptime):
+def test_check_balances(cp, share, cptime):
     '''check totalSupply'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime) == 100000
 
 
-def test_mint_before(cp, token, cptime):
+def test_mint_before(cp, share, cptime):
     '''minted before checkpoint'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 200000
 
 
-def test_mint_after(cp, token, cptime):
+def test_mint_after(cp, share, cptime):
     '''minted after checkpoint'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 100000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 100000
 
 
-def test_mint_before_after(cp, token, cptime):
+def test_mint_before_after(cp, share, cptime):
     '''minted before and after checkpoint'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 200000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 200000
 
 
-def test_two_checkpoints(cp, token, cptime):
+def test_two_checkpoints(cp, share, cptime):
     '''check totalSupply - two checkpoints'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime) == 100000
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 100000
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 100000
 
 
-def test_two_mint_before(cp, token, cptime):
+def test_two_mint_before(cp, share, cptime):
     '''two checkpoints - mint before'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 200000
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 200000
-    assert cp.totalSupplyAt(token, cptime + 100) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime + 100) == 200000
 
 
-def test_two_mint_in_between(cp, token, cptime):
+def test_two_mint_in_between(cp, share, cptime):
     '''two checkpoints - mint in between'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 200000
 
 
-def test_two_mint_after(cp, token, cptime):
+def test_two_mint_after(cp, share, cptime):
     '''two checkpoints - mint after'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime) == 100000
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 100000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 100000
 
 
-def test_two_mint_before_after(cp, token, cptime):
+def test_two_mint_before_after(cp, share, cptime):
     '''two checkpoints - mint before and after'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 200000
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 200000
-    assert cp.totalSupplyAt(token, cptime + 100) == 200000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime + 100) == 200000
 
 
-def test_two_mint_before_inbetween_after(cp, token, cptime):
+def test_two_mint_before_inbetween_after(cp, share, cptime):
     '''two checkpoints - mint before, in between, after'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 200000
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 200000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 200000
-    assert cp.totalSupplyAt(token, cptime + 100) == 300000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime + 100) == 300000
 
 
-def test_three_checkpoints(cp, token, cptime):
+def test_three_checkpoints(cp, share, cptime):
     '''check totalSupply - two checkpoints'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime) == 100000
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 100000
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 100000
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 100000
-    assert cp.totalSupplyAt(token, cptime + 200) == 100000
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 100000
+    assert cp.totalSupplyAt(share, cptime + 200) == 100000
 
 
-def test_three_before(cp, token, cptime):
+def test_three_before(cp, share, cptime):
     '''three checkpoints - mint before'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(310)
-    assert cp.totalSupplyAt(token, cptime) == 200000
-    assert cp.totalSupplyAt(token, cptime + 100) == 200000
-    assert cp.totalSupplyAt(token, cptime + 200) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime + 100) == 200000
+    assert cp.totalSupplyAt(share, cptime + 200) == 200000
 
 
-def test_three_after(cp, token, cptime):
+def test_three_after(cp, share, cptime):
     '''three checkpoints - mint after'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
     _sleep(310)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 100000
-    assert cp.totalSupplyAt(token, cptime + 200) == 100000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 100000
+    assert cp.totalSupplyAt(share, cptime + 200) == 100000
 
 
-def test_three_between_first_second(cp, token, cptime):
+def test_three_between_first_second(cp, share, cptime):
     '''three checkpoints - mint between first and second'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(210)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 200000
-    assert cp.totalSupplyAt(token, cptime + 200) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 200000
+    assert cp.totalSupplyAt(share, cptime + 200) == 200000
 
 
-def test_three_between_second_third(cp, token, cptime):
+def test_three_between_second_third(cp, share, cptime):
     '''three checkpoints - mint between second and third'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
     _sleep(210)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 100000
-    assert cp.totalSupplyAt(token, cptime + 200) == 200000
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 100000
+    assert cp.totalSupplyAt(share, cptime + 200) == 200000
 
 
-def test_three_between(cp, token, cptime):
+def test_three_between(cp, share, cptime):
     '''three checkpoints - mint in between'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    assert cp.totalSupplyAt(token, cptime) == 100000
-    assert cp.totalSupplyAt(token, cptime + 100) == 200000
-    assert cp.totalSupplyAt(token, cptime + 200) == 300000
+    assert cp.totalSupplyAt(share, cptime) == 100000
+    assert cp.totalSupplyAt(share, cptime + 100) == 200000
+    assert cp.totalSupplyAt(share, cptime + 200) == 300000
 
 
-def test_three_before_after(cp, token, cptime):
+def test_three_before_after(cp, share, cptime):
     '''three checkpoints - mint before and after'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(310)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 200000
-    assert cp.totalSupplyAt(token, cptime + 100) == 200000
-    assert cp.totalSupplyAt(token, cptime + 200) == 200000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime + 100) == 200000
+    assert cp.totalSupplyAt(share, cptime + 200) == 200000
 
 
-def test_three_before_in_betwee_after(cp, token, cptime):
+def test_three_before_in_betwee_after(cp, share, cptime):
     '''three checkpoints - moved before, in between, after'''
-    cp.newCheckpoint(token, cptime, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 100, {'from': accounts[0]})
-    cp.newCheckpoint(token, cptime + 200, {'from': accounts[0]})
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 100, {'from': accounts[0]})
+    cp.newCheckpoint(share, cptime + 200, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
     _sleep(110)
-    token.mint(accounts[1], 100000, {'from': accounts[0]})
-    assert cp.totalSupplyAt(token, cptime) == 200000
-    assert cp.totalSupplyAt(token, cptime + 100) == 300000
-    assert cp.totalSupplyAt(token, cptime + 200) == 400000
+    share.mint(accounts[1], 100000, {'from': accounts[0]})
+    assert cp.totalSupplyAt(share, cptime) == 200000
+    assert cp.totalSupplyAt(share, cptime + 100) == 300000
+    assert cp.totalSupplyAt(share, cptime + 200) == 400000

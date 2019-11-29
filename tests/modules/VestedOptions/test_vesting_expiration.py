@@ -64,8 +64,8 @@ def test_multiple_different_expirations(id1, issueoptions, sleep, check):
     )
 
 
-def test_multiple_investors(id1, id2, issueoptions, sleep, check):
-    '''multiple investors'''
+def test_multiple_members(id1, id2, issueoptions, sleep, check):
+    '''multiple members'''
     issueoptions(id1, 10)
     issueoptions(id2, 10)
     sleep(1)

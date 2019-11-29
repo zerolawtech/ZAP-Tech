@@ -1,13 +1,16 @@
 pragma solidity 0.4.25;
 
 import "../../open-zeppelin/SafeMath.sol";
-import "./Module.sol";
+import {OrgShareModuleBase} from "./Module.sol";
+
+import "../../interfaces/IOrgCode.sol";
+import "../../interfaces/IOrgShare.sol";
 
 /**
     @title Checkpoint Module Base Contract
-    @dev Inherited contract for token modules requiring a balance checkpoint
+    @dev Inherited contract for share modules requiring a balance checkpoint
 */
-contract CheckpointModuleBase is STModuleBase {
+contract CheckpointModuleBase is OrgShareModuleBase {
 
     using SafeMath for uint256;
 
@@ -17,26 +20,26 @@ contract CheckpointModuleBase is STModuleBase {
     mapping (address => uint256) balances;
     mapping (address => bool) zeroBalances;
 
-    /* token holder, custodian contract */
+    /* share holder, custodian contract */
     mapping (address => mapping(address => uint256)) custBalances;
     mapping (address => mapping(address => bool)) custZeroBalances;
 
     /**
         @notice Base constructor
-        @param _token SecurityToken contract address
-        @param _issuer IssuingEntity contract address
+        @param _share OrgShare contract address
+        @param _org OrgCode contract address
         @param _checkpointTime Epoch time of balance checkpoint
      */
     constructor(
-        SecurityToken _token,
-        address _issuer,
+        IOrgShareBase _share,
+        IOrgCode _org,
         uint256 _checkpointTime
     )
-        STModuleBase(_token, _issuer)
+        OrgShareModuleBase(_share, _org)
         public
     {
         require (_checkpointTime >= now);
-        totalSupply = token.totalSupply();
+        totalSupply = orgShare.totalSupply();
         checkpointTime = _checkpointTime;
     }
 
@@ -44,8 +47,8 @@ contract CheckpointModuleBase is STModuleBase {
         @notice supply permissions and hook points when attaching module
         @dev
             permissions: 0xbb2a8522 - detachModule
-            hooks: 0x35a341da - transferTokens
-                   0x8b5f1240 - transferTokensCustodian
+            hooks: 0x0675a5e0 - transferShares
+                   0xdc9d1da1 - transferSharesCustodian
                    0x741b5078 - totalSupplyChanged
             hookBools - all true
      */
@@ -61,12 +64,12 @@ contract CheckpointModuleBase is STModuleBase {
     {
         permissions = new bytes4[](1);
         permissions[0] = 0xbb2a8522;
-        
+
         hooks = new bytes4[](3);
-        hooks[0] = 0x35a341da;
-        hooks[1] = 0x8b5f1240;
+        hooks[0] = 0x0675a5e0;
+        hooks[1] = 0xdc9d1da1;
         hooks[2] = 0x741b5078;
-        
+
         return (permissions, hooks, ~uint256(0));
     }
 
@@ -79,7 +82,7 @@ contract CheckpointModuleBase is STModuleBase {
     function _getBalance(address _owner) internal view returns (uint256) {
         if (balances[_owner] > 0) return balances[_owner];
         if (zeroBalances[_owner]) return 0;
-        return token.balanceOf(_owner);
+        return orgShare.balanceOf(_owner);
     }
 
     /**
@@ -99,7 +102,7 @@ contract CheckpointModuleBase is STModuleBase {
     {
         if (custBalances[_owner][_cust] > 0) return custBalances[_owner][_cust];
         if (custZeroBalances[_owner][_cust]) return 0;
-        return token.custodianBalanceOf(_owner, _cust);
+        return orgShare.custodianBalanceOf(_owner, _cust);
     }
 
     /**
@@ -125,7 +128,7 @@ contract CheckpointModuleBase is STModuleBase {
     }
 
     /**
-        @notice Store custodian checkpoint balance after tokens are sent
+        @notice Store custodian checkpoint balance after shares are sent
         @param _owner Address of owner
         @param _cust Address of custodian
         @param _value Amount transferred
@@ -141,12 +144,12 @@ contract CheckpointModuleBase is STModuleBase {
             custBalances[_owner][_cust] > 0 ||
             custZeroBalances[_owner][_cust]
         ) return;
-        _value = token.custodianBalanceOf(_owner, _cust).add(_value);
+        _value = orgShare.custodianBalanceOf(_owner, _cust).add(_value);
         custBalances[_owner][_cust] = _value;
     }
 
     /**
-        @notice Store custodian checkpoint balance after tokens are received
+        @notice Store custodian checkpoint balance after shares are received
         @param _owner Address of owner
         @param _cust Address of custodian
         @param _value Amount transferred
@@ -162,7 +165,7 @@ contract CheckpointModuleBase is STModuleBase {
             custBalances[_owner][_cust] > 0 ||
             custZeroBalances[_owner][_cust]
         ) return;
-        uint256 _bal = token.custodianBalanceOf(_owner, _cust).sub(_value);
+        uint256 _bal = orgShare.custodianBalanceOf(_owner, _cust).sub(_value);
         if (_bal == 0) {
             custZeroBalances[_owner][_cust] == true;
         } else {
@@ -173,12 +176,12 @@ contract CheckpointModuleBase is STModuleBase {
     /**
         @notice Hook method, record checkpoint value after a transfer
         @param _addr Sender/receiver address
-        @param _id Sender/receiver investor ID
+        @param _id Sender/receiver member ID
         @param _rating Sender/receiver rating
         @param _value Amount transferred
         @return bool
      */
-    function transferTokens(
+    function transferShares(
         address[2] _addr,
         bytes32[2] _id,
         uint8[2] _rating,
@@ -188,17 +191,17 @@ contract CheckpointModuleBase is STModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(token));
+        require(msg.sender == address(orgShare));
         if (now < checkpointTime) return true;
         if (_rating[0] == 0 && _id[0] != ownerID) {
             _custodianSent(_addr[1], _addr[0], _value);
         } else if (!_isBalanceSet(_addr[0])) {
-            balances[_addr[0]] = token.balanceOf(_addr[0]).add(_value);
+            balances[_addr[0]] = orgShare.balanceOf(_addr[0]).add(_value);
         }
         if (_rating[1] == 0 && _id[1] != ownerID) {
             _custodianReceived(_addr[0], _addr[1], _value);
         } else if (!_isBalanceSet(_addr[1])) {
-            _setBalance(_addr[1], token.balanceOf(_addr[1]).sub(_value));
+            _setBalance(_addr[1], orgShare.balanceOf(_addr[1]).sub(_value));
         }
         return true;
     }
@@ -210,7 +213,7 @@ contract CheckpointModuleBase is STModuleBase {
         @param _value Amount transferred
         @return bool
      */
-    function transferTokensCustodian(
+    function transferSharesCustodian(
         address _cust,
         address[2] _addr,
         bytes32[2],
@@ -221,7 +224,7 @@ contract CheckpointModuleBase is STModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(token));
+        require(msg.sender == address(orgShare));
         if (now >= checkpointTime) {
             _custodianSent(_addr[0], _cust, _value);
             _custodianReceived(_addr[1], _cust, _value);
@@ -231,7 +234,7 @@ contract CheckpointModuleBase is STModuleBase {
 
     /**
         @notice Hook method, record checkpoint value after mint/burn
-        @param _addr Investor address
+        @param _addr Member address
         @param _old Old balance
         @param _new New balance
         @return bool
@@ -247,7 +250,7 @@ contract CheckpointModuleBase is STModuleBase {
         external
         returns (bool)
     {
-        require(msg.sender == address(token));
+        require(msg.sender == address(orgShare));
         if (now < checkpointTime) {
             totalSupply = totalSupply.add(_new).sub(_old);
             return true;

@@ -59,10 +59,10 @@ contract MultiSig {
     event RemovedAuthorityPermissions (bytes32 indexed id, bytes4[] signatures);
 
     /**
-        @notice KYC registrar constructor
+        @notice MultiSig constructor
         @param _owners Array of addresses for owning authority
         @param _threshold multisig threshold for owning authority
-     */ 
+     */
     constructor(address[] _owners, uint32 _threshold) public {
         require(_owners.length > 0);
         require (_threshold > 0);
@@ -94,7 +94,7 @@ contract MultiSig {
 
     /**
         @notice Internal function to add new addresses
-        @param _id investor or authority ID
+        @param _id member or authority ID
         @param _addr array of addresses
         @return number of new addresses (not previous restricted)
      */
@@ -103,7 +103,7 @@ contract MultiSig {
         address[] _addr
     )
         internal
-        returns (uint32 _count) 
+        returns (uint32 _count)
     {
         for (uint256 i; i < _addr.length; i++) {
             if (idMap[_addr[i]].id == _id && idMap[_addr[i]].restricted) {
@@ -201,7 +201,7 @@ contract MultiSig {
         }
         a.multiSigAuth[_callHash].push(_sender);
         emit MultiSigCall(
-            _authID, 
+            _authID,
             _sig,
             _callHash,
             _sender,
@@ -274,7 +274,7 @@ contract MultiSig {
         view
         returns (bool)
     {
-        
+
         if (idMap[_addr].restricted) return false;
         bytes32 _authID = idMap[_addr].id;
         if (_authID == ownerID) return true;

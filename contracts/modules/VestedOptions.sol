@@ -1,13 +1,16 @@
 pragma solidity 0.4.25;
 
-import "./bases/Module.sol";
 import "../open-zeppelin/SafeMath.sol";
+import {BookShareModuleBase} from "./bases/Module.sol";
+
+import "../interfaces/IOrgCode.sol";
+import "../interfaces/IOrgShare.sol";
 
 /**
-    @title Vested Options Module
-    @dev attached at token
+    @title BookShare Vested Options Module
+    @dev attached at share
  */
-contract VestedOptions is STModuleBase {
+contract VestedOptions is BookShareModuleBase {
 
     using SafeMath for uint256;
     using SafeMath32 for uint32;
@@ -99,8 +102,8 @@ contract VestedOptions is STModuleBase {
 
     /**
         @notice constructor
-        @param _token token address
-        @param _issuer issuer address
+        @param _share share address
+        @param _org org address
         @param _ethPeg initial ethereum peg rate
         @param _expireMonths time for options to expire, in months
         @param _gracePeriodMonths number of months that already vested options
@@ -108,15 +111,15 @@ contract VestedOptions is STModuleBase {
         @param _receiver address to send ETH to when options are exercised
      */
     constructor(
-        SecurityToken _token,
-        address _issuer,
+        IBookShare _share,
+        IOrgCode _org,
         uint32 _ethPeg,
         uint32 _expireMonths,
         uint32 _gracePeriodMonths,
         address _receiver
     )
         public
-        STModuleBase(_token, _issuer)
+        BookShareModuleBase(_share, _org)
     {
         require(_expireMonths > 0);
         require(_gracePeriodMonths > 0);
@@ -182,8 +185,8 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
-        @notice get information about an investor's options
-        @param _id investor ID
+        @notice get information about an member's options
+        @param _id member ID
         @return total vested, total unvested, array of (exercise price, array length)
      */
     function getOptions(
@@ -228,8 +231,8 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
-        @notice get detailed information about specific options for an investor
-        @param _id investor ID
+        @notice get detailed information about specific options for an member
+        @param _id member ID
         @param _price exercise price
         @param _index option array index (use getOptions for possible values)
         @return vested total, unvested total, iso bool, expiry date, vestMap (ascending)
@@ -264,8 +267,8 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
-        @notice Get information about in-money options for a given investor
-        @param _id investor ID
+        @notice Get information about in-money options for a given member
+        @param _id member ID
         @param _perShareConsideration per-share consideration to be paid
         @return number of options that are in the money
         @return aggregate exercise price for in-money options
@@ -320,7 +323,7 @@ contract VestedOptions is STModuleBase {
 
     /**
         @notice issue new options
-        @param _id investor ID
+        @param _id member ID
         @param _price exercise price for options being issued
         @param _amount array, quantities of options to issue
         @param _monthsToVest array, relative time for options to vest (months from now)
@@ -345,7 +348,7 @@ contract VestedOptions is STModuleBase {
         Option storage o = _saveOption(_id, _price, _iso);
 
         uint32 _total;
-        uint256[2] memory _max = [t.length - 1, uint256(expirationMonths)]; 
+        uint256[2] memory _max = [t.length - 1, uint256(expirationMonths)];
 
         for (uint256 i; i < _amount.length; i++) {
             require(_monthsToVest[i] < _max[1]); // dev: vest > expiration
@@ -365,7 +368,7 @@ contract VestedOptions is STModuleBase {
         o.unvested = o.unvested.add(_total);
         t.unvested = t.unvested.add(_total);
         total += _total;
-        require(token.authorizedSupply().sub(token.totalSupply()) >= total); // dev: exceeds authorized
+        require(orgShare.authorizedSupply().sub(orgShare.totalSupply()) >= total); // dev: exceeds authorized
         emit NewOptions( _id, _iso, _price, o.expiryDate, _amount, _monthsToVest);
         return true;
     }
@@ -417,7 +420,7 @@ contract VestedOptions is STModuleBase {
 
     /**
         @notice Extends an OptionData array if needed, and returns an Option struct
-        @param _id investor ID
+        @param _id member ID
         @param _price exercise price to add
         @return Option struct
      */
@@ -466,7 +469,7 @@ contract VestedOptions is STModuleBase {
     {
         require (ethPeg.mul(_amount).mul(_price) == msg.value, "Incorrect payment");
 
-        bytes32 _id = issuer.getID(msg.sender);
+        bytes32 _id = orgCode.getID(msg.sender);
         require(_updateOptionBase(_id, _price), "No options at this price");
 
         uint32 _remaining = _amount;
@@ -494,9 +497,9 @@ contract VestedOptions is STModuleBase {
             _removeOptionTotal(_price);
             total -= _amount;
 
-            /* transfer eth, mint tokens */
+            /* transfer eth, mint shares */
             receiver.transfer(address(this).balance);
-            require(token.mint(msg.sender, _amount));
+            require(orgShare.mint(msg.sender, _amount));
             emit ExercisedOptions(_id, _price, _amount);
             return true;
         }
@@ -504,8 +507,8 @@ contract VestedOptions is STModuleBase {
     }
 
     /**
-        @notice Immediately vest all options for a given investor ID
-        @param _id investor ID
+        @notice Immediately vest all options for a given member ID
+        @param _id member ID
         @return bool success
      */
     function accellerateVesting(bytes32 _id) external returns (bool) {
@@ -537,10 +540,10 @@ contract VestedOptions is STModuleBase {
     /**
         @notice Terminate options
         @dev
-            Terminates all unvested options associated with an investor ID.
+            Terminates all unvested options associated with an member ID.
             Options that have already vested will have their expiration date
             decreased to gracePeriodMonths * 2592000
-        @param _id Investor ID
+        @param _id Member ID
         @return bool success
      */
     function terminateOptions(bytes32 _id) external returns (bool) {
@@ -577,7 +580,7 @@ contract VestedOptions is STModuleBase {
     function _accellerateOrTerminate(
         OptionBase storage b,
         uint32 _price,
-        uint32 _gracePeriod 
+        uint32 _gracePeriod
     )
         internal
         returns (uint32 _total)
@@ -642,7 +645,7 @@ contract VestedOptions is STModuleBase {
         returns (bool)
     {
         if (_old > _new) {
-            require(token.authorizedSupply().sub(token.totalSupply()) >= totalOptions());
+            require(orgShare.authorizedSupply().sub(orgShare.totalSupply()) >= totalOptions());
         }
         return true;
     }
@@ -684,7 +687,7 @@ contract VestedOptions is STModuleBase {
     /**
         @notice update start and length values for OptionBase struct
         @dev _updateOption must still be called on remaining Options
-        @param _id investor ID
+        @param _id member ID
         @param _price exercise price to update
         @return boolean - true if OptionBase is not empty after the update
      */

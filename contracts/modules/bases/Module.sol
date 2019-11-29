@@ -1,9 +1,7 @@
 pragma solidity 0.4.25;
 
-
-import "../../bases/MultiSig.sol";
-import "../../IssuingEntity.sol";
-import "../../SecurityToken.sol";
+import "../../interfaces/IOrgCode.sol";
+import "../../interfaces/IOrgShare.sol";
 
 /**
     @title ModuleBase Abstract Base Contract
@@ -29,12 +27,12 @@ contract ModuleBase is ModuleBaseABC {
      */
     constructor(address _owner) public {
         owner = _owner;
-        ownerID = MultiSig(_owner).ownerID();
+        ownerID = IOrgCode(_owner).ownerID();
     }
 
     /** @dev Check that call originates from approved authority, allows multisig */
     function _onlyAuthority() internal returns (bool) {
-        return MultiSig(owner).checkMultiSigExternal(
+        return IOrgCode(owner).checkMultiSigExternal(
             msg.sender,
             keccak256(msg.data),
             msg.sig
@@ -42,7 +40,7 @@ contract ModuleBase is ModuleBaseABC {
     }
 
     /**
-        @notice Fetch address of issuer contract that module is active on
+        @notice Fetch address of org contract that module is active on
         @return Owner contract address
     */
     function getOwner() public view returns (address) {
@@ -53,63 +51,113 @@ contract ModuleBase is ModuleBaseABC {
 
 
 /**
-    @title Token Module Base Contract
-    @dev Inherited contract for SecurityToken or NFToken modules
+    @title OrgShare Module Base Contract
+    @dev Inherited contract for BookShare and CertShare modules
  */
-contract STModuleBase is ModuleBase {
+contract OrgShareModuleBase is ModuleBase {
 
-    SecurityToken public token;
-    IssuingEntity public issuer;
+    IOrgShareBase orgShare;
+    IOrgCode public orgCode;
 
     /**
         @notice Base constructor
-        @param _token SecurityToken contract address
-        @param _issuer IssuingEntity contract address
+        @param _share OrgShare contract address
+        @param _org OrgCode contract address
      */
     constructor(
-        SecurityToken _token,
-        address _issuer
+        IOrgShareBase _share,
+        IOrgCode _org
     )
         public
-        ModuleBase(_issuer)
+        ModuleBase(_org)
     {
-        token = _token;
-        issuer = IssuingEntity(_issuer);
+        orgCode = _org;
+        orgShare = _share;
     }
 
-    /** @dev Check that call originates from parent token contract */
-    function _onlyToken() internal view {
-        require(msg.sender == address(token));
+    /** @dev Check that call originates from parent share contract */
+    function _onlyShare() internal view {
+        require(msg.sender == address(orgShare));
     }
 
     /**
-        @notice Fetch address of token that module is active on
-        @return Token address
+        @notice Fetch address of share that module is active on
+        @return Share address
     */
     function getOwner() public view returns (address) {
-        return address(token);
+        return address(orgShare);
+    }
+
+}
+
+/**
+    @title BookShare Module Base Contract
+    @dev Inherited contract for BookShare modules
+ */
+contract BookShareModuleBase is OrgShareModuleBase {
+
+    IBookShare public orgShare;
+
+    /**
+        @notice Base constructor
+        @param _share BookShare contract address
+        @param _org OrgCode contract address
+     */
+    constructor(
+        IBookShare _share,
+        IOrgCode _org
+    )
+        public
+        OrgShareModuleBase(_share, _org)
+    {
+        orgShare = _share;
     }
 
 }
 
 
-contract IssuerModuleBase is ModuleBase {
+/**
+    @title CertShare Module Base Contract
+    @dev Inherited contract for CertShare modules
+ */
+contract CertShareModuleBase is OrgShareModuleBase {
 
-    IssuingEntity public issuer;
+    ICertShare public orgShare;
+
+    /**
+        @notice Base constructor
+        @param _share CertShare contract address
+        @param _org OrgCode contract address
+     */
+    constructor(
+        ICertShare _share,
+        IOrgCode _org
+    )
+        public
+        OrgShareModuleBase(_share, _org)
+    {
+        orgShare = _share;
+    }
+
+}
+
+contract OrgModuleBase is ModuleBase {
+
+    IOrgCode public orgCode;
     mapping (address => bool) parents;
 
     /**
         @notice Base constructor
-        @param _issuer IssuingEntity contract address
+        @param _org IOrgCode contract address
      */
-    constructor(address _issuer) public ModuleBase(_issuer) {
-        issuer = IssuingEntity(_issuer);
+    constructor(address _org) public ModuleBase(_org) {
+        orgCode = IOrgCode(_org);
     }
 
-    /** @dev Check that call originates from token contract */
-    function _onlyToken() internal {
+    /** @dev Check that call originates from share contract */
+    function _onlyShare() internal {
         if (!parents[msg.sender]) {
-            parents[msg.sender] = issuer.isActiveToken(msg.sender);
+            parents[msg.sender] = orgCode.isActiveOrgShare(msg.sender);
         }
         require (parents[msg.sender]);
     }

@@ -7,9 +7,9 @@ OwnedCustodian
 
 ``OwnedCustodian`` is a standard custodian implementation that is controlled and maintained by a known legal entity. Use cases for this contract may include broker/dealers or centralized exchanges.
 
-Owned Custodian contracts include the standard SFT protocol :ref:`multisig` and :ref:`modules` functionality. See the respective documents for detailed information on these components.
+Owned Custodian contracts include the standard ZAP :ref:`multisig` and :ref:`modules` functionality. See the respective documents for detailed information on these components.
 
-It may be useful to view the `OwnedCustodian.sol <https://github.com/HyperLink-Technology/SFT-Protocol/blob/master/contracts/custodians/OwnedCustodian.sol>`__ source code for the following contracts while reading this document.
+It may be useful to view the `OwnedCustodian.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/custodians/OwnedCustodian.sol>`__ source code for the following contracts while reading this document.
 
 Deployment
 ==========
@@ -23,7 +23,7 @@ The constructor declares the owner as per standard :ref:`multisig`.
 
     The ID of the owner is generated as a keccak of the contract address and available from the public getter ``OwnedCustodian.ownerID``.
 
-    Once deployed, the custodian must be approved by an ``IssuingEntity`` before it can receive tokens associated with that contract.
+    Once deployed, the custodian must be approved by an ``OrgCode`` before it can receive shares associated with that contract.
 
     .. code-block:: python
 
@@ -54,27 +54,27 @@ Balances and Transfers
 Checking Balances
 -----------------
 
-Custodied investor balances are tracked within the token contract. They can be queried using ``TokenBase.custodianBalanceOf`` or ``OwnedCustodian.balanceOf``.
+Custodied member balances are tracked within the share contract. They can be queried using ``OrgShare.custodianBalanceOf`` or ``OwnedCustodian.balanceOf``.
 
-.. method:: OwnedCustodian.balanceOf(address _token, address _owner)
+.. method:: OwnedCustodian.balanceOf(address _share, address _owner)
 
-    Returns the custodied token balance for a given investor address.
+    Returns the custodied share balance for a given member address.
 
     .. code-block:: python
 
-        >>> cust.balanceOf(token, accounts[1])
+        >>> cust.balanceOf(share, accounts[1])
         5000
-        >>> token.custodianBalanceOf(accounts[1], cust)
+        >>> share.custodianBalanceOf(accounts[1], cust)
         5000
 
 Checking Transfer Permissions
 -----------------------------
 
-.. method:: OwnedCustodian.checkCustodianTransfer(address _token, address _from, address _to, uint256 _value)
+.. method:: OwnedCustodian.checkCustodianTransfer(address _share, address _from, address _to, uint256 _value)
 
     Checks if an internal transfer is permitted.
 
-    * ``_token``: Token address
+    * ``_share``: Share address
     * ``_from``: Sender address
     * ``_to``: Receiver address
     * ``_value``: Amount to transfer
@@ -85,44 +85,44 @@ Checking Transfer Permissions
 
     .. code-block:: python
 
-        >>> cust.balanceOf(token, accounts[1])
+        >>> cust.balanceOf(share, accounts[1])
         2000
-        >>> cust.checkCustodianTransfer(token, accounts[1], accounts[2], 1000)
+        >>> cust.checkCustodianTransfer(share, accounts[1], accounts[2], 1000)
         True
-        >>> cust.checkCustodianTransfer(token, accounts[1], accounts[2], 5000)
+        >>> cust.checkCustodianTransfer(share, accounts[1], accounts[2], 5000)
         File "contract.py", line 282, in call
           raise VirtualMachineError(e)
         VirtualMachineError: VM Exception while processing transaction: revert Insufficient Custodial Balance
 
-Transferring Tokens
+Transferring Shares
 -------------------
 
-.. method:: OwnedCustodian.transferInternal(address _token, address _from, address _to, uint256 _value)
+.. method:: OwnedCustodian.transferInternal(address _share, address _from, address _to, uint256 _value)
 
-    * ``_token``: SecurityToken address
+    * ``_share``: BookShare address
     * ``_from``: Sender address
     * ``_to``: Receiver address
     * ``_value``: Amount to transfer
 
     .. code-block:: python
 
-        >>> cust.transferInternal(token, accounts[1], accounts[2], 5000, {'from': accounts[0]})
+        >>> cust.transferInternal(share, accounts[1], accounts[2], 5000, {'from': accounts[0]})
 
         Transaction sent: 0x1c5cf1d01d2d5f9b9d9e801d8e2a0b9b2eb50fa11fbe03864b69ccf0fe2c03fc
         OwnedCustodian.transferInternal confirmed - block: 17   gas used: 189610 (2.37%)
         <Transaction object '0x1c5cf1d01d2d5f9b9d9e801d8e2a0b9b2eb50fa11fbe03864b69ccf0fe2c03fc'>
 
-.. method:: OwnedCustodian.transfer(address _token, address _to, uint256 _value)
+.. method:: OwnedCustodian.transfer(address _share, address _to, uint256 _value)
 
-    Transfers tokens out of the Custodian contract.
+    Transfers shares out of the Custodian contract.
 
-    * ``_token``: Token address
+    * ``_share``: Share address
     * ``_to``:  Receipient address
     * ``_value``: Amount to transfer
 
     .. code-block:: python
 
-        >>> cust.transfer(token, accounts[2], 5000, {'from': accounts[0]})
+        >>> cust.transfer(share, accounts[2], 5000, {'from': accounts[0]})
 
         Transaction sent: 0x227f7c24d68d63aa567c16458e039a283481ef5fd79d8b9e48c88b033ff18f79
         OwnedCustodian.transfer confirmed - block: 18   gas used: 149638 (1.87%)
@@ -188,14 +188,14 @@ Events
 
 ``OwnedCustodian`` includes the following events:
 
-.. method:: OwnedCustodian.ReceivedTokens(address indexed token, address indexed from, uint256 amount)
+.. method:: OwnedCustodian.ReceivedShares(address indexed share, address indexed from, uint256 amount)
 
-    Emitted by ``OwnedCustodian.receiveTransfer`` when tokens are sent into the custodian contract.
+    Emitted by ``OwnedCustodian.receiveTransfer`` when shares are sent into the custodian contract.
 
-.. method:: OwnedCustodian.SentTokens(address indexed token, address indexed to, uint256 amount)
+.. method:: OwnedCustodian.SentShares(address indexed share, address indexed to, uint256 amount)
 
-    Emitted by ``OwnedCustodian.transfer`` after tokens are sent out of the custodian contract.
+    Emitted by ``OwnedCustodian.transfer`` after shares are sent out of the custodian contract.
 
-.. method:: OwnedCustodian.TransferOwnership(address indexed token, address indexed from, address indexed to, uint256 value)
+.. method:: OwnedCustodian.TransferOwnership(address indexed share, address indexed from, address indexed to, uint256 value)
 
     Emitted by ``OwnedCustodia.transferInternal`` after an internal change of beneficial ownership.

@@ -4,7 +4,7 @@
 Modules
 #######
 
-Modules are contracts that hook into various methods in :ref:`share` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
+Modules are contracts that hook into various methods in :ref:`orgshare` and :ref:`custodian` contracts. They may be used to add custom permissioning logic or extra functionality.
 
 Modules introduce functionality in two ways:
 

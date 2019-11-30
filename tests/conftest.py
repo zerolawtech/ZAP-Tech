@@ -10,6 +10,7 @@ from brownie.convert import to_bytes
 
 # test isolation, always use!
 
+
 @pytest.fixture(autouse=True)
 def isolation(fn_isolation):
     pass
@@ -17,24 +18,25 @@ def isolation(fn_isolation):
 
 # share deployments / linking
 
+
 @pytest.fixture(scope="module")
 def share(BookShare, org, accounts):
     t = accounts[0].deploy(BookShare, org, "Test Share", "TST", 1000000)
-    org.addOrgShare(t, {'from': accounts[0]})
+    org.addOrgShare(t, {"from": accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
 def share2(BookShare, org, accounts, share):
     t = accounts[0].deploy(BookShare, org, "Test Share2", "TS2", 1000000)
-    org.addOrgShare(t, {'from': accounts[0]})
+    org.addOrgShare(t, {"from": accounts[0]})
     yield t
 
 
 @pytest.fixture(scope="module")
 def nft(CertShare, org, accounts):
     share = accounts[0].deploy(CertShare, org, "Test NFT", "NFT", 1000000)
-    org.addOrgShare(share, {'from': accounts[0]})
+    org.addOrgShare(share, {"from": accounts[0]})
     yield share
 
 
@@ -47,14 +49,14 @@ def org(OrgCode, accounts):
 @pytest.fixture(scope="module")
 def kyc(IDVerifierRegistrar, org, accounts):
     kyc = accounts[0].deploy(IDVerifierRegistrar, [accounts[0]], 1)
-    org.setVerifier(kyc, False, {'from': accounts[0]})
+    org.setVerifier(kyc, False, {"from": accounts[0]})
     yield kyc
 
 
 @pytest.fixture(scope="module")
 def cust(OwnedCustodian, accounts, org):
     accounts[0].deploy(OwnedCustodian, [accounts[0]], 1)
-    org.addCustodian(OwnedCustodian[0], {'from': accounts[0]})
+    org.addCustodian(OwnedCustodian[0], {"from": accounts[0]})
     yield OwnedCustodian[0]
 
 
@@ -68,7 +70,7 @@ def ownerid(org):
 
 @pytest.fixture(scope="module")
 def set_countries(org):
-    org.setCountries((1, 2, 3), (1, 1, 1), (0, 0, 0), {'from': accounts[0]})
+    org.setCountries((1, 2, 3), (1, 1, 1), (0, 0, 0), {"from": accounts[0]})
 
 
 @pytest.fixture(scope="module")
@@ -84,7 +86,9 @@ def id2(set_countries, kyc):
 @pytest.fixture(scope="module")
 def approve_many(id1, id2, kyc):
     product = list(itertools.product((2, 3), (1, 2)))
-    for count, country, rating in [(c, i[0], i[1]) for c, i in enumerate(product, start=3)]:
+    for count, country, rating in [
+        (c, i[0], i[1]) for c, i in enumerate(product, start=3)
+    ]:
         _add_member(kyc, count, country, rating)
 
 
@@ -93,11 +97,11 @@ def _add_member(kyc, i, country, rating):
     kyc.addMember(
         id_,
         country,
-        '0x000001',
+        "0x000001",
         rating,
         9999999999,
         (accounts[i],),
-        {'from': accounts[0]}
+        {"from": accounts[0]},
     )
     return id_
 
@@ -111,7 +115,7 @@ def _check_countries(org, one=(0, 0, 0), two=(0, 0, 0), three=(0, 0, 0)):
     assert org.getMemberCounts()[0][:3] == (
         one[0] + two[0] + three[0],
         one[1] + two[1] + three[1],
-        one[2] + two[2] + three[2]
+        one[2] + two[2] + three[2],
     )
     assert org.getCountry(1)[1][:3] == one
     assert org.getCountry(2)[1][:3] == two

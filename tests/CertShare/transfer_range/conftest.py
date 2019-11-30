@@ -31,7 +31,9 @@ def _check_ranges(nft, upper, *expected_ranges, tags=False):
                 try:
                     data = nft.getRange(i)
                 except Exception:
-                    raise AssertionError(f"Could not get range pointer {i} for account {num}")
+                    raise AssertionError(
+                        f"Could not get range pointer {i} for account {num}"
+                    )
                 if i < start:
                     if not tags:
                         assert data[0] != account

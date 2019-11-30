@@ -2,7 +2,7 @@
 
 
 def test_in_money(options, id1, issueoptions, sleep):
-    '''get in money options'''
+    """get in money options"""
     issueoptions(id1, 10)
     issueoptions(id1, 20)
     issueoptions(id1, 30)
@@ -20,7 +20,7 @@ def test_in_money(options, id1, issueoptions, sleep):
 
 
 def test_reverts(options, id1, issueoptions, sleep):
-    '''no options, expired options'''
+    """no options, expired options"""
     assert options.getInMoneyOptions(id1, 11) == (0, 0)
     issueoptions(id1, 10)
     assert options.getInMoneyOptions(id1, 11) == (0, 0)
@@ -31,7 +31,7 @@ def test_reverts(options, id1, issueoptions, sleep):
 
 
 def test_multiple_expirations(options, id1, issueoptions, sleep):
-    '''multiple expiration dates'''
+    """multiple expiration dates"""
     issueoptions(id1, 10)
     sleep(3)
     issueoptions(id1, 10)

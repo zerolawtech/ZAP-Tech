@@ -8,10 +8,10 @@ from brownie import accounts, rpc
 
 @pytest.fixture(scope="module", autouse=True)
 def local_setup(kyc, owner_id, auth_id):
-    kyc.setAuthorityCountries(auth_id, (1,), False, {'from': accounts[0]})
-    kyc.registerAddresses(owner_id, accounts[1:5], {'from': accounts[0]})
-    kyc.registerAddresses(auth_id, accounts[-5:-2], {'from': accounts[0]})
-    kyc.addMember("0x1111", 1, 1, 1, 9999999999, (accounts[5],), {'from': accounts[0]})
+    kyc.setAuthorityCountries(auth_id, (1,), False, {"from": accounts[0]})
+    kyc.registerAddresses(owner_id, accounts[1:5], {"from": accounts[0]})
+    kyc.registerAddresses(auth_id, accounts[-5:-2], {"from": accounts[0]})
+    kyc.addMember("0x1111", 1, 1, 1, 9999999999, (accounts[5],), {"from": accounts[0]})
 
 
 @pytest.fixture(scope="module")
@@ -65,35 +65,35 @@ def test_restrictAddresses(msauth, kyc):
 
 
 def _auth_multisig(kyc, auth_id, fn, *args):
-    args = list(args) + [{'from': accounts[-1]}]
+    args = list(args) + [{"from": accounts[-1]}]
     with pytest.reverts("dev: country"):
         fn(*args)
-    kyc.setAuthorityCountries(auth_id, (1,), True, {'from': accounts[0]})
-    kyc.setAuthorityThreshold(auth_id, 3, {'from': accounts[0]})
-    assert 'MultiSigCallApproved' not in fn(*args).events
+    kyc.setAuthorityCountries(auth_id, (1,), True, {"from": accounts[0]})
+    kyc.setAuthorityThreshold(auth_id, 3, {"from": accounts[0]})
+    assert "MultiSigCallApproved" not in fn(*args).events
     with pytest.reverts("dev: repeat caller"):
         fn(*args)
-    args[-1]['from'] = accounts[-2]
-    assert 'MultiSigCallApproved' not in fn(*args).events
+    args[-1]["from"] = accounts[-2]
+    assert "MultiSigCallApproved" not in fn(*args).events
     with pytest.reverts("dev: repeat caller"):
         fn(*args)
-    args[-1]['from'] = accounts[-3]
-    assert 'MultiSigCallApproved' in fn(*args).events
+    args[-1]["from"] = accounts[-3]
+    assert "MultiSigCallApproved" in fn(*args).events
 
 
 def _owner_multisig(kyc, owner_id, fn, *args):
-    args = list(args) + [{'from': accounts[0]}]
+    args = list(args) + [{"from": accounts[0]}]
     with pytest.reverts("dev: only owner"):
-        fn(*args[:-1] + [{'from': accounts[-1]}])
-    assert 'MultiSigCallApproved' in fn(*args).events
+        fn(*args[:-1] + [{"from": accounts[-1]}])
+    assert "MultiSigCallApproved" in fn(*args).events
     rpc.revert()
-    kyc.setAuthorityThreshold(owner_id, 3, {'from': accounts[0]})
-    assert 'MultiSigCallApproved' not in fn(*args).events
+    kyc.setAuthorityThreshold(owner_id, 3, {"from": accounts[0]})
+    assert "MultiSigCallApproved" not in fn(*args).events
     with pytest.reverts("dev: repeat caller"):
         fn(*args)
-    args[-1]['from'] = accounts[1]
-    assert 'MultiSigCallApproved' not in fn(*args).events
+    args[-1]["from"] = accounts[1]
+    assert "MultiSigCallApproved" not in fn(*args).events
     with pytest.reverts("dev: repeat caller"):
         fn(*args)
-    args[-1]['from'] = accounts[2]
-    assert 'MultiSigCallApproved' in fn(*args).events
+    args[-1]["from"] = accounts[2]
+    assert "MultiSigCallApproved" in fn(*args).events

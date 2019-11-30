@@ -1,6 +1,6 @@
-# SFT-Protocol/tests
+# ZAP-Tech/tests
 
-Unit testing of this project is performed with [Brownie](https://github.com/HyperLink-Technology/brownie).
+Unit testing of this project is performed with [Brownie](https://github.com/iamdefinitelyahuman/brownie).
 
 To run the tests:
 
@@ -12,7 +12,7 @@ A [dockerfile](Dockerfile) is available if you are experiencing issues.
 
 ## Organization
 
-Tests for SFT are sorted by the main contract being tested, then optionally by the main contract being interacted with and the methods being called.
+Tests for ZAP are sorted by the main contract being tested, then optionally by the main contract being interacted with and the methods being called.
 
 ## Subfolders
 

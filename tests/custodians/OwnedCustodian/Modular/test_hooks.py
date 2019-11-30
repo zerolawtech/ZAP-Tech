@@ -51,42 +51,47 @@ def check_hooks(cust):
 
 
 def test_custodian_sentShares(check_hooks, share, cust):
-    source = '''sentShares(
+    source = """sentShares(
         address _share,
         address _to,
-        uint256 _value'''
-    share.transfer(cust, 10000, {'from': accounts[0]})
+        uint256 _value"""
+    share.transfer(cust, 10000, {"from": accounts[0]})
     check_hooks(cust.transfer, (share, accounts[0], 100), source, "0xa110724f")
 
 
 def test_custodian_receivedShares(check_hooks, share, cust):
-    source = '''receivedShares(
+    source = """receivedShares(
         address _share,
         address _from,
-        uint256 _value'''
+        uint256 _value"""
     check_hooks(share.transfer, (cust, 1000), source, "0xa000ff88")
 
 
 def test_custodian_internalTransfer(check_hooks, share, cust):
-    source = '''internalTransfer(
+    source = """internalTransfer(
         address _share,
         address _from,
         address _to,
-        uint256 _value'''
-    share.transfer(cust, 10000, {'from': accounts[0]})
-    check_hooks(cust.transferInternal, (share, accounts[0], accounts[2], 100), source, "0x44a29e2a")
+        uint256 _value"""
+    share.transfer(cust, 10000, {"from": accounts[0]})
+    check_hooks(
+        cust.transferInternal,
+        (share, accounts[0], accounts[2], 100),
+        source,
+        "0x44a29e2a",
+    )
 
 
 def _hook(cust, fn, args, source, sig):
-    args = list(args) + [{'from': accounts[0]}]
+    args = list(args) + [{"from": accounts[0]}]
     source = module_source.format(sig, source)
     project = compile_source(source)
-    module = project.TestModule.deploy(cust, {'from': accounts[0]})
+    module = project.TestModule.deploy(cust, {"from": accounts[0]})
     fn(*args)
-    cust.attachModule(module, {'from': accounts[0]})
+    cust.attachModule(module, {"from": accounts[0]})
     fn(*args)
-    module.setReturn(False, {'from': accounts[0]})
+    module.setReturn(False, {"from": accounts[0]})
     with pytest.reverts():
         fn(*args)
-    cust.detachModule(module, {'from': accounts[0]})
+    cust.detachModule(module, {"from": accounts[0]})
     fn(*args)

@@ -7,7 +7,7 @@ from brownie import accounts
 
 @pytest.fixture(scope="module", autouse=True)
 def setup(kyc):
-    kyc.addAuthority((accounts[-1], accounts[-2]), [1], 1, {'from': accounts[0]})
+    kyc.addAuthority((accounts[-1], accounts[-2]), [1], 1, {"from": accounts[0]})
 
 
 @pytest.fixture(scope="module")

@@ -10,9 +10,9 @@ def setup(id1, id2, org, nft, share):
     for i in range(6):
         accounts.add()
         accounts[0].transfer(accounts[-1], "1 ether")
-    org.addAuthority(accounts[-6:-3], [], 2000000000, 1, {'from': accounts[0]})
-    share.mint(accounts[2], 1000, {'from': accounts[0]})
-    nft.mint(accounts[2], 1000, 0, "0x00", {'from': accounts[0]})
+    org.addAuthority(accounts[-6:-3], [], 2000000000, 1, {"from": accounts[0]})
+    share.mint(accounts[2], 1000, {"from": accounts[0]})
+    nft.mint(accounts[2], 1000, 0, "0x00", {"from": accounts[0]})
 
 
 def test_share_modifyAuthorizedSupply(multisig, share):

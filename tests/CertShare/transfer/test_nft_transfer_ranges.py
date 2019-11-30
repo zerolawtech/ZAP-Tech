@@ -8,7 +8,7 @@ from brownie import accounts
 
 @pytest.fixture(scope="module", autouse=True)
 def setup(approve_many, org, nft):
-    nft.mint(org, 100000, 0, "0x00", {'from': accounts[0]})
+    nft.mint(org, 100000, 0, "0x00", {"from": accounts[0]})
 
 
 @pytest.fixture
@@ -22,12 +22,12 @@ def ts(org, nft):
 
 
 def test_simple(transfer):
-    '''Simple transfer'''
+    """Simple transfer"""
     transfer(0, 1, 12345)
 
 
 def test_no_intersect(transfer, ts):
-    '''No intersection'''
+    """No intersection"""
     transfer(0, 1, 10)
     transfer(0, 2, 1000)
     transfer(0, 3, 10)
@@ -40,7 +40,7 @@ def test_no_intersect(transfer, ts):
 
 
 def test_middle(transfer, ts):
-    '''Intersect on both sides'''
+    """Intersect on both sides"""
     transfer(0, 1, 100)
     transfer(0, 2, 120)
     transfer(0, 1, 3)
@@ -49,7 +49,7 @@ def test_middle(transfer, ts):
 
 
 def test_start(transfer, ts):
-    '''Intersect at start'''
+    """Intersect at start"""
     transfer(0, 1, 3040)
     transfer(0, 2, 33)
     transfer(1, 2, 41)
@@ -58,7 +58,7 @@ def test_start(transfer, ts):
 
 
 def test_stop(transfer, ts):
-    '''Intersect at end'''
+    """Intersect at end"""
     transfer(0, 1, 100)
     transfer(0, 2, 100)
     transfer(0, 3, 42)
@@ -69,7 +69,7 @@ def test_stop(transfer, ts):
 
 
 def test_one(transfer, ts):
-    '''One nft'''
+    """One nft"""
     transfer(0, 1, 1)
     transfer(0, 2, 1)
     transfer(0, 3, 1)
@@ -83,9 +83,9 @@ def test_one(transfer, ts):
 
 
 def test_split(transfer, nft, org, skip_coverage):
-    '''many ranges'''
-    nft.modifyAuthorizedSupply("1000 gwei", {'from': accounts[0]})
-    nft.mint(org, "100 gwei", 0, "0x00", {'from': accounts[0]})
+    """many ranges"""
+    nft.modifyAuthorizedSupply("1000 gwei", {"from": accounts[0]})
+    nft.mint(org, "100 gwei", 0, "0x00", {"from": accounts[0]})
     for i in range(2, 7):
         transfer(0, 1, 12345678)
         transfer(0, i, 12345678)
@@ -114,7 +114,7 @@ def _transfer(org, nft, from_, to, amount):
         to_bal = nft.balanceOf(org)
     else:
         to_bal = nft.balanceOf(accounts[to])
-    nft.transfer(accounts[to], amount, {'from': accounts[from_]})
+    nft.transfer(accounts[to], amount, {"from": accounts[from_]})
     if from_ == 0 or to == 0:
         return
     assert nft.balanceOf(accounts[from_]) == from_bal - amount

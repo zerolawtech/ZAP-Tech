@@ -7,9 +7,11 @@ matrix:
       sudo: true
       install:
         - sudo add-apt-repository -y ppa:ethereum/ethereum
+        - sudo add-apt-repository -y ppa:deadsnakes/ppa
         - sudo apt-get update
         - sudo apt-get install -y python3.7-dev npm solc
-        - python -m pip install -r requirements-dev.txt
+        - npm -g install ganache-cli
+        - python -m pip install tox
       script: tox
 
 notifications:

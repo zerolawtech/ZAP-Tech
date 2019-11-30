@@ -7,3 +7,5 @@ docs/_static/
 build/
 reports/
 .idea/
+.tox/
+dist/

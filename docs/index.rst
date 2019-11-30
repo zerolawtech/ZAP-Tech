@@ -31,7 +31,7 @@ Components
 
 ZAP is comprised of four core components:
 
-1. :ref:`share`
+1. :ref:`orgshare`
 
     * ERC20 compliant token contracts
     * Intended to represent a corporate shareholder registry in book entry or certificated form

@@ -4,12 +4,20 @@ import pytest
 
 from brownie import accounts
 
-proposal_inputs = ["0x1234", 1500000000, 2000000000, 2100000000, "test proposal", "0" * 40, "0x"]
+proposal_inputs = [
+    "0x1234",
+    1500000000,
+    2000000000,
+    2100000000,
+    "test proposal",
+    "0" * 40,
+    "0x",
+]
 
 
 @pytest.fixture()
 def pinputs():
-    yield proposal_inputs.copy() + [{'from': accounts[0]}]
+    yield proposal_inputs.copy() + [{"from": accounts[0]}]
 
 
 def test_new_proposal(gov, pinputs):

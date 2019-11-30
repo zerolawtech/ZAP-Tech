@@ -66,91 +66,91 @@ contract TestModule {
 
 @pytest.fixture(scope="module", autouse=True)
 def setup(id1, id2, org, nft):
-    nft.mint(accounts[1], 100, 0, "0x0000", {'from': accounts[0]})  # 1   - 100
-    nft.mint(accounts[1], 100, 0, "0xaa01", {'from': accounts[0]})  # 101 - 200
-    nft.mint(accounts[1], 100, 0, "0xaa02", {'from': accounts[0]})  # 201 - 300
-    nft.mint(accounts[1], 100, 0, "0xff00", {'from': accounts[0]})  # 301 - 400
-    nft.mint(accounts[1], 100, 0, "0xff01", {'from': accounts[0]})  # 401 - 500
-    nft.mint(accounts[1], 100, 0, "0xff02", {'from': accounts[0]})  # 501 - 600
+    nft.mint(accounts[1], 100, 0, "0x0000", {"from": accounts[0]})  # 1   - 100
+    nft.mint(accounts[1], 100, 0, "0xaa01", {"from": accounts[0]})  # 101 - 200
+    nft.mint(accounts[1], 100, 0, "0xaa02", {"from": accounts[0]})  # 201 - 300
+    nft.mint(accounts[1], 100, 0, "0xff00", {"from": accounts[0]})  # 301 - 400
+    nft.mint(accounts[1], 100, 0, "0xff01", {"from": accounts[0]})  # 401 - 500
+    nft.mint(accounts[1], 100, 0, "0xff02", {"from": accounts[0]})  # 501 - 600
 
 
 @pytest.fixture(scope="module")
 def module(nft, org):
     project = compile_source(module_source)
-    m = project.TestModule.deploy(nft, {'from': accounts[0]})
-    org.attachModule(nft, m, {'from': accounts[0]})
+    m = project.TestModule.deploy(nft, {"from": accounts[0]})
+    org.attachModule(nft, m, {"from": accounts[0]})
     yield m
 
 
 def test_checkTransferRange_transferRange(nft, module):
-    '''module.checkTransferRange, nft.transferRange - adjust tags'''
+    """module.checkTransferRange, nft.transferRange - adjust tags"""
     _transferRange(nft, module, "0x2d79c6d7")
 
 
 def test_checkTransferRange_transfer(nft, module):
-    '''module.checkTransferRange, nft.transfer - adjust tags'''
-    module.setHookTags("0x2d79c6d7", True, "0xaa", ["0x01"], {'from': accounts[0]})
-    nft.transfer(accounts[2], 250, {'from': accounts[1]})
+    """module.checkTransferRange, nft.transfer - adjust tags"""
+    module.setHookTags("0x2d79c6d7", True, "0xaa", ["0x01"], {"from": accounts[0]})
+    nft.transfer(accounts[2], 250, {"from": accounts[1]})
     assert nft.getRange(101)[0] == accounts[1]
-    module.setHookTags("0x2d79c6d7", False, "0xaa", ["0x01"], {'from': accounts[0]})
-    nft.transfer(accounts[2], 120, {'from': accounts[1]})
+    module.setHookTags("0x2d79c6d7", False, "0xaa", ["0x01"], {"from": accounts[0]})
+    nft.transfer(accounts[2], 120, {"from": accounts[1]})
     assert nft.getRange(101)[0] == accounts[2]
 
 
 def test_checkTransferRange_always(nft, module):
-    '''module.checkTransferRange - toggle always and permitted'''
+    """module.checkTransferRange - toggle always and permitted"""
     _always(nft, module, "0x2d79c6d7")
 
 
 def test_transferShareRange_transferRange(nft, module):
-    '''module.checkTransferRange, nft.transferRange - adjust tags'''
+    """module.checkTransferRange, nft.transferRange - adjust tags"""
     _transferRange(nft, module, "0x244d5002")
 
 
 def test_transferShareRange_transfer(nft, module):
-    '''module.checkTransferRange, nft.transfer - adjust tags'''
-    module.setHookTags("0x244d5002", True, "0xff", ["0x01"], {'from': accounts[0]})
-    nft.transfer(accounts[2], 250, {'from': accounts[1]})
+    """module.checkTransferRange, nft.transfer - adjust tags"""
+    module.setHookTags("0x244d5002", True, "0xff", ["0x01"], {"from": accounts[0]})
+    nft.transfer(accounts[2], 250, {"from": accounts[1]})
     with pytest.reverts():
-        nft.transfer(accounts[2], 250, {'from': accounts[1]})
-    module.setHookTags("0x244d5002", False, "0xff", ["0x01"], {'from': accounts[0]})
-    nft.transfer(accounts[2], 250, {'from': accounts[1]})
+        nft.transfer(accounts[2], 250, {"from": accounts[1]})
+    module.setHookTags("0x244d5002", False, "0xff", ["0x01"], {"from": accounts[0]})
+    nft.transfer(accounts[2], 250, {"from": accounts[1]})
 
 
 def test_transferShareRange_always(nft, module):
-    '''module.checkTransferRange - toggle always and permitted'''
+    """module.checkTransferRange - toggle always and permitted"""
     _always(nft, module, "0x244d5002")
 
 
 def _transferRange(nft, module, sig):
-    module.setHookTags(sig, True, "0xff", ["0x01"], {'from': accounts[0]})
-    nft.transferRange(accounts[2], 301, 310, {'from': accounts[1]})
+    module.setHookTags(sig, True, "0xff", ["0x01"], {"from": accounts[0]})
+    nft.transferRange(accounts[2], 301, 310, {"from": accounts[1]})
     with pytest.reverts():
-        nft.transferRange(accounts[2], 401, 410, {'from': accounts[1]})
-    nft.transferRange(accounts[2], 501, 510, {'from': accounts[1]})
-    module.setHookTags(sig, True, "0xff", ["0x00"], {'from': accounts[0]})
-    nft.transferRange(accounts[2], 101, 110, {'from': accounts[1]})
+        nft.transferRange(accounts[2], 401, 410, {"from": accounts[1]})
+    nft.transferRange(accounts[2], 501, 510, {"from": accounts[1]})
+    module.setHookTags(sig, True, "0xff", ["0x00"], {"from": accounts[0]})
+    nft.transferRange(accounts[2], 101, 110, {"from": accounts[1]})
     with pytest.reverts():
-        nft.transferRange(accounts[2], 311, 331, {'from': accounts[1]})
+        nft.transferRange(accounts[2], 311, 331, {"from": accounts[1]})
     with pytest.reverts():
-        nft.transferRange(accounts[2], 411, 421, {'from': accounts[1]})
+        nft.transferRange(accounts[2], 411, 421, {"from": accounts[1]})
     with pytest.reverts():
-        nft.transferRange(accounts[2], 511, 521, {'from': accounts[1]})
-    module.clearHookTags(sig, ["0xff"], {'from': accounts[0]})
-    nft.transferRange(accounts[2], 321, 330, {'from': accounts[1]})
-    nft.transferRange(accounts[2], 421, 430, {'from': accounts[1]})
-    nft.transferRange(accounts[2], 521, 530, {'from': accounts[1]})
+        nft.transferRange(accounts[2], 511, 521, {"from": accounts[1]})
+    module.clearHookTags(sig, ["0xff"], {"from": accounts[0]})
+    nft.transferRange(accounts[2], 321, 330, {"from": accounts[1]})
+    nft.transferRange(accounts[2], 421, 430, {"from": accounts[1]})
+    nft.transferRange(accounts[2], 521, 530, {"from": accounts[1]})
 
 
 def _always(nft, module, sig):
-    module.setHook(sig, True, True, {'from': accounts[0]})
-    module.setHookTags(sig, True, "0xff", ["0x01"], {'from': accounts[0]})
+    module.setHook(sig, True, True, {"from": accounts[0]})
+    module.setHookTags(sig, True, "0xff", ["0x01"], {"from": accounts[0]})
     with pytest.reverts():
-        nft.transfer(accounts[2], 1, {'from': accounts[1]})
-    module.setHook(sig, True, False, {'from': accounts[0]})
-    nft.transfer(accounts[2], 1, {'from': accounts[1]})
+        nft.transfer(accounts[2], 1, {"from": accounts[1]})
+    module.setHook(sig, True, False, {"from": accounts[0]})
+    nft.transfer(accounts[2], 1, {"from": accounts[1]})
     with pytest.reverts():
-        nft.transferRange(accounts[2], 401, 410, {'from': accounts[1]})
-    module.setHook(sig, False, False, {'from': accounts[0]})
-    nft.transfer(accounts[2], 1, {'from': accounts[1]})
-    nft.transferRange(accounts[2], 401, 410, {'from': accounts[1]})
+        nft.transferRange(accounts[2], 401, 410, {"from": accounts[1]})
+    module.setHook(sig, False, False, {"from": accounts[0]})
+    nft.transfer(accounts[2], 1, {"from": accounts[1]})
+    nft.transferRange(accounts[2], 401, 410, {"from": accounts[1]})

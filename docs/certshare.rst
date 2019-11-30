@@ -46,7 +46,7 @@ Deployment
 
     After the contract is deployed it must be associated with the org via ``OrgCode.addShare``. It is not possible to mint shares until this is done.
 
-    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The org may then mint shares by calling ``CertShare.mint`` directly or via a module. See :ref:`nftoken-mint-burn`.
+    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The org may then mint shares by calling ``CertShare.mint`` directly or via a module. See :ref:`certshare-mint-burn`.
 
     .. code-block:: python
 

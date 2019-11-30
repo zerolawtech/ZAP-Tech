@@ -14,49 +14,49 @@ from brownie import accounts
 
 
 def test_wrong_price(options, id1, issueoptions, sleep):
-    '''incorrect payment amount'''
+    """incorrect payment amount"""
     issueoptions(id1, 10)
     sleep(7)
-    options.exerciseOptions(10, 100, {'from': accounts[1], 'amount': 1000})
+    options.exerciseOptions(10, 100, {"from": accounts[1], "amount": 1000})
     with pytest.reverts("Incorrect payment"):
-        options.exerciseOptions(10, 100, {'from': accounts[1], 'amount': 100})
+        options.exerciseOptions(10, 100, {"from": accounts[1], "amount": 100})
     with pytest.reverts("Incorrect payment"):
-        options.exerciseOptions(10, 100, {'from': accounts[1]})
+        options.exerciseOptions(10, 100, {"from": accounts[1]})
     with pytest.reverts("Incorrect payment"):
-        options.exerciseOptions(10, 100, {'from': accounts[1], 'amount': 100000})
+        options.exerciseOptions(10, 100, {"from": accounts[1], "amount": 100000})
 
 
 def test_unknown_id(options):
-    '''unknown member ID'''
+    """unknown member ID"""
     with pytest.reverts("Address not registered"):
-        options.exerciseOptions(10, 100, {'from': accounts[9], 'amount': 1000})
+        options.exerciseOptions(10, 100, {"from": accounts[9], "amount": 1000})
 
 
 def test_no_options_at_price(options, id1, issueoptions, sleep):
-    '''no options at this price'''
+    """no options at this price"""
     issueoptions(id1, 10)
     sleep(7)
     with pytest.reverts("No options at this price"):
-        options.exerciseOptions(20, 500, {'from': accounts[1], 'amount': 10000})
-    options.exerciseOptions(10, 500, {'from': accounts[1], 'amount': 5000})
+        options.exerciseOptions(20, 500, {"from": accounts[1], "amount": 10000})
+    options.exerciseOptions(10, 500, {"from": accounts[1], "amount": 5000})
     with pytest.reverts("No options at this price"):
-        options.exerciseOptions(10, 500, {'from': accounts[1], 'amount': 5000})
+        options.exerciseOptions(10, 500, {"from": accounts[1], "amount": 5000})
 
 
 def test_not_enough_options(options, id1, issueoptions, sleep):
-    '''insufficient vested options'''
+    """insufficient vested options"""
     issueoptions(id1, 10)
     sleep(3)
     with pytest.reverts("Insufficient vested options"):
-        options.exerciseOptions(10, 400, {'from': accounts[1], 'amount': 4000})
-    options.exerciseOptions(10, 200, {'from': accounts[1], 'amount': 2000})
+        options.exerciseOptions(10, 400, {"from": accounts[1], "amount": 4000})
+    options.exerciseOptions(10, 200, {"from": accounts[1], "amount": 2000})
     with pytest.reverts("Insufficient vested options"):
-        options.exerciseOptions(10, 100, {'from': accounts[1], 'amount': 1000})
+        options.exerciseOptions(10, 100, {"from": accounts[1], "amount": 1000})
 
 
 def test_zero_options(options, id1, issueoptions, sleep):
-    '''cannot exercise zero options'''
+    """cannot exercise zero options"""
     issueoptions(id1, 10)
     sleep(3)
     with pytest.reverts("dev: mint 0"):
-        options.exerciseOptions(10, 0, {'from': accounts[1], 'amount': 0})
+        options.exerciseOptions(10, 0, {"from": accounts[1], "amount": 0})

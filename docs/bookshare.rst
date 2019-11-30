@@ -26,7 +26,7 @@ Deployment
 
     After the contract is deployed it must be associated with the org via ``OrgCode.addShare``. It is not possible to mint shares until this is done.
 
-    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The org may then mint shares by calling ``BookShare.mint`` directly or via a module. See :ref:`security-token-mint-burn`.
+    At the time of deployment the initial authorized supply is set, and the total supply is left as 0. The org may then mint shares by calling ``BookShare.mint`` directly or via a module. See :ref:`bookshare-mint-burn`.
 
     .. code-block:: python
 
@@ -87,7 +87,7 @@ The following public variables cannot be changed after contract deployment.
         >>> share.orgCode()
         0x40b49Ad1B8D6A8Df6cEdB56081D51b69e6569e06
 
-.. _security-share-mint-burn:
+.. _bookshare-mint-burn:
 
 Total Supply, Minting and Burning
 =================================

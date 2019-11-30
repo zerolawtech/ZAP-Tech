@@ -7,5 +7,5 @@ def test_permissions(share, options):
 
 def hooks(options):
     result = options.getPermissions()
-    assert result['hooks'] == ('0x741b5078',)
-    assert result['hookBools'] == 2**256 - 1
+    assert result["hooks"] == ("0x741b5078",)
+    assert result["hookBools"] == 2 ** 256 - 1

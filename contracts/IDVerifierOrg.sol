@@ -4,7 +4,10 @@ import "./bases/IDVerifier.sol";
 
 import "./interfaces/IOrgCode.sol";
 
-/** @title Simplified IDVerifier Contract for Single Org */
+/**
+    @title Simplified IDVerifier Contract for Single Org
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract IDVerifierOrg is IDVerifierBase {
 
     IOrgCode public orgCode;

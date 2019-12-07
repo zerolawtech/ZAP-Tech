@@ -2,7 +2,10 @@ pragma solidity 0.4.25;
 
 import "./bases/IDVerifier.sol";
 
-/** @title ID Verifier */
+/**
+    @title ID Verifier
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract IDVerifierRegistrar is IDVerifierBase {
 
     bytes32 ownerID;

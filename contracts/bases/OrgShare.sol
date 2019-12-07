@@ -7,7 +7,8 @@ import "../interfaces/IOrgCode.sol";
 /**
     @title OrgShareBase Abstract Base Contract
     @dev Methods in this ABC are defined in contracts that inherit OrgShareBase
-*/
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract OrgShareBaseABC {
     function balanceOf(address) public view returns (uint256);
     function transfer(address, uint256) external returns (bool);

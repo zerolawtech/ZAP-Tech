@@ -15,7 +15,8 @@ interface IMultiCheckpointModule {
 /**
     @title Governance Module
     @dev Attaches to OrgCode and MultiCheckpointModule
-*/
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract GovernanceModule {
 
     using SafeMath for uint256;

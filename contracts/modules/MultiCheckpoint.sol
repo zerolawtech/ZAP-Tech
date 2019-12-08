@@ -8,7 +8,8 @@ import "../interfaces/IOrgShare.sol";
 /**
     @title MultiCheckpoint Module
     @dev Org level module used to record and access checkpoints across many OrgShares
-*/
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract MultiCheckpointModule is OrgModuleBase {
 
     using SafeMath for uint256;

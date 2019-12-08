@@ -3,6 +3,7 @@ pragma solidity 0.4.25;
 /**
     @title IDVerifierBase Abstract Base Contract
     @dev Methods in this ABC are defined in contracts that inherit IDVerifierBase
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
 */
 contract IDVerifierBaseABC {
 

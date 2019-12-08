@@ -3,7 +3,10 @@ pragma solidity 0.4.25;
 import "../interfaces/IModules.sol";
 
 
-/** @title Modular Functionality */
+/**
+    @title Modular Functionality
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract Modular {
 
     struct Module {

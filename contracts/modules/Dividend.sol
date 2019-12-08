@@ -9,6 +9,7 @@ import "../interfaces/IOrgShare.sol";
 /**
     @title Ether Dividend Payment Module
     @dev attached at OrgShare
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
  */
 contract DividendModule is CheckpointModuleBase {
 

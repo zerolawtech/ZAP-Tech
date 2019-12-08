@@ -11,6 +11,7 @@ import "./interfaces/IOrgCode.sol";
     @dev
         Expands upon the ERC20 token standard
         https://theethereum.wiki/w/index.php/ERC20_Token_Standard
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
  */
 contract BookShare is OrgShareBase {
 

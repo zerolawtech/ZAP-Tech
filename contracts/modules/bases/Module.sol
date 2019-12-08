@@ -6,7 +6,8 @@ import "../../interfaces/IOrgShare.sol";
 /**
     @title ModuleBase Abstract Base Contract
     @dev Methods in this ABC are defined in contracts that inherit ModuleBase
-*/
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract ModuleBaseABC {
     function getPermissions() external pure returns (bytes4[], bytes4[], uint256);
 }

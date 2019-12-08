@@ -9,7 +9,8 @@ import "../../interfaces/IOrgShare.sol";
 /**
     @title Checkpoint Module Base Contract
     @dev Inherited contract for share modules requiring a balance checkpoint
-*/
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract CheckpointModuleBase is OrgShareModuleBase {
 
     using SafeMath for uint256;

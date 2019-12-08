@@ -9,7 +9,10 @@ import "./interfaces/IIDVerifier.sol";
 import "./interfaces/IModules.sol";
 import "./interfaces/IOrgShare.sol";
 
-/** @title Issuing Entity */
+/**
+    @title Issuing Entity
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract OrgCode is MultiSig {
 
     using SafeMath32 for uint32;

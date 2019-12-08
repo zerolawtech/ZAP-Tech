@@ -5,7 +5,9 @@ import "../bases/MultiSig.sol";
 
 import "../interfaces/IOrgShare.sol";
 
-/** @title Owned Custodian Contract */
+/** @title Owned Custodian Contract
+    @notice Licensed under GNU GPLv3 - https://github.com/zerolawtech/ZAP-Tech/LICENSE
+ */
 contract OwnedCustodian is Modular, MultiSig {
 
     event ReceivedShares(

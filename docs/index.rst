@@ -1,8 +1,8 @@
-############
-ZAP
-############
+#############################
+ZeroLaw Augmentation Protocol
+#############################
 
-The Secured Financial Transaction Protocol (ZAP) is a set of smart contracts, written in `Solidity <https://solidity.readthedocs.io/en/latest>`__ for the Ethereum blockchain, that allow for the shareization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. ZAP favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
+The ZeroLaw org-Augmentation Protocol (ZAP) is a general-purpose tech/law stack for augmenting any business entity or organization through the use of smart contracts and shares deployed to Ethereum or any other EVM-based blockchain. It is non-rent-seeking, fully free and open source and is neither funded by nor requires the use of any protocol token. It is intended to be compatible with a range of legal compliance strategies or applicable legal regimes by providing tunable compliance parameters; it is even compatible with antilaw positions. ZAP’s compliance parameters may be tuned "all the way up", "all the way down" or anywhere in between; thus, ZAP is suitable for any entity or organization, ranging from traditional corporations to anarchic, pseudonymous collectives. ZAP merges the vision of a borderless, decentralized future with the power to comply with existing legal requirements & best practices for doing business. ZAP has been developed by ZeroLaw, an independent law/technology team working to make technology and legal agreements interoperable. Anyone may contribute to the protocol.
 
 ZAP was developed by `ZeroLaw <https://zerolaw.tech>`__.
 
@@ -81,8 +81,7 @@ To run the tests:
 License
 =======
 
-This project is licensed under the `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0.html>`__ license.
-
+The code in this project is licensed under the `GNU GPLv3 <https://github.com/zerolawtech/ZAP-Tech/blob/master/LICENSE>`__ license.
 
 Contents
 ========

@@ -10,7 +10,7 @@ Standard <https://eips.ethereum.org/EIPS/eip-20>`__. Depending on the use case, 
 * `BookShare.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/BookShare.sol>`__ is used for the issuance of non-certificated (book entry) securities. These tokens are fungible.
 * `CertShare.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/CertShare.sol>`__ is used for the issuance of certificated securities. These tokens are non-fungible.
 
-Both contracts are derived from a common base `OrgShare.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/bases/Share.sol>`__.
+Both contracts are derived from a common base `OrgShare.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/bases/OrgShare.sol>`__.
 
 Share contracts include :ref:`multisig` and :ref:`modules` via the associated :ref:`org-code` contract. See the respective documents for more detailed information.
 

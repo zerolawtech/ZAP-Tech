@@ -2,7 +2,9 @@
 
 ## Description
 
-The ZeroLaw org-Augmentation Protocol (ZAP)  is a set of smart contracts, written in Solidity for the Ethereum blockchain, that allow for the tokenization of financial securities. It provides a robust, modular framework that is configurable for a wide range of jurisdictions, with consideration for real world needs based on today’s existing markets. ZAP favors handling as much permissioning logic on-chain as possible, in order to maximize transparency for all parties involved.
+The ZeroLaw org-Augmentation Protocol (ZAP) is a general-purpose tech/law stack for augmenting any business entity or organization through the use of smart contracts and shares deployed to Ethereum or any other EVM-based blockchain. It is non-rent-seeking, fully free and open source and is neither funded by nor requires the use of any protocol token. It is intended to be compatible with a range of legal compliance strategies or applicable legal regimes by providing tunable compliance parameters; it is even compatible with antilaw positions. ZAP’s compliance parameters may be tuned "all the way up", "all the way down" or anywhere in between; thus, ZAP is suitable for any entity or organization, ranging from traditional corporations to anarchic, pseudonymous collectives. ZAP merges the vision of a borderless, decentralized future with the power to comply with existing legal requirements & best practices for doing business. ZAP has been developed by ZeroLaw, an independent law/technology team working to make technology and legal agreements interoperable. Anyone may contribute to the protocol.
+
+ZAP was developed by [ZeroLaw](https://zerolaw.tech).
 
 ## How it Works
 
@@ -11,13 +13,13 @@ ZAP is designed to maximize interoperability between different network participa
 * **Orgs** are entities that create and sell security shares to fund their business operations.
 * **Investors** are entities that have passed identity checks and are are able to hold or transfer shares created by an Org.
 * **Verifiers** are trusted entities that provide identification services for network participants.
-* **Custodians** hold shares on behalf of investors without taking direct ownership. They may provide services such as escrow or custody, or facilitate secondary trading of shares.
+* **Custodians** hold shares on behalf of members without taking direct ownership. They may provide services such as escrow or custody, or facilitate secondary trading of shares.
 
-The protocol is built with two central concepts in mind: **identification** and **permission**. Each investor has their identity verified by a registrar and a unique ID hash is associated to their wallet addresses. Based on this identity information, issuers and custodians apply a series of rules to determine how the investor may interact with them.
+The protocol is built with two central concepts in mind: **identification** and **permission**. Each member has their identity verified by a registrar and a unique ID hash is associated to their wallet addresses. Based on this identity information, orgs and custodians apply a series of rules to determine how the member may interact with them.
 
-Issuers, registrars and custodians each exist on the blockchain with their own smart contracts that define the way they interact with one another. These contracts allow different entities to provide services to each other within the ecosystem.
+Orgs, identifiers and custodians each exist on the blockchain with their own smart contracts that define the way they interact with one another. These contracts allow different entities to provide services to each other within the ecosystem.
 
-OrgShares are based upon the ERC20 token standard. Shares are transferred via the ``transfer`` and ``transferFrom`` methods, however the transfer will only succeed if it passes a series of on-chain permissioning checks. A call to ``checkTransfer`` returns true if the transfer is possible. The base configuration includes investor identification, tracking investor counts and limits, and restrictions on countries and accredited status. By implementing other modules a variety of additional functionality is possible so as to meet the needs of each individual issuer.
+OrgShares are based upon the ERC20 token standard. Shares are transferred via the ``transfer`` and ``transferFrom`` methods, however the transfer will only succeed if it passes a series of on-chain permissioning checks. A call to ``checkTransfer`` returns true if the transfer is possible. The base configuration includes member identification, tracking member counts and limits, and restrictions on countries and accredited status. By implementing other modules a variety of additional functionality is possible so as to meet the needs of each individual org.
 
 ## Components
 
@@ -32,21 +34,21 @@ ZAP is comprised of four core components:
 
 2. **OrgCode**
 
-    * Common owner contract for multiples classes of shares created by the same issuer
+    * Common owner contract for multiples classes of shares created by the same org
     * Detailed on-chain cap table with granular permissioning capabilities
     * Modular design allows for optional added functionality
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
 
 3. **IDVerifier**
 
-    * Whitelists that provide identity, region, and accreditation information of investors based on off-chain KYC/AML verification
-    * May be maintained by a single entity for a single issuance, or a federation across multiple jurisdictions providing identity data for many issuers
+    * Whitelists that provide identity, region, and accreditation information of members based on off-chain KYC/AML verification
+    * May be maintained by a single entity for a single issuance, or a federation across multiple jurisdictions providing identity data for many orgs
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
 
 4. **Custodian**
 
-    * Contracts that represent an entity approved to hold shares on behalf of multiple investors
-    * Deep integration with IssuingEntity to provide accurate on-chain investor counts
+    * Contracts that represent an entity approved to hold shares on behalf of multiple members
+    * Deep integration with IssuingEntity to provide accurate on-chain member counts
     * Multiple implementations allow for a wide range of functionality including escrow services, custody, and secondary trading
     * Modular design allows for optional added functionality
     * Multi-sig, multi-authority design provides increased security and permissioned contract management
@@ -88,8 +90,8 @@ This runs the `main` function in [scripts/deployment.py](scripts/deployment.py) 
 * Deploys ``OrgCode`` from ``accounts[0]``
 * Deploys ``BookShare`` from ``accounts[0]`` with an initial authorized supply of 1,000,000
 * Associates the contracts
-* Approves ``accounts[1:7]`` in ``IDVerifierRegistrar``, with investor ratings 1-2 and country codes 1-3
-* Approves investors from country codes 1-3 in ``OrgCode``
+* Approves ``accounts[1:7]`` in ``IDVerifierRegistrar``, with member ratings 1-2 and country codes 1-3
+* Approves members from country codes 1-3 in ``OrgCode``
 
 From this configuration, the contracts are ready to mint and transfer shares:
 
@@ -111,4 +113,4 @@ BookShare.transfer confirmed - block: 14   gas used: 192451 (2.41%)
 
 ## License
 
-The code in this project is licensed under the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html) license. The ZAP Whitepaper and SFT Yellowpaper are licensed under [Creative Commons - Attribution-NonCommercial-NoDerivatives 4.0 International](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode). All model legal forms, including all documents contained in the "model-legal-forms" folder, are licensed under [Attribution-ShareAlike](https://creativecommons.org/licenses/by-sa/4.0/legalcode).
+The code in this project is licensed under the [GNU GPLv3](https://github.com/zerolawtech/ZAP-Tech/blob/master/LICENSE) license. The ZAP Whitepaper and SFT Yellowpaper are licensed under [Creative Commons - Attribution-NonCommercial-NoDerivatives 4.0 International](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode). All model legal forms, including all documents contained in the "model-legal-forms" folder, are licensed under [Attribution-ShareAlike](https://creativecommons.org/licenses/by-sa/4.0/legalcode).

@@ -12,7 +12,7 @@ Share contracts include :ref:`multisig` and :ref:`modules` via the associated :r
 It may be useful to view source code for the following contracts while reading this document:
 
 * `BookShare.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/BookShare.sol>`__: the deployed contract, with functionality specific to ``BookShare``.
-* `OrgShare.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/bases/Share.sol>`__: the base contract that both ``BookShare`` and ``CertShare`` inherit functionality from.
+* `OrgShare.sol <https://github.com/zerolawtech/ZAP-Tech/blob/master/contracts/bases/OrgShare.sol>`__: the base contract that both ``BookShare`` and ``CertShare`` inherit functionality from.
 
 Deployment
 ==========

@@ -29,7 +29,7 @@ ZAP is comprised of four core components:
 
     * ERC20 compliant token contracts
     * Intended to represent a corporate shareholder registry in book entry or certificated form
-    * Permissioning logic to enforce enforce legal and contractural restrictions around share transfers
+    * Permissioning logic to enforce legal and contractural restrictions around share transfers
     * Modular design allows for optional added functionality
 
 2. **OrgCode**
